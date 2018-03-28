@@ -22,6 +22,3 @@ def priceaway(price,marketvalue):
     else:
         print('priceaway reject: order price deviates from market price by more than ' + str(priceawayreject))
         return False
-
-limitcheck('ZVZZT',12)
-
