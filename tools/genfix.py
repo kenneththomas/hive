@@ -8,15 +8,14 @@ def neworder():
         49 : 'Tay',
         56 : 'Spicii',
         35 : 'D',
-        55 : 'AAPL',
+        55 : 'ZVZZT',
         54 : 1,
         38 : 100,
-        44 : 170,
+        44 : 10,
         40 : 2,
               }
     genfix = ''
     for key,val in fixmsg.items():
-        #print(str(key) + '=' + str(val) + ';',end="")
             genfix = genfix + str(key) + "=" + str(val) + ';'
     return genfix
 
