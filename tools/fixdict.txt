@@ -1,0 +1,15 @@
+one example of a fixdict for reference
+
+fixdict = collections.OrderedDict({
+    '8': 'DUMFIX',
+    '11': 'tag11',
+    '49': 'Tay',
+    '56': 'Spicii',
+    '35': 'D',
+    '55': 'ZVZZT',
+    '54': '1',
+    '38': '100',
+    '44': '10',
+    '40': '2',
+    '10': 'END'
+})
