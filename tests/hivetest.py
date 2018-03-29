@@ -5,6 +5,7 @@ sys.path.insert(0, '../pyengine')
 sys.path.insert(1, 'pyengine')
 import dumfix
 import riskcheck
+import hive
 
 #reuse this one fixdict
 fixdict = collections.OrderedDict({
@@ -27,6 +28,9 @@ tne = collections.OrderedDict({
     '55': 'ZVZZT',
 })
 
+#reuse this too
+regfix = '8=DUMFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
+
 class dumfixtest(unittest.TestCase):
     def setUp(self):
         pass
@@ -35,8 +39,8 @@ class dumfixtest(unittest.TestCase):
         #turn a fix msg into an ordered dictionary, and confirm so
         fixmsg = '8=DUMFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
         print('parsing fixmsg into dictionary')
-        print(fixmsg)
-        parsed = dumfix.parsefix(fixmsg)
+        print(regfix)
+        parsed = dumfix.parsefix(regfix)
         print(parsed)
         self.assertTrue('Dict' in str(type(parsed)))
 
@@ -107,6 +111,16 @@ class risktest(unittest.TestCase):
         #order price is too passive compared to market data, should reject
         check = riskcheck.priceaway(800,1000)
         self.assertFalse(check)
+
+class f2btest(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_getresponse(self):
+        #get an exec report from hive by sending through fix gateway
+        execreport = hive.fixgateway(regfix)
+        print(execreport)
+        self.assertTrue('150=8;' in execreport)
 
 if __name__ == '__main__':
     unittest.main()
