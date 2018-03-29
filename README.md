@@ -1,5 +1,5 @@
 # HIVE/DUMFIX
-
+[![Build Status](https://travis-ci.org/kenneththomas/hive.svg?branch=master)](https://travis-ci.org/kenneththomas/hive)
 # Mission
 HIVE is a Trading Engine that is being built to contain much of the logic of a real FIX engine. It will take DUMFIX as input, undergo standard order management procedures including risk checking and exchange slicing.
 
