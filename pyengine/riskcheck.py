@@ -16,9 +16,14 @@ def priceaway(price,marketvalue):
     print('priceaway check' + ' price: ' + str(price) + ' market value: ' + str(marketvalue))
     differential = marketvalue * priceawayreject
     allowedvalue = marketvalue + differential
+    allowedpassivevalue = marketvalue - differential
     check = allowedvalue > price
-    if check:
-        return True
-    else:
+    if allowedvalue < price:
         print('priceaway reject: order price deviates from market price by more than ' + str(priceawayreject))
         return False
+    elif allowedpassivevalue > price:
+        print('priceaway reject: order price deviates from market price by more than ' + str(priceawayreject))
+        return False
+    else:
+        return True
+
