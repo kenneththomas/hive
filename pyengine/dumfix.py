@@ -1,7 +1,17 @@
-#convert fix message into dictionary for python processing
-#TODO - this doesnt like semicolon at the end of the message, need something to handle this
-#fix msg
-fixmsg='49=Tay;35=D;40=2;38=100;54=1;56=Spicii;8=DUMFIX;55=ZVZZT;11=794752be;44=10'
+from collections import OrderedDict as odict
 
+
+#parse fixmsg into ordered dictionary for python processing
 def parsefix(fixmsg):
-    return dict(item.split("=") for item in fixmsg.split(";"))
+    return odict(item.split("=") for item in fixmsg.split(";"))
+
+
+#convert ordered dictionary into fix message
+def exportfix(fixdict):
+    genfix=''
+    for key,val in fixdict.items():
+        if key != '10':
+            genfix = genfix + str(key) + "=" + str(val) + ';'
+        else: # tail tag should not have a semicolon at the end
+            genfix = genfix + str(key) + "=" + str(val)
+    return genfix
