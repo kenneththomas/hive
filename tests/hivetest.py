@@ -2,7 +2,7 @@ import unittest
 import sys
 import collections
 sys.path.insert(0, '../pyengine')
-
+sys.path.insert(1, 'pyengine')
 import dumfix
 import riskcheck
 
