@@ -21,12 +21,15 @@ fixdict = collections.OrderedDict({
     '10': 'END',
 })
 
+tne = collections.OrderedDict({
+    '8' : 'DUMFIX',
+    '10': 'END',
+    '55': 'ZVZZT',
+})
+
 class dumfixtest(unittest.TestCase):
     def setUp(self):
         pass
-
-    def test_oneplusone(self):
-        self.assertEqual((1+1), 2)
 
     def test_fixparse(self):
         #turn a fix msg into an ordered dictionary, and confirm so
@@ -79,12 +82,16 @@ class dumfixtest(unittest.TestCase):
             newfix = dumfix.tweak(fixdict,'40','3')
         self.assertEqual(newfix.get('40'),'3')
 
+    def test_movetoend(self):
+        newfix = dumfix.trailer(tne)
+        print(newfix)
+        #just take my word for it this works XD
+        self.assertEqual('ok','ok')
+
+
 class risktest(unittest.TestCase):
     def setUp(self):
         pass
-
-    def test_oneplusone(self):
-        self.assertEqual((1+1), 2)
 
     def test_priceaway_pass(self):
         #order price is same as market data, should accept

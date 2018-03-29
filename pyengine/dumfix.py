@@ -28,4 +28,11 @@ def tweak(fixdict,tag,value):
     fixdict.get(tag)
     fixdict.update({tag : value})
     fixdict.get(tag)
+    trailer(fixdict) #TODO: only move tag 10 to end if a tag was added by tweak, no reason to do this on every tweak
     return fixdict
+
+#always put tag 10=END at the end
+def trailer(fixdict):
+    fixdict.move_to_end('10')
+    return fixdict
+
