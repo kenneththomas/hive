@@ -18,6 +18,6 @@ def ordermanager(clientorder):
     symbol = clientorder.get('55')
     price = clientorder.get('44')
     riskcheck.limitcheck(symbol,int(price))
-    execreport = dumfix.tweak(clientorder,'150','8')
+    execreport = dumfix.tweak(clientorder,'35','8')
     return execreport
 

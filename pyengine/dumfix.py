@@ -25,10 +25,12 @@ def subscription(fixdict,tag,value):
 
 #change one fix value to another value
 def tweak(fixdict,tag,value):
-    fixdict.get(tag)
+    addedtag = False # maybe theres a more efficient way to do this
+    if tag in fixdict.keys():
+        addedtag = True
     fixdict.update({tag : value})
-    fixdict.get(tag)
-    trailer(fixdict) #TODO: only move tag 10 to end if a tag was added by tweak, no reason to do this on every tweak
+    if addedtag:
+        trailer(fixdict)
     return fixdict
 
 #always put tag 10=END at the end

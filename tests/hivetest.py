@@ -120,7 +120,7 @@ class f2btest(unittest.TestCase):
         #get an exec report from hive by sending through fix gateway
         execreport = hive.fixgateway(regfix)
         print(execreport)
-        self.assertTrue('150=8;' in execreport)
+        self.assertTrue('35=8;' in execreport)
 
 if __name__ == '__main__':
     unittest.main()
