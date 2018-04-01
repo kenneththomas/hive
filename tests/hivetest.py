@@ -78,7 +78,6 @@ class dumfixtest(unittest.TestCase):
             newfix = dumfix.tweak(fixdict,'40','3')
         self.assertEqual(newfix.get('40'),'3')
 
-
     def test_subtweak_nomatch(self):
         #dont tweak fix cuz it doesn't match
         newfix = fixdict
@@ -89,8 +88,12 @@ class dumfixtest(unittest.TestCase):
     def test_movetoend(self):
         newfix = dumfix.trailer(tne)
         print(newfix)
-        #just take my word for it this works XD
-        self.assertEqual('ok','ok')
+        #convert fix
+        listversion = (list(newfix.items()))
+        print(listversion)
+        print(listversion[-1])
+        lasttag = [('10', 'END')]
+        self.assertEqual(listversion[-1],lasttag[0])
 
 
 class risktest(unittest.TestCase):
@@ -163,15 +166,28 @@ class f2btest(unittest.TestCase):
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=8;' in execreport)
 
+    def test_tailer(self):
+        fix = '8=DUMFIX;11=4a4964c6;49=Tay;56=Spicii;35=V;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
+        execreport = hive.fixgateway(fix)
+        #convert back into dictionary
+        tailerdict = dumfix.parsefix(execreport)
+        #convert dictionary to list so we can check order
+        listtailer = list(tailerdict)
+        print(listtailer)
+        self.assertEqual(listtailer[-1],'10')
+
+    def tearDown(self):
+        pass
+
 class fillsimtest(unittest.TestCase):
     def setUp(self):
         pass
 
     def test_fillsim100(self):
         #100 qty order should be filled if market value is good
-        result = hive.fillsimulate(fixdict)
-        print(result)
-        self.assertEqual(result.get('150'),'2')
+        result3 = hive.fillsimulate(fixdict)
+        print(result3)
+        self.assertEqual(result3.get('150'),'2')
 
     def test_fillsim200(self):
         #200 qty order should be partially filled for 100 if market value is good
