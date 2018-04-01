@@ -6,8 +6,13 @@ import marketdata
 
 def fixgateway(fix):
     clientorder = dumfix.parsefix(fix)
-    execreport = ordermanager(clientorder)
+    # check for valid values of tag 35
+    if not messagetypevalidation(clientorder.get('35')):
+        clientorder = dumfix.tweak(clientorder, '150', '8')
+    else:
+        clientorder = ordermanager(clientorder)
     #send back to client
+    execreport = dumfix.tweak(clientorder, '35', '8')
     clientexec = dumfix.exportfix(execreport)
     #for now, sending to client simply means printing/returning
     print(clientexec)
@@ -18,7 +23,51 @@ def ordermanager(clientorder):
     symbol = clientorder.get('55')
     price = clientorder.get('44')
     quantity = clientorder.get('38')
-    riskcheck.limitcheck(symbol,int(price),int(quantity))
-    execreport = dumfix.tweak(clientorder,'35','8')
-    return execreport
+    side = clientorder.get('54')
+    #limit check function returns false if there is a reject
+    if not riskcheck.limitcheck(symbol,int(price),int(quantity)):
+        #reject is 150=8
+        clientorder = dumfix.tweak(clientorder,'150','8')
+    else:
+        #accept order with 150=0
+        clientorder = dumfix.tweak(clientorder,'150','0')
+    return clientorder
+
+def messagetypevalidation(tag35):
+    valid35 = ['D','G','F']
+    if tag35 in valid35:
+        return True
+    else:
+        print(tag35 + ' is an invalid value of Tag 35 (MessageType)')
+        return False
+
+def fillsimulate(fsfix):
+    #just fill 100 qty if price is "marketable"
+
+    #get relevant tags (symbol, orderqty, price, side)
+    symbol = fsfix.get('55')
+    orderqty = fsfix.get('38')
+    price = fsfix.get('44')
+    side = fsfix.get('54')
+
+    #convert price to pennies
+    pricepny = int(price) * 1000
+
+    #int values
+    intorderqty = int(orderqty)
+
+    marketvalue = (marketdata.getprice(symbol))
+    if side == '1': # buy order
+        if pricepny > marketvalue:
+            if intorderqty <= 100:
+                #full fill
+                dumfix.tweak(fsfix,'150','2')
+            elif intorderqty > 100:
+                #partial fill
+                dumfix.tweak(fsfix,'150','1')
+    if side == '2': #sell order
+        print('not yet.')
+    return fsfix
+
+
 

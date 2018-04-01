@@ -5,14 +5,22 @@ priceawayreject = .10
 notionalreject = 1000000
 
 def limitcheck(symbol,price,quantity):
+    #if ANY rejects, function returns false
+
     #convert price to us penny
     pricepny = price * 100
+    if not notional(price,quantity): #should we be consistent using price and price in pennies? probably.
+        return False
     #get market data for symbol
     marketvalue = (marketdata.getprice(symbol))
-    priceaway(pricepny,marketvalue)
-    notional(price,quantity)
+    if not priceaway(pricepny,marketvalue):
+        return False
+    #if everything passes return true
+    return True
 
-#starts with aggressive only
+
+
+
 
 def priceaway(price,marketvalue):
     print('priceaway check' + ' price: ' + str(price) + ' market value: ' + str(marketvalue))
@@ -34,5 +42,5 @@ def notional(price,quantity):
     if notionalvalue < notionalreject:
         return True
     if notionalvalue > notionalreject:
-        print('notional reject: order notional value is higher than notional value limit')
+        print('notional reject: order notional value ' + str(notionalvalue) + ' is higher than notional value limit ' + str(notionalreject))
         return False

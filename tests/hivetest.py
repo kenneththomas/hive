@@ -122,6 +122,19 @@ class risktest(unittest.TestCase):
         check = riskcheck.notional(100,20000)
         self.assertFalse(check)
 
+class gatewaytest(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_35val_pass(self):
+        #tag 35=D/G/F are valid values of tag 35
+        check = hive.messagetypevalidation('D')
+        self.assertTrue(check)
+
+    def test_35val_reject(self):
+        #tag 35=D/G/F are valid values of tag 35
+        check = hive.messagetypevalidation('V')
+        self.assertFalse(check)
 
 class f2btest(unittest.TestCase):
     def setUp(self):
@@ -132,6 +145,44 @@ class f2btest(unittest.TestCase):
         execreport = hive.fixgateway(regfix)
         print(execreport)
         self.assertTrue('35=8;' in execreport)
+
+    def test_reject(self):
+        #get reject (for now from notional value check)
+        fix = '8=DUMFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=10000;44=10000;40=2;10=END'
+        execreport = hive.fixgateway(fix)
+        self.assertTrue('150=8;' in execreport)
+
+    def test_ack(self):
+        #order passes limit checks and we get new order
+        fix = '8=DUMFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
+        execreport = hive.fixgateway(fix)
+        self.assertTrue('150=0;' in execreport)
+
+    def test_invalid35(self):
+        fix = '8=DUMFIX;11=4a4964c6;49=Tay;56=Spicii;35=V;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
+        execreport = hive.fixgateway(fix)
+        self.assertTrue('150=8;' in execreport)
+
+class fillsimtest(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_fillsim100(self):
+        #100 qty order should be filled if market value is good
+        result = hive.fillsimulate(fixdict)
+        print(result)
+        self.assertEqual(result.get('150'),'2')
+
+    def test_fillsim200(self):
+        #200 qty order should be partially filled for 100 if market value is good
+        fixdict2 = fixdict
+        dumfix.tweak(fixdict2,'38','200')
+        print(fixdict2)
+        result = hive.fillsimulate(fixdict2)
+        print(result)
+        print(result.get('150'))
+        self.assertEqual(result.get('150'),'1')
+
 
 if __name__ == '__main__':
     unittest.main()
