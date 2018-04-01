@@ -112,6 +112,17 @@ class risktest(unittest.TestCase):
         check = riskcheck.priceaway(800,1000)
         self.assertFalse(check)
 
+    def test_notional_pass(self):
+        #order value is less than notional limit
+        check = riskcheck.notional(100,100)
+        self.assertTrue(check)
+
+    def test_notional_reject(self):
+        #order value is more than notional limit
+        check = riskcheck.notional(100,20000)
+        self.assertFalse(check)
+
+
 class f2btest(unittest.TestCase):
     def setUp(self):
         pass
