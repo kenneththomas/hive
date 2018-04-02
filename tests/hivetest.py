@@ -129,15 +129,26 @@ class gatewaytest(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_35val_pass(self):
+    def test_35val_pass(self): #currently unused
         #tag 35=D/G/F are valid values of tag 35
         check = hive.messagetypevalidation('D')
         self.assertTrue(check)
 
-    def test_35val_reject(self):
+    def test_35val_reject(self): #currently unused
         #tag 35=D/G/F are valid values of tag 35
         check = hive.messagetypevalidation('V')
         self.assertFalse(check)
+
+    def test_35val_rejectv2(self):
+        #tag 35=D/G/F are valid values of tag 35
+        check = hive.fixvalidator(['D','G','F'],'V')
+        self.assertFalse(check)
+
+    def test_35val_acceptv2(self):
+        #tag 35=D/G/F are valid values of tag 35
+        check = hive.fixvalidator(['D','G','F'],'G')
+        print(check)
+        self.assertTrue(check)
 
 class f2btest(unittest.TestCase):
     def setUp(self):
