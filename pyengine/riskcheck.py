@@ -18,10 +18,6 @@ def limitcheck(symbol,price,quantity):
     #if everything passes return true
     return True
 
-
-
-
-
 def priceaway(price,marketvalue):
     print('priceaway check' + ' price: ' + str(price) + ' market value: ' + str(marketvalue))
     differential = marketvalue * priceawayreject

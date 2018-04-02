@@ -7,8 +7,10 @@ import marketdata
 def fixgateway(fix):
     clientorder = dumfix.parsefix(fix)
     # check for valid values of tag 35
-    if not messagetypevalidation(clientorder.get('35')):
+    msgtype = clientorder.get('35')
+    if not fixvalidator(valid35, msgtype):
         clientorder = dumfix.tweak(clientorder, '150', '8')
+        print(msgtype + ' is an invalid value of Tag 35 (MsgType)')
     else:
         clientorder = ordermanager(clientorder)
     #send back to client
@@ -33,13 +35,14 @@ def ordermanager(clientorder):
         clientorder = dumfix.tweak(clientorder,'150','0')
     return clientorder
 
-def messagetypevalidation(tag35):
-    valid35 = ['D','G','F']
-    if tag35 in valid35:
+def fixvalidator(validlist, value):
+    if value in validlist:
         return True
     else:
-        print(tag35 + ' is an invalid value of Tag 35 (MessageType)')
         return False
+
+#fixvalidator lists
+valid35 = ['D','G','F']
 
 def fillsimulate(fsfix):
     #just fill 100 qty if price is "marketable"
