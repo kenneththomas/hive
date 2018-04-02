@@ -1,21 +1,21 @@
-import dumfix
+import dfix
 import riskcheck
 import marketdata
 
 #accept fixmsg
 
 def fixgateway(fix):
-    clientorder = dumfix.parsefix(fix)
+    clientorder = dfix.parsefix(fix)
     # check for valid values of tag 35
     msgtype = clientorder.get('35')
     if not fixvalidator(valid35, msgtype):
-        clientorder = dumfix.tweak(clientorder, '150', '8')
+        clientorder = dfix.tweak(clientorder, '150', '8')
         print(msgtype + ' is an invalid value of Tag 35 (MsgType)')
     else:
         clientorder = ordermanager(clientorder)
     #send back to client
-    execreport = dumfix.tweak(clientorder, '35', '8')
-    clientexec = dumfix.exportfix(execreport)
+    execreport = dfix.tweak(clientorder, '35', '8')
+    clientexec = dfix.exportfix(execreport)
     #for now, sending to client simply means printing/returning
     print(clientexec)
     return clientexec
@@ -29,10 +29,10 @@ def ordermanager(clientorder):
     #limit check function returns false if there is a reject
     if not riskcheck.limitcheck(symbol,int(price),int(quantity)):
         #reject is 150=8
-        clientorder = dumfix.tweak(clientorder,'150','8')
+        clientorder = dfix.tweak(clientorder,'150','8')
     else:
         #accept order with 150=0
-        clientorder = dumfix.tweak(clientorder,'150','0')
+        clientorder = dfix.tweak(clientorder,'150','0')
     return clientorder
 
 def fixvalidator(validlist, value):
@@ -64,13 +64,12 @@ def fillsimulate(fsfix):
         if pricepny > marketvalue:
             if intorderqty <= 100:
                 #full fill
-                dumfix.tweak(fsfix,'150','2')
+                dfix.tweak(fsfix,'150','2')
             elif intorderqty > 100:
                 #partial fill
-                dumfix.tweak(fsfix,'150','1')
+                dfix.tweak(fsfix,'150','1')
     if side == '2': #sell order
         print('not yet.')
     return fsfix
-
 
 
