@@ -38,17 +38,13 @@ class dumfixtest(unittest.TestCase):
     def test_fixparse(self):
         #turn a fix msg into an ordered dictionary, and confirm so
         fixmsg = '8=DUMFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
-        print('parsing fixmsg into dictionary')
-        print(regfix)
         parsed = dumfix.parsefix(regfix)
-        print(parsed)
         self.assertTrue('Dict' in str(type(parsed)))
 
     def test_exportfix(self):
         #turn an ordered dictionary into fix and confirm it generates a string
 
         exported = dumfix.exportfix(fixdict)
-        print(exported)
         self.assertTrue('str' in str(type(exported)))
 
     def test_subscription_true(self):
@@ -87,11 +83,8 @@ class dumfixtest(unittest.TestCase):
 
     def test_movetoend(self):
         newfix = dumfix.trailer(tne)
-        print(newfix)
         #convert fix
         listversion = (list(newfix.items()))
-        print(listversion)
-        print(listversion[-1])
         lasttag = [('10', 'END')]
         self.assertEqual(listversion[-1],lasttag[0])
 
@@ -129,16 +122,6 @@ class gatewaytest(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_35val_pass(self): #currently unused
-        #tag 35=D/G/F are valid values of tag 35
-        check = hive.messagetypevalidation('D')
-        self.assertTrue(check)
-
-    def test_35val_reject(self): #currently unused
-        #tag 35=D/G/F are valid values of tag 35
-        check = hive.messagetypevalidation('V')
-        self.assertFalse(check)
-
     def test_35val_rejectv2(self):
         #tag 35=D/G/F are valid values of tag 35
         check = hive.fixvalidator(['D','G','F'],'V')
@@ -147,7 +130,6 @@ class gatewaytest(unittest.TestCase):
     def test_35val_acceptv2(self):
         #tag 35=D/G/F are valid values of tag 35
         check = hive.fixvalidator(['D','G','F'],'G')
-        print(check)
         self.assertTrue(check)
 
 class f2btest(unittest.TestCase):
@@ -157,7 +139,6 @@ class f2btest(unittest.TestCase):
     def test_getresponse(self):
         #get an exec report from hive by sending through fix gateway
         execreport = hive.fixgateway(regfix)
-        print(execreport)
         self.assertTrue('35=8;' in execreport)
 
     def test_reject(self):
@@ -184,7 +165,6 @@ class f2btest(unittest.TestCase):
         tailerdict = dumfix.parsefix(execreport)
         #convert dictionary to list so we can check order
         listtailer = list(tailerdict)
-        print(listtailer)
         self.assertEqual(listtailer[-1],'10')
 
     def tearDown(self):
@@ -197,17 +177,13 @@ class fillsimtest(unittest.TestCase):
     def test_fillsim100(self):
         #100 qty order should be filled if market value is good
         result3 = hive.fillsimulate(fixdict)
-        print(result3)
         self.assertEqual(result3.get('150'),'2')
 
     def test_fillsim200(self):
         #200 qty order should be partially filled for 100 if market value is good
         fixdict2 = fixdict
         dumfix.tweak(fixdict2,'38','200')
-        print(fixdict2)
         result = hive.fillsimulate(fixdict2)
-        print(result)
-        print(result.get('150'))
         self.assertEqual(result.get('150'),'1')
 
 
