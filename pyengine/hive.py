@@ -9,8 +9,7 @@ def fixgateway(fix):
     # check for valid values of tag 35
     msgtype = clientorder.get('35')
     if not fixvalidator(valid35, msgtype):
-        clientorder = dfix.tweak(clientorder, '150', '8')
-        print(msgtype + ' is an invalid value of Tag 35 (MsgType)')
+        clientorder = rejectorder(clientorder,msgtype + ' is an invalid value of Tag 35 (MsgType)')
     else:
         clientorder = ordermanager(clientorder)
     #send back to client
@@ -43,6 +42,12 @@ def fixvalidator(validlist, value):
 
 #fixvalidator lists
 valid35 = ['D','G','F']
+
+def rejectorder(rejectedorder,rejectreason):
+    print(rejectreason)
+    rejectedorder = dfix.tweak(rejectedorder, '150', '8')
+    return dfix.tweak(rejectedorder,'58',rejectreason)
+
 
 def fillsimulate(fsfix):
     #just fill 100 qty if price is "marketable"
