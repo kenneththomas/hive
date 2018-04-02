@@ -132,6 +132,12 @@ class gatewaytest(unittest.TestCase):
         check = hive.fixvalidator(['D','G','F'],'G')
         self.assertTrue(check)
 
+    def test_appendreject(self):
+        #test appending reject message
+        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=10000;44=10000;40=2;10=END'
+        check = hive.rejectorder(dfix.parsefix(fix),'test reject')
+        self.assertEqual(check.get('58'),'test reject')
+
 class f2btest(unittest.TestCase):
     def setUp(self):
         pass
@@ -141,9 +147,15 @@ class f2btest(unittest.TestCase):
         execreport = hive.fixgateway(regfix)
         self.assertTrue('35=8;' in execreport)
 
-    def test_reject(self):
-        #get reject (for now from notional value check)
+    def test_notionalvalue_reject(self):
+        #get reject from notional limit check
         fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=10000;44=10000;40=2;10=END'
+        execreport = hive.fixgateway(fix)
+        self.assertTrue('150=8;' in execreport)
+
+    def test_priceaway_reject(self):
+        #get reject from notional limit check
+        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=9999;40=2;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=8;' in execreport)
 
