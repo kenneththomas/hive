@@ -25,13 +25,17 @@ def ordermanager(clientorder):
     price = clientorder.get('44')
     quantity = clientorder.get('38')
     side = clientorder.get('54')
-    #limit check function returns false if there is a reject
-    if not riskcheck.limitcheck(symbol,int(price),int(quantity)):
-        #reject is 150=8
-        clientorder = dfix.tweak(clientorder,'150','8')
+    #check if symbol exists in MD, reject otherwise
+    if not marketdata.marketdataexists(symbol):
+        clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
     else:
-        #accept order with 150=0
-        clientorder = dfix.tweak(clientorder,'150','0')
+    #limit check function returns false if there is a reject
+        if not riskcheck.limitcheck(symbol,int(price),int(quantity)):
+            #reject is 150=8
+            clientorder = dfix.tweak(clientorder,'150','8')
+        else:
+            #accept order with 150=0
+            clientorder = dfix.tweak(clientorder,'150','0')
     return clientorder
 
 def fixvalidator(validlist, value):
@@ -41,7 +45,7 @@ def fixvalidator(validlist, value):
         return False
 
 #fixvalidator lists
-valid35 = ['D','G','F']
+valid35 = ['D']
 
 def rejectorder(rejectedorder,rejectreason):
     print(rejectreason)

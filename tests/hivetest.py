@@ -154,7 +154,7 @@ class f2btest(unittest.TestCase):
         self.assertTrue('150=8;' in execreport)
 
     def test_priceaway_reject(self):
-        #get reject from notional limit check
+        #get reject from priceaway limit check
         fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=9999;40=2;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=8;' in execreport)
@@ -178,6 +178,11 @@ class f2btest(unittest.TestCase):
         #convert dictionary to list so we can check order
         listtailer = list(tailerdict)
         self.assertEqual(listtailer[-1],'10')
+
+    def test_nomarketdata(self):
+        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=NOTREALSYMBOL;54=1;38=100;44=10;40=2;10=END'
+        execreport = hive.fixgateway(fix)
+        self.assertTrue('market data does not exist' in execreport)
 
     def tearDown(self):
         pass

@@ -7,3 +7,9 @@ md = {'ZVZZT' : 1000,
 
 def getprice(symbol):
     return md.get(symbol)
+
+def marketdataexists(symbol):
+    if symbol in md.keys():
+        return True
+    else:
+        return False
