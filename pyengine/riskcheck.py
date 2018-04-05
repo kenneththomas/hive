@@ -26,11 +26,9 @@ def priceaway(price,marketvalue):
     check = allowedvalue > price
     if allowedvalue < price:
         rejectreason = 'priceaway reject: order price deviates from market price by more than ' + str(priceawayreject)
-        print(rejectreason)
         return ['Reject',rejectreason]
     elif allowedpassivevalue > price:
         rejectreason = 'priceaway reject: order price deviates from market price by more than ' + str(priceawayreject)
-        print(rejectreason)
         return ['Reject',rejectreason]
     else:
         return ['Accept']
@@ -41,7 +39,6 @@ def notional(price,quantity):
         return ['Accept']
     if notionalvalue > notionalreject:
         rejectreason = 'notional reject: order notional value ' + str(notionalvalue) + ' is higher than notional value limit ' + str(notionalreject)
-        print(rejectreason)
         return ['Reject',rejectreason]
 
 suspendedsymbols = ['SPOT']
