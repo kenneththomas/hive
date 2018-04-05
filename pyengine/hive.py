@@ -29,10 +29,9 @@ def ordermanager(clientorder):
     if not marketdata.marketdataexists(symbol):
         clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
     else:
-    #limit check function returns false if there is a reject
-        if not riskcheck.limitcheck(symbol,int(price),int(quantity)):
-            #reject is 150=8
-            clientorder = dfix.tweak(clientorder,'150','8')
+        riskcheckresult = riskcheck.limitcheck(symbol,int(price),int(quantity))
+        if riskcheckresult[0] == 'Reject':
+            clientorder = rejectorder(clientorder,riskcheckresult[1])
         else:
             #accept order with 150=0
             clientorder = dfix.tweak(clientorder,'150','0')

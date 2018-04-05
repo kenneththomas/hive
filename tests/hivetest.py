@@ -96,27 +96,27 @@ class risktest(unittest.TestCase):
     def test_priceaway_pass(self):
         #order price is same as market data, should accept
         check = riskcheck.priceaway(1000,1000)
-        self.assertTrue(check)
+        self.assertTrue(check[0] == 'Accept')
 
     def test_aggpriceaway_reject(self):
         #order price is too aggressive compared to market data, should reject
         check = riskcheck.priceaway(5000,1000)
-        self.assertFalse(check)
+        self.assertTrue(check[0] == 'Reject')
 
     def test_passivepriceaway_reject(self):
         #order price is too passive compared to market data, should reject
         check = riskcheck.priceaway(800,1000)
-        self.assertFalse(check)
+        self.assertTrue(check[0] == 'Reject')
 
-    def test_notional_pass(self):
+    def test_notional_accept(self):
         #order value is less than notional limit
         check = riskcheck.notional(100,100)
-        self.assertTrue(check)
+        self.assertTrue(check[0] == 'Accept')
 
     def test_notional_reject(self):
         #order value is more than notional limit
         check = riskcheck.notional(100,20000)
-        self.assertFalse(check)
+        self.assertTrue(check[0] == 'Reject')
 
 class gatewaytest(unittest.TestCase):
     def setUp(self):

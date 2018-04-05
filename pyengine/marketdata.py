@@ -3,6 +3,7 @@
 #market data is stored in US Pennies
 md = {'ZVZZT' : 1000,
       'AAPL' : 17000,
+      'SPOT' : 15000,
 }
 
 def getprice(symbol):
