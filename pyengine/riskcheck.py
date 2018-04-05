@@ -4,7 +4,8 @@ priceawayreject = .10  #this limit checks if the price indicated on the order is
 notionalreject = 1000000 #this limit checks if the total value of the order is greater than this limit
 
 def limitcheck(symbol,price,quantity):
-
+    if not suspendedcheck(symbol):
+        return ['Reject',symbol + ' suspended for trading']
     #convert price to us penny
     pricepny = price * 100
     notionalresult = notional(price,quantity)
@@ -42,3 +43,15 @@ def notional(price,quantity):
         rejectreason = 'notional reject: order notional value ' + str(notionalvalue) + ' is higher than notional value limit ' + str(notionalreject)
         print(rejectreason)
         return ['Reject',rejectreason]
+
+suspendedsymbols = ['SPOT']
+
+def suspendedcheck(symbol):
+    if symbol not in suspendedsymbols:
+        return True
+
+def suspendsymbol(symbol):
+    suspendedsymbols.append(symbol)
+
+def unsuspendsymbol(symbol):
+    suspendedsymbols.remove(symbol)

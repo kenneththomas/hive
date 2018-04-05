@@ -118,6 +118,25 @@ class risktest(unittest.TestCase):
         check = riskcheck.notional(100,20000)
         self.assertTrue(check[0] == 'Reject')
 
+    def test_suspended_accept(self):  # maybe unneccessary
+        #symbol is not suspended
+        check = riskcheck.suspendedcheck('ZVZZT')
+        self.assertTrue(check)
+
+    def test_suspended_reject(self):  # maybe unnecessary
+        check = riskcheck.suspendedcheck('SPOT')
+        self.assertFalse(check)
+
+    def test_suspendadd_reject(self):
+        riskcheck.suspendsymbol('TEST')
+        check = riskcheck.suspendedcheck('TEST')
+        self.assertFalse(check)
+
+    def test_unsuspend_accept(self):
+        riskcheck.unsuspendsymbol('TEST')
+        check = riskcheck.suspendedcheck('TEST')
+        self.assertTrue(check)
+
 class gatewaytest(unittest.TestCase):
     def setUp(self):
         pass
