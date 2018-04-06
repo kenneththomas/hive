@@ -27,12 +27,8 @@ def mop(fix):
         return fix
     symbol = fix.get('55')
     orderid = fix.get('11')
-    print(book.values())
     if symbol not in book.values():
-        print('no match, adding to book')
-        print(book)
         book[orderid] = symbol
-        print(book)
         return fix
     marketprice = marketdata.getprice(symbol)
     for matchid, matchsymbol in book.items():

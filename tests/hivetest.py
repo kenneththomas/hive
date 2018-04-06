@@ -6,6 +6,7 @@ sys.path.insert(1, 'pyengine')
 import dfix
 import riskcheck
 import hive
+import mop
 
 #reuse this one fixdict
 fixdict = collections.OrderedDict({
@@ -221,6 +222,30 @@ class fillsimtest(unittest.TestCase):
         dfix.tweak(fixdict2,'38','200')
         result = hive.fillsimulate(fixdict2)
         self.assertEqual(result.get('150'),'1')
+
+class marketorderpooltest(unittest.TestCase):
+    def test_2orders_1match(self):
+        #send 2 orders, 1st one does not get filled and second one does
+        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=1;38=100;44=10;40=1;10=END'
+        fix2 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=2;38=100;44=10;40=1;10=END'
+        fix1 = dfix.parsefix(fix1)
+        fix2 = dfix.parsefix(fix2)
+        mop.mop(fix1)
+        check = mop.mop(fix2)
+        print(check)
+        self.assertEqual(check.get('150'),'2')
+
+    def test_reject_non100(self):
+        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=1;38=200;44=10;40=1;10=END'
+        fix1 = dfix.parsefix(fix1)
+        check = mop.mop(fix1)
+        self.assertEqual(check.get('150'),'8')
+
+    def test_reject_limitorder(self):
+        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=1;38=100;44=10;40=2;10=END'
+        fix1 = dfix.parsefix(fix1)
+        check = mop.mop(fix1)
+        self.assertEqual(check.get('150'),'8')
 
 
 if __name__ == '__main__':
