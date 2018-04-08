@@ -26,7 +26,7 @@ def subscription(fixdict,tag,value):
 #change one fix value to another value
 def tweak(fixdict,tag,value):
     addedtag = False # maybe theres a more efficient way to do this
-    if tag in fixdict.keys():
+    if tag not in fixdict.keys():
         addedtag = True
     fixdict.update({tag : value})
     if addedtag:
