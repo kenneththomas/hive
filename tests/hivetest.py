@@ -237,7 +237,6 @@ class marketorderpooltest(unittest.TestCase):
         fix2 = dfix.parsefix(fix2)
         mop.mop(fix1)
         check = mop.mop(fix2)
-        print(check)
         self.assertEqual(check.get('150'),'2')
 
     def test_reject_non100(self):
