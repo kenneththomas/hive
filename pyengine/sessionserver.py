@@ -16,11 +16,14 @@ def Main():
         if not data:
             break
         print ("from connected  user: " + str(data))
-
-        #data = str(data).upper()
-        data = hive.fixgateway(data)
-        print ("sending: " + str(data))
-        conn.send(data.encode())
+        #we need to validate this is an actual fix message and wont blow up hive. improve this
+        if ';35=' in str(data):
+            data = hive.fixgateway(data)
+            print ("sending: " + str(data))
+            conn.send(data.encode())
+        else:
+            #do we want to make this a FIX logoff instead?
+            conn.send('invalid message'.encode())
 
     conn.close()
 

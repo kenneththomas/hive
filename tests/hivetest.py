@@ -226,8 +226,8 @@ class fillsimtest(unittest.TestCase):
 class marketorderpooltest(unittest.TestCase):
     def test_2orders_1match(self):
         #send 2 orders, 1st one does not get filled and second one does
-        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=1;38=100;44=10;40=1;10=END'
-        fix2 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=2;38=100;44=10;40=1;10=END'
+        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=TWTR;54=1;38=100;44=10;40=1;10=END'
+        fix2 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=TWTR;54=2;38=100;44=10;40=1;10=END'
         fix1 = dfix.parsefix(fix1)
         fix2 = dfix.parsefix(fix2)
         mop.mop(fix1)
