@@ -5,6 +5,7 @@ md = {'ZVZZT' : 1000,
       'AAPL' : 17000,
       'SPOT' : 15000,
       'TWTR' : 2811,
+      'MS' : 5300,
 }
 
 def getprice(symbol):

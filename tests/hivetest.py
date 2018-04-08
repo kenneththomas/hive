@@ -216,6 +216,14 @@ class f2btest(unittest.TestCase):
         check = hive.fixgateway(fix)
         self.assertTrue('Duplicate value of tag 11 is not allowed' in check)
 
+    def test_hundoslicer_fill(self):
+        #submit buy order of 300, submit sell order of 300, fills in hundoslicer
+        fix1 = '8=DFIX;35=D;11=hs1;49=Tay;56=Spicii;55=MS;54=1;38=300;40=1;10=END'
+        fix2 = '8=DFIX;35=D;11=hs2;49=Tay;56=Spicii;55=MS;54=2;38=300;40=1;10=END'
+        hive.fixgateway(fix1) # should put 3 MS buy in MOP book
+        check = hive.fixgateway(fix2) # should fill with above order
+        self.assertTrue('150=2' in check)
+
     def tearDown(self):
         pass
 
@@ -257,6 +265,23 @@ class marketorderpooltest(unittest.TestCase):
         fix1 = dfix.parsefix(fix1)
         check = mop.mop(fix1)
         self.assertEqual(check.get('150'),'8')
+
+class algotest(unittest.TestCase):
+
+    def test_hundoslice(self):
+        #order of 300 should create 3 slices into MOP
+        fix1 = '8=DFIX;35=D;11=4a49s4c6;49=Tay;56=Spicii;55=TWTR;54=1;38=300;40=1;10=END'
+        fix1 = dfix.parsefix(fix1)
+        check = hive.hundoslice(fix1)
+        c = collections.Counter(mop.buybook.values()) # this thing counts how many of each value
+        #c['TWTR'] this is how we check how many times twitter appears
+        self.assertEqual(c['TWTR'],3) #as order was 300, there should be 3 slices
+
+    def test_hundoslice_qty_150(self):
+        fix1 = '8=DFIX;35=D;11=4a49s4c6;49=Tay;56=Spicii;55=TWTR;54=1;38=150;40=1;10=END'
+        fix1 = dfix.parsefix(fix1)
+        check = hive.hundoslice(fix1)
+        self.assertEqual(check.get('58'),'hundoslice reject: order not divisible by 100')
 
 
 if __name__ == '__main__':
