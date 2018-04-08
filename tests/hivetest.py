@@ -169,13 +169,13 @@ class f2btest(unittest.TestCase):
 
     def test_notionalvalue_reject(self):
         #get reject from notional limit check
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=10000;44=10000;40=2;10=END'
+        fix = '8=DFIX;11=4aasd6sdf6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=10000;44=10000;40=2;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=8;' in execreport)
 
     def test_priceaway_reject(self):
         #get reject from priceaway limit check
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=9999.31;40=2;10=END'
+        fix = '8=DFIX;11=4asfs4c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=9999.31;40=2;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=8;' in execreport)
 
@@ -186,12 +186,12 @@ class f2btest(unittest.TestCase):
         self.assertTrue('150=0;' in execreport)
 
     def test_invalid35(self):
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=V;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
+        fix = '8=DFIX;11=4a4asdc6;49=Tay;56=Spicii;35=V;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=8;' in execreport)
 
     def test_tailer(self):
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=V;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
+        fix = '8=DFIX;11=4a4sdf4c6;49=Tay;56=Spicii;35=V;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
         execreport = hive.fixgateway(fix)
         #convert back into dictionary
         tailerdict = dfix.parsefix(execreport)
@@ -200,14 +200,21 @@ class f2btest(unittest.TestCase):
         self.assertEqual(listtailer[-1],'10')
 
     def test_nomarketdata(self):
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=NOTREALSYMBOL;54=1;38=100;44=10;40=2;10=END'
+        fix = '8=DFIX;35=D;11=4a4964c4;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=1;38=100;44=10;40=2;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('market data does not exist' in execreport)
 
     def test_marketorderwithprice(self):
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=1;10=END'
+        fix = '8=DFIX;35=D;11=4a4964c7;49=Tay;56=Spicii;55=ZVZZT;54=1;38=100;44=10;40=1;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('Market Orders should not contain price in tag 44' in execreport)
+
+    def test_duplicate11(self):
+        #send 2 orders with same tag 11, 2nd should be rejected
+        fix = '8=DFIX;35=D;11=4a4964cr;49=Tay;56=Spicii;55=ZVZZT;54=1;38=100;40=1;10=END'
+        hive.fixgateway(fix) #order 1
+        check = hive.fixgateway(fix)
+        self.assertTrue('Duplicate value of tag 11 is not allowed' in check)
 
     def tearDown(self):
         pass

@@ -3,10 +3,21 @@ import riskcheck
 import marketdata
 import mop
 
+orderidpool=[] # list that contains used orderids
+
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
     # check for valid values of tag 35
     msgtype = clientorder.get('35')
+    orderid = clientorder.get('11')
+    sendercompid = clientorder.get('49')
+    uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
+    if uniqclord in orderidpool: #reject if duplicate 49 - 11
+        clientorder = rejectorder(clientorder,'Duplicate value of tag 11 is not allowed')
+        execreport = dfix.tweak(clientorder, '35', '8')
+        return dfix.exportfix(execreport)
+    else:
+        orderidpool.append(uniqclord) # append uniqclord to list
     if not fixvalidator(valid35, msgtype):
         clientorder = rejectorder(clientorder,msgtype + ' is an invalid value of Tag 35 (MsgType)')
     else:
@@ -29,7 +40,6 @@ def ordermanager(clientorder):
         clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
     else:
         if clientorder.get('40') == '1': # marketorders have no price, but we need a price to limit check
-            print(price) #debug
             if price:
                 clientorder = rejectorder(clientorder,'Market Orders should not contain price in tag 44')
                 return clientorder

@@ -34,7 +34,6 @@ def mop(fix):
     orderid = fix.get('11')
     side = fix.get('54')
     marketprice = marketdata.getprice(symbol) / 100
-    print(marketprice)
     if side == '1': # buy order
         if symbol not in sellbook.values():
             buybook[orderid] = symbol
