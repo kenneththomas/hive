@@ -29,7 +29,7 @@ def ordermanager(clientorder):
     if not marketdata.marketdataexists(symbol):
         clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
     else:
-        riskcheckresult = riskcheck.limitcheck(symbol,int(price),int(quantity))
+        riskcheckresult = riskcheck.limitcheck(symbol,float(price),int(quantity))
         if riskcheckresult[0] == 'Reject':
             clientorder = rejectorder(clientorder,riskcheckresult[1])
         else:
