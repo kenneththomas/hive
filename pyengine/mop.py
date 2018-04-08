@@ -6,9 +6,14 @@ import dfix
 import hive
 import marketdata
 
-book = {
+buybook = {
     'orderid1' : 'ZVZZT',
     'orderid2' : 'FB',
+}
+
+sellbook = {
+    'orderid3' : 'GE',
+    'orderid4' : 'TWTR',
 }
 
 def mopvalidator(ordertype,orderqty): # validates mop can support order
@@ -27,15 +32,27 @@ def mop(fix):
         return fix
     symbol = fix.get('55')
     orderid = fix.get('11')
-    if symbol not in book.values():
-        book[orderid] = symbol
-        return fix
-    marketprice = marketdata.getprice(symbol)
-    for matchid, matchsymbol in book.items():
-        if symbol == matchsymbol:
-            mopfill(fix,marketprice)
-            del book[matchid]
+    side = fix.get('54')
+    if side == '1': # buy order
+        if symbol not in sellbook.values():
+            buybook[orderid] = symbol
             return fix
+        marketprice = marketdata.getprice(symbol)
+        for matchid, matchsymbol in sellbook.items():
+            if symbol == matchsymbol:
+                mopfill(fix,marketprice)
+                del sellbook[matchid]
+                return fix
+    if side == '2': # sell order
+        if symbol not in buybook.values():
+            sellbook[orderid] = symbol
+            return fix
+        marketprice = marketdata.getprice(symbol)
+        for matchid, matchsymbol in buybook.items():
+            if symbol == matchsymbol:
+                mopfill(fix,marketprice)
+                del buybook[matchid]
+                return fix
 
 def mopfill(fix,fillprice):
     fix = dfix.tweak(fix,'150','2') #full fill

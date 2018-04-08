@@ -175,7 +175,7 @@ class f2btest(unittest.TestCase):
 
     def test_priceaway_reject(self):
         #get reject from priceaway limit check
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=9999;40=2;10=END'
+        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=9999.31;40=2;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=8;' in execreport)
 
