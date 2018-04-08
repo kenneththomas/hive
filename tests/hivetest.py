@@ -181,7 +181,7 @@ class f2btest(unittest.TestCase):
 
     def test_ack(self):
         #order passes limit checks and we get new order
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=1;10=END'
+        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;40=1;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=0;' in execreport)
 
@@ -226,8 +226,8 @@ class fillsimtest(unittest.TestCase):
 class marketorderpooltest(unittest.TestCase):
     def test_2orders_1match(self):
         #send 2 orders, 1st one does not get filled and second one does
-        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=TWTR;54=1;38=100;44=10;40=1;10=END'
-        fix2 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=TWTR;54=2;38=100;44=10;40=1;10=END'
+        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=TWTR;54=1;38=100;40=1;10=END'
+        fix2 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=TWTR;54=2;38=100;40=1;10=END'
         fix1 = dfix.parsefix(fix1)
         fix2 = dfix.parsefix(fix2)
         mop.mop(fix1)
@@ -236,7 +236,7 @@ class marketorderpooltest(unittest.TestCase):
         self.assertEqual(check.get('150'),'2')
 
     def test_reject_non100(self):
-        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=1;38=200;44=10;40=1;10=END'
+        fix1 = '8=DFIX;35=D;11=4a4964c6;49=Tay;56=Spicii;55=NOTREALSYMBOL;54=1;38=200;40=1;10=END'
         fix1 = dfix.parsefix(fix1)
         check = mop.mop(fix1)
         self.assertEqual(check.get('150'),'8')
