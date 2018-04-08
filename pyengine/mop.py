@@ -13,7 +13,7 @@ buybook = {
 
 sellbook = {
     'orderid3' : 'GE',
-    'orderid4' : 'TWTR',
+    'orderid4' : 'ZNGA',
 }
 
 def mopvalidator(ordertype,orderqty): # validates mop can support order
@@ -33,12 +33,13 @@ def mop(fix):
     symbol = fix.get('55')
     orderid = fix.get('11')
     side = fix.get('54')
+    marketprice = marketdata.getprice(symbol) / 100
+    print(marketprice)
     if side == '1': # buy order
         if symbol not in sellbook.values():
             buybook[orderid] = symbol
             fix = dfix.tweak(fix,'150','0')
             return fix
-        marketprice = marketdata.getprice(symbol)
         for matchid, matchsymbol in sellbook.items():
             if symbol == matchsymbol:
                 mopfill(fix,marketprice)
@@ -49,7 +50,6 @@ def mop(fix):
             sellbook[orderid] = symbol
             fix = dfix.tweak(fix, '150', '0')
             return fix
-        marketprice = marketdata.getprice(symbol)
         for matchid, matchsymbol in buybook.items():
             if symbol == matchsymbol:
                 mopfill(fix,marketprice)
@@ -58,7 +58,7 @@ def mop(fix):
 
 def mopfill(fix,fillprice):
     fix = dfix.tweak(fix,'150','2') #full fill
-    fix = dfix.tweak(fix,'6',fillprice) # avg price
+    fix = dfix.tweak(fix,'6',str(fillprice)) # avg price
     fix = dfix.tweak(fix,'14','100') # cum qty
     fix = dfix.tweak(fix,'151','0') # leaves qty
     return fix

@@ -3,8 +3,6 @@ import riskcheck
 import marketdata
 import mop
 
-#accept fixmsg
-
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
     # check for valid values of tag 35
@@ -30,7 +28,16 @@ def ordermanager(clientorder):
     if not marketdata.marketdataexists(symbol):
         clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
     else:
-        riskcheckresult = riskcheck.limitcheck(symbol,float(price),int(quantity))
+        if clientorder.get('40') == '1': # marketorders have no price, but we need a price to limit check
+            print(price) #debug
+            if price:
+                clientorder = rejectorder(clientorder,'Market Orders should not contain price in tag 44')
+                return clientorder
+            mdprice = float(marketdata.getprice(symbol)) / 100
+            riskcheckresult = riskcheck.limitcheck(symbol,mdprice,int(quantity))
+        else:
+            riskcheckresult = riskcheck.limitcheck(symbol,float(price),int(quantity))
+        #riskcheckresult comes back as a list with "Reject" in [0] if the order is rejected
         if riskcheckresult[0] == 'Reject':
             clientorder = rejectorder(clientorder,riskcheckresult[1])
         else:
