@@ -29,10 +29,15 @@ def ordermanager(clientorder):
         clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
     else:
         if clientorder.get('40') == '1': # marketorders have no price, but we need a price to limit check
+            print(price) #debug
+            if price:
+                clientorder = rejectorder(clientorder,'Market Orders should not contain price in tag 44')
+                return clientorder
             mdprice = float(marketdata.getprice(symbol)) / 100
             riskcheckresult = riskcheck.limitcheck(symbol,mdprice,int(quantity))
         else:
             riskcheckresult = riskcheck.limitcheck(symbol,float(price),int(quantity))
+        #riskcheckresult comes back as a list with "Reject" in [0] if the order is rejected
         if riskcheckresult[0] == 'Reject':
             clientorder = rejectorder(clientorder,riskcheckresult[1])
         else:

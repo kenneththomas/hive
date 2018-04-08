@@ -204,6 +204,11 @@ class f2btest(unittest.TestCase):
         execreport = hive.fixgateway(fix)
         self.assertTrue('market data does not exist' in execreport)
 
+    def test_marketorderwithprice(self):
+        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=1;10=END'
+        execreport = hive.fixgateway(fix)
+        self.assertTrue('Market Orders should not contain price in tag 44' in execreport)
+
     def tearDown(self):
         pass
 
