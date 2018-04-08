@@ -1,6 +1,7 @@
 import dfix
 import riskcheck
 import marketdata
+import mop
 
 #accept fixmsg
 
@@ -33,8 +34,9 @@ def ordermanager(clientorder):
         if riskcheckresult[0] == 'Reject':
             clientorder = rejectorder(clientorder,riskcheckresult[1])
         else:
+            clientorder = mop.mop(clientorder)
             #accept order with 150=0
-            clientorder = dfix.tweak(clientorder,'150','0')
+            #clientorder = dfix.tweak(clientorder,'150','0')
     return clientorder
 
 def fixvalidator(validlist, value):

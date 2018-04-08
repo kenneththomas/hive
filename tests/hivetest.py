@@ -181,7 +181,7 @@ class f2btest(unittest.TestCase):
 
     def test_ack(self):
         #order passes limit checks and we get new order
-        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=2;10=END'
+        fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=100;44=10;40=1;10=END'
         execreport = hive.fixgateway(fix)
         self.assertTrue('150=0;' in execreport)
 

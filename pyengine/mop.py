@@ -36,6 +36,7 @@ def mop(fix):
     if side == '1': # buy order
         if symbol not in sellbook.values():
             buybook[orderid] = symbol
+            fix = dfix.tweak(fix,'150','0')
             return fix
         marketprice = marketdata.getprice(symbol)
         for matchid, matchsymbol in sellbook.items():
@@ -46,6 +47,7 @@ def mop(fix):
     if side == '2': # sell order
         if symbol not in buybook.values():
             sellbook[orderid] = symbol
+            fix = dfix.tweak(fix, '150', '0')
             return fix
         marketprice = marketdata.getprice(symbol)
         for matchid, matchsymbol in buybook.items():
