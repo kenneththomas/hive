@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <script src="script.js"></script>
+    </head>
+    <body>
+        <div class="title">
+            <h1>HiveWeb</h1>
+        </div>
+        <div class="info">
+            <p>Welcome to Hive Web!</p>
+        </div>
+        <div class="Client Information">
+            <form>
+                <p>Client Session:</p>
+                <input type="text" id="sendercompid">
+                <p>Target Session:</p>
+                <input type="text" id="targetcompid">
+            </form>
+        </div>
+        <div class="generate">
+            <button onclick="generateFix()">Generate FIX Message</button>
+            <h3>generated fix:</h3>
+            <p id="generated"></p>
+        </div>
+        <div class="footer">
+            <p>Hive Web 0.1</p>
+        </div>
+    </body>
+</html>
