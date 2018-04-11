@@ -2,3 +2,15 @@
     font-size: 9px;
     color: black;
 }
+
+body{
+    background: linear-gradient(90deg, gray 0%, #d9e7ff 100%);
+}
+
+.title{
+    font-size: 20px;
+    background: -webkit-linear-gradient(teal, black);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: 'Cabin', sans-serif;
+}

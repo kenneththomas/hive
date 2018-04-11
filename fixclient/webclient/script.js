@@ -1,9 +1,11 @@
 function generateFix() {
     console.log('generating fix message');
-    var basefix = '8=DFIX;35=D'
-    var tailfix = ';55=ZVZZT;54=1;40=1;10=END'
-    var tag49 = ';49=' + document.getElementById("sendercompid").value;
-    var tag56 = ';56=' + document.getElementById("targetcompid").value;
-    var newfix = basefix + tag49 + tag56 +  tailfix
-    document.getElementById("generated").innerHTML = newfix;
+    var basefix = '8=DFIX;35=D',
+        tailfix = ';54=1;40=1;10=END',
+        tag49 = ';49=' + document.getElementById("sendercompid").value,
+        tag56 = ';56=' + document.getElementById("targetcompid").value,
+        tag55 = ';55=' + document.getElementById("symbol").value,
+        tag54 = ';54=' + document.getElementById("side").value;
+        newfix = basefix + tag49 + tag56 + tag55 + tag54 + tailfix;
+        document.getElementById("generated").innerHTML = newfix;
 }
