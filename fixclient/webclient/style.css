@@ -5,6 +5,7 @@
 
 body{
     background: linear-gradient(90deg, gray 0%, #d9e7ff 100%);
+    font-family: 'Open Sans', sans-serif;
 }
 
 .title{
