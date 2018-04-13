@@ -18,6 +18,10 @@
                 <input type="text" value="SenderCompID" id="sendercompid">
                 <p>Target Session:</p>
                 <input type="text" value="TargetCompID" id="targetcompid">
+            </form>
+        </div>
+        <div class="Order Information">
+            <form>
                 <p>Symbol:</p>
                 <input type="text" value="ZVZZT" id="symbol">
                 <p>Side:</p>
@@ -26,14 +30,23 @@
                     <option value="2">Sell</option>
                     <option value="5">Short Sell</option>
                 </select>
+                <p>Order Type</p>
+                <select onChange="isLimit()" id='ordertype'>
+                    <option value="2">Limit</option>
+                    <option value="1">Market</option>
+                </select>
             </form>
+            <div id="pricer" class="pricer">
+                <p>Price</p>
+                <input id="price" type="number">
+            </div>
         </div>
         <div class="generate">
             <button onclick="generateFix()">Generate FIX Message</button>
             <p id="generated"></p>
         </div>
         <div class="footer">
-            <p>Hive Web 0.2.1</p>
+            <p>Hive Web 0.2.2</p>
         </div>
     </body>
 </html>
