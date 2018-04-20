@@ -9,7 +9,7 @@ body{
 }
 
 .title{
-    font-size: 20px;
+    font-size: 10px;
     background: -webkit-linear-gradient(teal, black);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

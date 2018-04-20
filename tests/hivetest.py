@@ -211,6 +211,7 @@ class f2btest(unittest.TestCase):
 
     def test_duplicate11(self):
         #send 2 orders with same tag 11, 2nd should be rejected
+        hive.tag11validation = True # this is off by default atm, so we turn it on
         fix = '8=DFIX;35=D;11=4a4964cr;49=Tay;56=Spicii;55=ZVZZT;54=1;38=100;40=1;10=END'
         hive.fixgateway(fix) #order 1
         check = hive.fixgateway(fix)

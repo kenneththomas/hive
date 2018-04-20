@@ -5,6 +5,7 @@ import mop
 import uuid
 
 orderidpool=[] # list that contains used orderids
+tag11validation = False # determines whether we do tag 11 validation
 
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
@@ -12,13 +13,14 @@ def fixgateway(fix):
     msgtype = clientorder.get('35')
     orderid = clientorder.get('11')
     sendercompid = clientorder.get('49')
-    uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
-    if uniqclord in orderidpool: #reject if duplicate 49 - 11
-        clientorder = rejectorder(clientorder,'Duplicate value of tag 11 is not allowed')
-        execreport = dfix.tweak(clientorder, '35', '8')
-        return dfix.exportfix(execreport)
-    else:
-        orderidpool.append(uniqclord) # append uniqclord to list
+    if tag11validation:
+        uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
+        if uniqclord in orderidpool: #reject if duplicate 49 - 11
+            clientorder = rejectorder(clientorder,'Duplicate value of tag 11 is not allowed')
+            execreport = dfix.tweak(clientorder, '35', '8')
+            return dfix.exportfix(execreport)
+        else:
+            orderidpool.append(uniqclord) # append uniqclord to list
     if not fixvalidator(valid35, msgtype):
         clientorder = rejectorder(clientorder,msgtype + ' is an invalid value of Tag 35 (MsgType)')
     else:
