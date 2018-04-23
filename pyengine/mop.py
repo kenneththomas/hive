@@ -56,9 +56,7 @@ def mop(fix):
                 return fix
 
 def mopfill(fix,fillprice):
-    fix = dfix.tweak(fix,'150','2') #full fill
-    fix = dfix.tweak(fix,'6',str(fillprice)) # avg price
-    fix = dfix.tweak(fix,'14','100') # cum qty
-    fix = dfix.tweak(fix,'151','0') # leaves qty
+    fix = dfix.multitweak(fix,'150=2;14=100;151=0') # full fill, cum qty, leaves qty
+    fix = dfix.tweak(fix,'6',str(fillprice)) # avg price - can we use the .format thing to use multitweak with this?
     return fix
 

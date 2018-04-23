@@ -127,11 +127,11 @@ def hundoslice(fix): # slices larger order into multiple orders of 100 qty
             filled = True
     if filled == True: # we need to make this look like the original order
         fix = dfix.tweak(fix, '150', '2')
-        fix = dfix.tweak(fix, '38', origqty)  # oriq qty
+        fix = dfix.tweak(fix, '38', origqty)  # orig qty
         fix = dfix.tweak(fix, '14', origqty)  # cum qty
         return fix
     else:
-        fix = dfix.tweak(fix, '38', origqty)  # oriq qty
+        fix = dfix.tweak(fix, '38', origqty)  # orig qty
         return fix
 
 
