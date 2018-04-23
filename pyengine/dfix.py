@@ -44,3 +44,9 @@ def dfixformat(fixmsg):
         print('DFIX: Detected DFIX with delimiter trailer, stripping')
         fixmsg = fixmsg[:-1] # strip last character
     return fixmsg
+
+def multitweak(fix,modifyfix):
+    modifyfix = parsefix(modifyfix) # parse into dictionary
+    for tag in modifyfix:
+        newfix = tweak(fix,tag,modifyfix[tag])
+    return newfix

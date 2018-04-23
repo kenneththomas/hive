@@ -94,6 +94,17 @@ class dfixtest(unittest.TestCase):
         betterfix = dfix.dfixformat(badfix)
         self.assertEqual(betterfix, '8=DFIX;35=D;55=GE;10=END') # format should return same message but with no semicolon at end
 
+    def test_multitweak(self):
+        oldfix = collections.OrderedDict({
+            '8': 'DIFX',
+            '10': 'END',
+            '55': 'ZVZZT',
+            '40': '2',
+        })
+        newfix = dfix.multitweak(oldfix,'40=1;8=DFIX')
+        self.assertTrue(newfix.get('40') == '1' and newfix.get('8') == 'DFIX')
+
+
 
 class risktest(unittest.TestCase):
     def setUp(self):
