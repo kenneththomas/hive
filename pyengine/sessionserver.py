@@ -1,5 +1,6 @@
 import socket
 import hive
+import dfix
 
 def Main():
     host = "127.0.0.1"
@@ -18,6 +19,7 @@ def Main():
         print ("from connected  user: " + str(data))
         #we need to validate this is an actual fix message and wont blow up hive. improve this
         if ';35=' in str(data):
+            data = dfix.dfixformat(data)
             data = hive.fixgateway(data)
             print ("sending: " + str(data))
             conn.send(data.encode())

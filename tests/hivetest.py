@@ -89,6 +89,11 @@ class dfixtest(unittest.TestCase):
         lasttag = [('10', 'END')]
         self.assertEqual(listversion[-1],lasttag[0])
 
+    def test_strip(self):
+        badfix = '8=DFIX;35=D;55=GE;10=END;' #trails with delimiter, our parser doesn't like this
+        betterfix = dfix.dfixformat(badfix)
+        self.assertEqual(betterfix, '8=DFIX;35=D;55=GE;10=END') # format should return same message but with no semicolon at end
+
 
 class risktest(unittest.TestCase):
     def setUp(self):

@@ -37,3 +37,10 @@ def tweak(fixdict,tag,value):
 def trailer(fixdict):
     fixdict.move_to_end('10')
     return fixdict
+
+#remove semicolon if trailer for parsing
+def dfixformat(fixmsg):
+    if fixmsg[-1] == ";": # check if last character is semicolon
+        print('DFIX: Detected DFIX with delimiter trailer, stripping')
+        fixmsg = fixmsg[:-1] # strip last character
+    return fixmsg
