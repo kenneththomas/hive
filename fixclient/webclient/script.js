@@ -1,7 +1,7 @@
 function generateFix() {
     console.log('generating fix message');
     var basefix = '8=DFIX;35=D',
-        tailfix = ';10=END',
+        tailfix = ';38=100;10=END',
         tag49 = ';49=' + document.getElementById("sendercompid").value,
         tag56 = ';56=' + document.getElementById("targetcompid").value,
         tag55 = ';55=' + document.getElementById("symbol").value,
@@ -33,19 +33,19 @@ function clordid() {
 }
 
 //websocket stuff below, WIP
-var fixserver = new WebSocket("ws:127.0.0.1:20001", "DFIX");
+var fixserver = new WebSocket("ws:127.0.0.1:20001");
 
-function sendFix(){
+fixserver.sendFix = function(){
     //get generated fixmessage
     var outgoingfix = document.getElementById("generated").innerHTML;
     console.log("outgoing fix: " + outgoingfix);
     //send it to the socket
     fixserver.send(outgoingfix);
-}
+};
 
 //whenever we get something from the fixserver
 fixserver.onmessage = function(event) {
     var execreport = event.data;
     console.log('received from server: ' + execreport);
     document.getElementById("execreport").innerHTML = execreport;
-}
+};
