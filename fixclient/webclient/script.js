@@ -31,3 +31,21 @@ function clordid() {
     }
     return s4() + '-' + s4(); 
 }
+
+//websocket stuff below, WIP
+var fixserver = new WebSocket("localhost:20015", "DFIX");
+
+function sendFix(){
+    //get generated fixmessage
+    var outgoingfix = document.getElementById("generated").innerHTML;
+    console.log("outgoing fix: " + outgoingfix)
+    //send it to the socket
+    fixserver.send(outgoingfix)
+}
+
+//whenever we get something from the fixserver
+fixserver.onmessage = function(event) {
+    var execreport = event.data
+    console.log('received from server: ' + execreport)
+    document.getElementById("execreport").innerHTML = execreport
+}

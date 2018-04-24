@@ -1,0 +1,8 @@
+informal dependencies file until we actually have dependencies to warrant a formal one
+
+pyengine - python3.5+, may work on earlier versions of python3, but not on python 2
+goal is to avoid using any non-standard python libraries in core engine logic
+
+webclient - this is going to use websocket
+
+web session server - will be python, interacting with webclient. will depend on some websocket module for python
