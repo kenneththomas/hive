@@ -4,15 +4,16 @@ import websockets
 import asyncio
 
 async def fixserver(websocket, path):
-    name = await websocket.recv()
-    print("received message: " + name)
-    if ';35=' in name:
-        fixmsg = dfix.dfixformat(name)
-        fixmsg = hive.fixgateway(name)
-    else:
-        fixmsg = "invalid message"
-    await websocket.send(fixmsg)
-    print("sending to client: " + fixmsg)
+    while True:
+        name = await websocket.recv()
+        print("received message: " + name)
+        if ';35=' in name:
+            fixmsg = dfix.dfixformat(name)
+            fixmsg = hive.fixgateway(name)
+        else:
+            fixmsg = "invalid message"
+        await websocket.send(fixmsg)
+        print("sending to client: " + fixmsg)
 
 start_server = websockets.serve(fixserver, '127.0.0.1', 20001)
 
