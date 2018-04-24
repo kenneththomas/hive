@@ -38,16 +38,21 @@ def ordermanager(clientorder):
     price = clientorder.get('44')
     quantity = clientorder.get('38')
     side = clientorder.get('54')
+    ordertype = clientorder.get('40')
     #check if symbol exists in MD, reject otherwise
     if not marketdata.marketdataexists(symbol):
         clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
     else:
-        if clientorder.get('40') == '1': # marketorders have no price, but we need a price to limit check
+        if ordertype == '1': # marketorders have no price, but we need a price to limit check
             if price:
                 clientorder = rejectorder(clientorder,'Market Orders should not contain price in tag 44')
                 return clientorder
             mdprice = float(marketdata.getprice(symbol)) / 100
             riskcheckresult = riskcheck.limitcheck(symbol,mdprice,int(quantity))
+        elif ordertype == '2' and not price: # limit orders need to have price
+            # todo: write test for this and also move this into order type validator function
+                clientorder = rejectorder(clientorder,'Limit Orders should contain price in tag 44')
+                return clientorder
         else:
             riskcheckresult = riskcheck.limitcheck(symbol,float(price),int(quantity))
         #riskcheckresult comes back as a list with "Reject" in [0] if the order is rejected
@@ -133,6 +138,3 @@ def hundoslice(fix): # slices larger order into multiple orders of 100 qty
     else:
         fix = dfix.tweak(fix, '38', origqty)  # orig qty
         return fix
-
-
-
