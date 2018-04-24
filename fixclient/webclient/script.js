@@ -9,7 +9,7 @@ function generateFix() {
         tag11 = ';11=' + clordid(),
         tag40 = ';40=' + document.getElementById("ordertype").value,
         newfix = basefix + tag49 + tag56 + tag11 + tag55 + tag54 + tag40 + tailfix;
-    document.getElementById("generated").innerHTML = newfix;
+    document.getElementById("generated").value = newfix;
 }
 //this shows the price tab if it's a limit order
 function isLimit() {
@@ -37,7 +37,7 @@ var fixserver = new WebSocket("ws:127.0.0.1:20001");
 
 fixserver.sendFix = function(){
     //get generated fixmessage
-    var outgoingfix = document.getElementById("generated").innerHTML;
+    var outgoingfix = document.getElementById("generated").value;
     console.log("outgoing fix: " + outgoingfix);
     //send it to the socket
     fixserver.send(outgoingfix);

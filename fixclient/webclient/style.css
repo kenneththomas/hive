@@ -15,3 +15,6 @@ body{
     -webkit-text-fill-color: transparent;
     font-family: 'Cabin', sans-serif;
 }
+input[type="dfix"] {
+    width: 800px;
+}
