@@ -1,14 +1,20 @@
 function generateFix() {
     console.log('generating fix message');
     var basefix = '8=DFIX;35=D',
-        tailfix = ';38=100;10=END',
+        tailfix = ';10=END',
         tag49 = ';49=' + document.getElementById("sendercompid").value,
         tag56 = ';56=' + document.getElementById("targetcompid").value,
         tag55 = ';55=' + document.getElementById("symbol").value,
         tag54 = ';54=' + document.getElementById("side").value,
         tag11 = ';11=' + clordid(),
-        tag40 = ';40=' + document.getElementById("ordertype").value,
-        newfix = basefix + tag49 + tag56 + tag11 + tag55 + tag54 + tag40 + tailfix;
+        tag38 = ';38=' + document.getElementById("orderqty").value,
+        tag40 = ';40=' + document.getElementById("ordertype").value
+        if (tag40 == ";40=1") {
+            newfix = basefix + tag49 + tag56 + tag11 + tag55 + tag54 + tag38 + tag40 + tailfix;
+        } else {
+            tag44 = ';44=' + document.getElementById("price").value,
+                newfix = basefix + tag49 + tag56 + tag11 + tag55 + tag54 + tag38 + tag40 + tag44 + tailfix;
+        };
     document.getElementById("generated").value = newfix;
 }
 //this shows the price tab if it's a limit order
