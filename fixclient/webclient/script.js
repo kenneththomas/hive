@@ -36,11 +36,16 @@ function clordid() {
 var fixserver = new WebSocket("ws:127.0.0.1:20001");
 
 fixserver.sendFix = function(){
-    //get generated fixmessage
-    var outgoingfix = document.getElementById("generated").value;
-    console.log("outgoing fix: " + outgoingfix);
-    //send it to the socket
-    fixserver.send(outgoingfix);
+    //check if we are connected and only send if we are connected
+    if (fixserver.readyState == 1) {
+        //get generated fixmessage
+        var outgoingfix = document.getElementById("generated").value;
+        console.log("outgoing fix: " + outgoingfix);
+        //send it to the socket
+        fixserver.send(outgoingfix);
+    } else {
+        document.getElementById("execreport").innerHTML = "not connected to server"
+    }
 };
 
 //whenever we get something from the fixserver
