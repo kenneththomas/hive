@@ -58,12 +58,23 @@ def ordermanager(clientorder):
         #riskcheckresult comes back as a list with "Reject" in [0] if the order is rejected
         if riskcheckresult[0] == 'Reject':
             clientorder = rejectorder(clientorder,riskcheckresult[1])
-        else:
-            if quantity == '100': # for now MOP is only destination
-                clientorder = mop.mop(clientorder)
-            else: # try to slice order into 100 if qty is not 100, THEN send to MOP from hundoslice
-                clientorder = hundoslice(clientorder)
+        else: # order is all good at this point and can be routed
+            clientorder = hiverouter(clientorder)
     return clientorder
+
+
+def hiverouter(fix):
+    quantity = fix.get('44')
+    ordertype = fix.get('40')
+    if ordertype == '1': # market order destinations
+        if quantity == '100': # order quantity 100 doesn't need to be sliced
+            outboundfix = mop.mop(fix)
+        else: # try to slice
+            outboundfix = hundoslice(fix)
+        return outboundfix
+    else:
+        noroute = rejectorder(fix, 'no route found for order')
+        return noroute
 
 def fixvalidator(validlist, value):
     if value in validlist:
