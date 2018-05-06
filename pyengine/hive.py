@@ -67,9 +67,14 @@ def ordermanager(clientorder):
             if currency: # we assume the default currency if no currency is listed
                 if currency != defaultcurrency:
                     print('OM: Detected order with non-default currency')
-                    #reject if we dont support the currency, put in currency conversion
-                    clientorder = rejectorder(clientorder,currency + ' Is An Unsupported Currency')
-                    return clientorder
+                    currencyrate = currencyconverter(currency)
+                    if currencyrate: #if we have a rate, we convert currency
+                        clientorder = dfix.tweak(clientorder, '15', defaultcurrency)
+                        newprice = float(price) * currencyrate
+                        clientorder = dfix.tweak(clientorder, '44', str(round(newprice,2)))
+                    else:
+                        clientorder = rejectorder(clientorder,currency + ' Is An Unsupported Currency')
+                        return clientorder
             riskcheckresult = riskcheck.limitcheck(symbol,float(price),int(quantity))
         #riskcheckresult comes back as a list with "Reject" in [0] if the order is rejected
         if riskcheckresult[0] == 'Reject':
@@ -77,6 +82,18 @@ def ordermanager(clientorder):
         else: # order is all good at this point and can be routed
             clientorder = hiverouter(clientorder)
     return clientorder
+
+def currencyconverter(tag15):
+    #conversion values for tag15/USD
+    USD = { 'EUR' : 1.20,
+            'CAD' : 0.78,
+    }
+    if tag15 in USD:
+        return USD.get(tag15)
+    else:
+        print('CurrencyConverter: No ' + tag15 + '/' + defaultcurrency + ' rate found')
+        return False
+
 
 
 def hiverouter(fix):
