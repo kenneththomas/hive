@@ -10,12 +10,12 @@ function generateFix() {
         tag38 = ';38=' + document.getElementById("orderqty").value,
         tag40 = ';40=' + document.getElementById("ordertype").value,
         tag1 = ';1=' + document.getElementById("traderid").value
-        if (tag40 == ";40=1") {
-            newfix = basefix + tag49 + tag56 + tag11 + tag1 + tag55 + tag54 + tag38 + tag40 + tailfix;
-        } else {
-            tag44 = ';44=' + document.getElementById("price").value,
-                newfix = basefix + tag49 + tag56 + tag11 + tag1 + tag55 + tag54 + tag38 + tag40 + tag44 + tailfix;
-        };
+    if (tag40 == ";40=1") {
+        newfix = basefix + tag49 + tag56 + tag11 + tag1 + tag55 + tag54 + tag38 + tag40 + tailfix;
+    } else {
+        tag44 = ';44=' + document.getElementById("price").value,
+            newfix = basefix + tag49 + tag56 + tag11 + tag1 + tag55 + tag54 + tag38 + tag40 + tag44 + tailfix;
+    };
     document.getElementById("generated").value = newfix;
 }
 //this shows the price tab if it's a limit order
