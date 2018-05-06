@@ -8,12 +8,13 @@ function generateFix() {
         tag54 = ';54=' + document.getElementById("side").value,
         tag11 = ';11=' + clordid(),
         tag38 = ';38=' + document.getElementById("orderqty").value,
-        tag40 = ';40=' + document.getElementById("ordertype").value
+        tag40 = ';40=' + document.getElementById("ordertype").value,
+        tag1 = ';1=' + document.getElementById("traderid").value
         if (tag40 == ";40=1") {
-            newfix = basefix + tag49 + tag56 + tag11 + tag55 + tag54 + tag38 + tag40 + tailfix;
+            newfix = basefix + tag49 + tag56 + tag11 + tag1 + tag55 + tag54 + tag38 + tag40 + tailfix;
         } else {
             tag44 = ';44=' + document.getElementById("price").value,
-                newfix = basefix + tag49 + tag56 + tag11 + tag55 + tag54 + tag38 + tag40 + tag44 + tailfix;
+                newfix = basefix + tag49 + tag56 + tag11 + tag1 + tag55 + tag54 + tag38 + tag40 + tag44 + tailfix;
         };
     document.getElementById("generated").value = newfix;
 }
@@ -60,3 +61,14 @@ fixserver.onmessage = function(event) {
     console.log('received from server: ' + execreport);
     document.getElementById("execreport").innerHTML = execreport;
 };
+
+//login
+// Get the modal
+var modal = document.getElementById('id01');
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
