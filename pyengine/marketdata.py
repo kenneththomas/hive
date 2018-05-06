@@ -12,7 +12,7 @@ def getprice(symbol):
     return md.get(symbol)
 
 def marketdataexists(symbol):
-    if symbol in md.keys():
+    if symbol in md:
         return True
     else:
         return False

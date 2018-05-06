@@ -4,8 +4,17 @@ import marketdata
 import mop
 import uuid
 
+#instance configuration
+hostname = 'nyastdev' #not sure if worth implementing something that actually grabs the hostname/ip
+instance = 'hive1'
+environment = 'dev'
+
+#instance settings
+tag11validation = False # determines whether we do duplicate tag 11 validation
+defaultcurrency = 'USD' # which currency is used logic for things like risk checking
+
 orderidpool=[] # list that contains used orderids
-tag11validation = False # determines whether we do tag 11 validation
+
 
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
@@ -22,7 +31,7 @@ def fixgateway(fix):
         else:
             orderidpool.append(uniqclord) # append uniqclord to list
     if not fixvalidator(valid35, msgtype):
-        clientorder = rejectorder(clientorder,msgtype + ' is an invalid value of Tag 35 (MsgType)')
+        clientorder = rejectorder(clientorder,msgtype + ' is an unsupported value of Tag 35 (MsgType)')
     else:
         clientorder = ordermanager(clientorder)
     #send back to client
@@ -39,6 +48,7 @@ def ordermanager(clientorder):
     quantity = clientorder.get('38')
     side = clientorder.get('54')
     ordertype = clientorder.get('40')
+    currency = clientorder.get('15')
     #check if symbol exists in MD, reject otherwise
     if not marketdata.marketdataexists(symbol):
         clientorder = rejectorder(clientorder,'market data does not exist for symbol ' + symbol)
@@ -49,11 +59,22 @@ def ordermanager(clientorder):
                 return clientorder
             mdprice = float(marketdata.getprice(symbol)) / 100
             riskcheckresult = riskcheck.limitcheck(symbol,mdprice,int(quantity))
-        elif ordertype == '2' and not price: # limit orders need to have price
+        elif ordertype == '2':
+            if not price: # limit orders need to have price
             # todo: write test for this and also move this into order type validator function
                 clientorder = rejectorder(clientorder,'Limit Orders should contain price in tag 44')
                 return clientorder
-        else:
+            if currency: # we assume the default currency if no currency is listed
+                if currency != defaultcurrency:
+                    print('OM: Detected order with non-default currency')
+                    currencyrate = currencyconverter(currency)
+                    if currencyrate: #if we have a rate, we convert currency
+                        clientorder = dfix.tweak(clientorder, '15', defaultcurrency)
+                        newprice = float(price) * currencyrate
+                        clientorder = dfix.tweak(clientorder, '44', str(round(newprice,2)))
+                    else:
+                        clientorder = rejectorder(clientorder,currency + ' Is An Unsupported Currency')
+                        return clientorder
             riskcheckresult = riskcheck.limitcheck(symbol,float(price),int(quantity))
         #riskcheckresult comes back as a list with "Reject" in [0] if the order is rejected
         if riskcheckresult[0] == 'Reject':
@@ -61,6 +82,18 @@ def ordermanager(clientorder):
         else: # order is all good at this point and can be routed
             clientorder = hiverouter(clientorder)
     return clientorder
+
+def currencyconverter(tag15):
+    #conversion values for tag15/USD
+    USD = { 'EUR' : 1.20,
+            'CAD' : 0.78,
+    }
+    if tag15 in USD:
+        return USD.get(tag15)
+    else:
+        print('CurrencyConverter: No ' + tag15 + '/' + defaultcurrency + ' rate found')
+        return False
+
 
 
 def hiverouter(fix):

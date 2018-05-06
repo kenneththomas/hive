@@ -241,6 +241,16 @@ class f2btest(unittest.TestCase):
         check = hive.fixgateway(fix2) # should fill with above order
         self.assertTrue('150=2' in check)
 
+    def test_currency_reject(self):
+        fix = '8=DFIX;35=D;11=4a4sdfc4;49=Tay;56=Spicii;55=ZVZZT;15=HKD;54=1;38=100;44=10;40=2;10=END'
+        check = hive.fixgateway(fix)
+        self.assertTrue('Unsupported Currency' in check)
+
+    def test_currency_convert(self):
+        fix = '8=DFIX;35=D;11=4a4awb;49=Tay;56=Spicii;55=ZVZZT;15=CAD;54=1;38=100;44=10;40=2;10=END'
+        check = hive.fixgateway(fix)
+        self.assertTrue('15=USD' in check)
+
     def tearDown(self):
         pass
 
