@@ -97,7 +97,7 @@ def currencyconverter(tag15):
 
 
 def hiverouter(fix):
-    quantity = fix.get('44')
+    quantity = fix.get('38')
     ordertype = fix.get('40')
     if ordertype == '1': # market order destinations
         if quantity == '100': # order quantity 100 doesn't need to be sliced
