@@ -14,14 +14,27 @@ tag11validation = False # determines whether we do duplicate tag 11 validation
 defaultcurrency = 'USD' # which currency is used logic for things like risk checking
 
 orderidpool=[] # list that contains used orderids
+blockedsessions=['TESTBLOCK']
 
 
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
-    # check for valid values of tag 35
     msgtype = clientorder.get('35')
+    if msgtype == 'UAC': #UAC is admin command
+        #below is repeated code, can we not do this?
+        clientorder = adminmgr(clientorder)
+        execreport = dfix.tweak(clientorder, '35', 'UAR') #UAR is admin response
+        clientexec = dfix.exportfix(execreport)
+        return clientexec
     orderid = clientorder.get('11')
     sendercompid = clientorder.get('49')
+    #check for blocked client
+    if sendercompid in blockedsessions: # blocked sessions
+        #below is repeated code, can we not do this?
+        clientorder = rejectorder(clientorder, 'FIX Session blocked')
+        execreport = dfix.tweak(clientorder, '35', '8')
+        clientexec = dfix.exportfix(execreport)
+        return clientexec
     if tag11validation:
         uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
         if uniqclord in orderidpool: #reject if duplicate 49 - 11
@@ -30,7 +43,7 @@ def fixgateway(fix):
             return dfix.exportfix(execreport)
         else:
             orderidpool.append(uniqclord) # append uniqclord to list
-    if not fixvalidator(valid35, msgtype):
+    if not fixvalidator(valid35, msgtype):     # check for valid values of tag 35
         clientorder = rejectorder(clientorder,msgtype + ' is an unsupported value of Tag 35 (MsgType)')
     else:
         clientorder = ordermanager(clientorder)
@@ -94,7 +107,23 @@ def currencyconverter(tag15):
         print('CurrencyConverter: No ' + tag15 + '/' + defaultcurrency + ' rate found')
         return False
 
+validcommands = ['disable fixsession','enable fixsession']
 
+def adminmgr(adminmsg):
+    component = adminmsg.get('57')
+    command = adminmsg.get('58')
+    parameter = adminmsg.get('161')
+    if command in validcommands:
+        print('AdminMgr: Detected Admin Command')
+        if command == 'disable fixsession':
+            blockedsessions.append(parameter)
+            uar = dfix.tweak(adminmsg, '58', parameter + ' has been disabled')
+        elif command == 'enable fixsession':
+            blockedsessions.remove(parameter)
+            uar = dfix.tweak(adminmsg,'58', parameter + ' has been unblocked')
+    else: # reject invalid admin command
+        uar = dfix.tweak(adminmsg, '58', 'Invalid Admin Command')
+    return uar
 
 def hiverouter(fix):
     quantity = fix.get('38')
