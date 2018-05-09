@@ -20,33 +20,28 @@ blockedsessions=[] # tag 49 values which will be rejected
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
     msgtype = clientorder.get('35')
+    if not fixvalidator(valid35, msgtype):     # check for valid values of tag 35
+        clientorder = rejectorder(clientorder,msgtype + ' is an unsupported value of Tag 35 (MsgType)')
+        return dfix.exportfix(clientorder)
     if msgtype == 'UAC': #UAC is admin command
-        #below is repeated code, can we not do this?
         clientorder = adminmgr(clientorder)
         execreport = dfix.tweak(clientorder, '35', 'UAR') #UAR is admin response
-        clientexec = dfix.exportfix(execreport)
-        return clientexec
+        return dfix.exportfix(execreport)
     orderid = clientorder.get('11')
     sendercompid = clientorder.get('49')
     #check for blocked client
     if sendercompid in blockedsessions: # blocked sessions
         #below is repeated code, can we not do this?
         clientorder = rejectorder(clientorder, 'FIX Session blocked')
-        execreport = dfix.tweak(clientorder, '35', '8')
-        clientexec = dfix.exportfix(execreport)
-        return clientexec
+        return dfix.exportfix(clientorder)
     if tag11validation:
         uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
         if uniqclord in orderidpool: #reject if duplicate 49 - 11
             clientorder = rejectorder(clientorder,'Duplicate value of tag 11 is not allowed')
-            execreport = dfix.tweak(clientorder, '35', '8')
-            return dfix.exportfix(execreport)
+            return dfix.exportfix(clientorder)
         else:
             orderidpool.append(uniqclord) # append uniqclord to list
-    if not fixvalidator(valid35, msgtype):     # check for valid values of tag 35
-        clientorder = rejectorder(clientorder,msgtype + ' is an unsupported value of Tag 35 (MsgType)')
-    else:
-        clientorder = ordermanager(clientorder)
+    clientorder = ordermanager(clientorder)
     #send back to client
     execreport = dfix.tweak(clientorder, '35', '8')
     clientexec = dfix.exportfix(execreport)
@@ -145,11 +140,11 @@ def fixvalidator(validlist, value):
         return False
 
 #fixvalidator lists
-valid35 = ['D']
+valid35 = ['D','UAC']
 
 def rejectorder(rejectedorder,rejectreason):
     print(rejectreason)
-    rejectedorder = dfix.tweak(rejectedorder, '150', '8')
+    rejectedorder = dfix.multitweak(rejectedorder,'35=8;150=8')
     return dfix.tweak(rejectedorder,'58',rejectreason)
 
 
