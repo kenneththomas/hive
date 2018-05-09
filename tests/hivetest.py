@@ -251,11 +251,6 @@ class f2btest(unittest.TestCase):
         check = hive.fixgateway(fix)
         self.assertTrue('15=USD' in check)
 
-    def test_blockedsesson(self):
-        fix = '8=DFIX;35=D;11=4m4awb;49=TESTBLOCK;56=Spicii;55=ZVZZT;15=CAD;54=1;38=100;44=10;40=2;10=END'
-        check = hive.fixgateway(fix)
-        self.assertTrue('58=FIX Session blocked' in check)
-
     def tearDown(self):
         pass
 

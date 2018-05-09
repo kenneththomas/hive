@@ -13,8 +13,8 @@ environment = 'dev'
 tag11validation = False # determines whether we do duplicate tag 11 validation
 defaultcurrency = 'USD' # which currency is used logic for things like risk checking
 
-orderidpool=[] # list that contains used orderids
-blockedsessions=['TESTBLOCK']
+orderidpool=[] # list that contains used orderids which will be rejected if tag11validation is on
+blockedsessions=[] # tag 49 values which will be rejected
 
 
 def fixgateway(fix):
