@@ -13,27 +13,32 @@ environment = 'dev'
 tag11validation = False # determines whether we do duplicate tag 11 validation
 defaultcurrency = 'USD' # which currency is used logic for things like risk checking
 
-orderidpool=[] # list that contains used orderids
+orderidpool=[] # list that contains used orderids which will be rejected if tag11validation is on
+blockedsessions=[] # tag 49 values which will be rejected
 
 
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
-    # check for valid values of tag 35
     msgtype = clientorder.get('35')
+    if not fixvalidator(valid35, msgtype):     # check for valid values of tag 35
+        clientorder = rejectorder(clientorder,msgtype + ' is an unsupported value of Tag 35 (MsgType)')
+        return dfix.exportfix(clientorder)
+    if msgtype == 'UAC': #UAC is admin command
+        clientorder = adminmgr(clientorder)
+        return dfix.exportfix(clientorder)
     orderid = clientorder.get('11')
     sendercompid = clientorder.get('49')
+    #check for blocked client
+    if sendercompid in blockedsessions: # blocked sessions
+        return dfix.exportfix(rejectorder(clientorder, 'FIX Session blocked'))
     if tag11validation:
         uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
         if uniqclord in orderidpool: #reject if duplicate 49 - 11
             clientorder = rejectorder(clientorder,'Duplicate value of tag 11 is not allowed')
-            execreport = dfix.tweak(clientorder, '35', '8')
-            return dfix.exportfix(execreport)
+            return dfix.exportfix(clientorder)
         else:
             orderidpool.append(uniqclord) # append uniqclord to list
-    if not fixvalidator(valid35, msgtype):
-        clientorder = rejectorder(clientorder,msgtype + ' is an unsupported value of Tag 35 (MsgType)')
-    else:
-        clientorder = ordermanager(clientorder)
+    clientorder = ordermanager(clientorder)
     #send back to client
     execreport = dfix.tweak(clientorder, '35', '8')
     clientexec = dfix.exportfix(execreport)
@@ -94,7 +99,24 @@ def currencyconverter(tag15):
         print('CurrencyConverter: No ' + tag15 + '/' + defaultcurrency + ' rate found')
         return False
 
+validcommands = ['disable fixsession','enable fixsession']
 
+def adminmgr(adminmsg):
+    component = adminmsg.get('57')
+    command = adminmsg.get('58')
+    parameter = adminmsg.get('161')
+    if command in validcommands:
+        print('AdminMgr: Detected Admin Command')
+        if command == 'disable fixsession':
+            blockedsessions.append(parameter)
+            uar = dfix.tweak(adminmsg, '58', parameter + ' has been disabled')
+        elif command == 'enable fixsession':
+            blockedsessions.remove(parameter)
+            uar = dfix.tweak(adminmsg,'58', parameter + ' has been unblocked')
+    else: # reject invalid admin command
+        uar = dfix.tweak(adminmsg, '58', 'Invalid Admin Command')
+    uar = dfix.tweak(uar,'35','UAR')
+    return uar
 
 def hiverouter(fix):
     quantity = fix.get('38')
@@ -116,11 +138,11 @@ def fixvalidator(validlist, value):
         return False
 
 #fixvalidator lists
-valid35 = ['D']
+valid35 = ['D','UAC']
 
 def rejectorder(rejectedorder,rejectreason):
     print(rejectreason)
-    rejectedorder = dfix.tweak(rejectedorder, '150', '8')
+    rejectedorder = dfix.multitweak(rejectedorder,'35=8;150=8')
     return dfix.tweak(rejectedorder,'58',rejectreason)
 
 

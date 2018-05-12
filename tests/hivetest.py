@@ -310,6 +310,22 @@ class algotest(unittest.TestCase):
         check = hive.hundoslice(fix1)
         self.assertEqual(check.get('58'),'hundoslice reject: order not divisible by 100')
 
+class admintest(unittest.TestCase):
+
+    def test_blockfix(self):
+        fix1 = '8=DFIX;35=UAC;57=fixserver;58=disable fixsession;161=TBL2'
+        hive.fixgateway(fix1) # run admin to disable
+        fix2 = '8=DFIX;35=D;11=emafge;49=TBL2;56=Spicii;55=TWTR;54=1;38=150;40=1;10=END'
+        check = hive.fixgateway(fix2)
+        self.assertTrue('58=FIX Session blocked' in check)
+
+    def test_unblockfix(self):
+        fix1 = '8=DFIX;35=UAC;57=fixserver;58=enable fixsession;161=TBL2'
+        hive.fixgateway(fix1) # run admin to disable
+        fix2 = '8=DFIX;35=D;11=emafge2;49=TBL2;56=Spicii;55=TWTR;54=1;38=150;40=1;10=END'
+        check = hive.fixgateway(fix2)
+        self.assertTrue('58=FIX Session blocked' not in check)
+
 
 if __name__ == '__main__':
     unittest.main()
