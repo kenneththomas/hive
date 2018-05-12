@@ -25,15 +25,12 @@ def fixgateway(fix):
         return dfix.exportfix(clientorder)
     if msgtype == 'UAC': #UAC is admin command
         clientorder = adminmgr(clientorder)
-        execreport = dfix.tweak(clientorder, '35', 'UAR') #UAR is admin response
-        return dfix.exportfix(execreport)
+        return dfix.exportfix(clientorder)
     orderid = clientorder.get('11')
     sendercompid = clientorder.get('49')
     #check for blocked client
     if sendercompid in blockedsessions: # blocked sessions
-        #below is repeated code, can we not do this?
-        clientorder = rejectorder(clientorder, 'FIX Session blocked')
-        return dfix.exportfix(clientorder)
+        return dfix.exportfix(rejectorder(clientorder, 'FIX Session blocked'))
     if tag11validation:
         uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
         if uniqclord in orderidpool: #reject if duplicate 49 - 11
@@ -118,6 +115,7 @@ def adminmgr(adminmsg):
             uar = dfix.tweak(adminmsg,'58', parameter + ' has been unblocked')
     else: # reject invalid admin command
         uar = dfix.tweak(adminmsg, '58', 'Invalid Admin Command')
+    uar = dfix.tweak(uar,'35','UAR')
     return uar
 
 def hiverouter(fix):
