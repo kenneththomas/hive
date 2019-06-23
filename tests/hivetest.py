@@ -96,7 +96,7 @@ class dfixtest(unittest.TestCase):
 
     def test_multitweak(self):
         oldfix = collections.OrderedDict({
-            '8': 'DIFX',
+            '8': 'DFIX',
             '10': 'END',
             '55': 'ZVZZT',
             '40': '2',
