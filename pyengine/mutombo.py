@@ -12,13 +12,11 @@ def rejectorder(fixmsg):
         print('37 not present, setting 37 to 11')
         fixmsg = dfix.tweak(fixmsg,'37',fixmsg['11'])
     #construct a reject message based on client's message
-    rejectmessage = '8=DFIX;150=8;39=8;17=dummy;6=0;14=0;151=0;10=END'
+    rejectmessage = '8=DFIX;150=8;39=8;76=MATU;17=dummy;6=0;14=0;151=0;10=END'
     rejectmessage = dfix.parsefix(rejectmessage)
     #need to pull 54,55,37,11 from client msg
     rejectmessage = dfix.multitweak(rejectmessage,'54={};55={};37={};11={}'.format(fixmsg['54'],fixmsg['55'],fixmsg['37'],fixmsg['11']))
     finalreject = dfix.exportfix(rejectmessage)
     print(finalreject)
-
-
-rejectorder(testmsg)
+    return finalreject
 

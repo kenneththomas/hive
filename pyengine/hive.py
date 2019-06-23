@@ -3,6 +3,7 @@ import riskcheck
 import marketdata
 import mop
 import uuid
+import mutombo
 
 #instance configuration
 hostname = 'nyastdev' #not sure if worth implementing something that actually grabs the hostname/ip
@@ -121,7 +122,12 @@ def adminmgr(adminmsg):
 def hiverouter(fix):
     quantity = fix.get('38')
     ordertype = fix.get('40')
-    if ordertype == '1': # market order destinations
+    if '57' not in fix.keys():
+        fix['57'] = 'unknown'
+    if fix['57'] == 'MATU':
+        result = mutombo.rejectorder(dfix.exportfix(fix))
+        return dfix.parsefix(result)
+    elif ordertype == '1': # market order destinations
         if quantity == '100': # order quantity 100 doesn't need to be sliced
             outboundfix = mop.mop(fix)
         else: # try to slice
