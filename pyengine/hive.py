@@ -204,3 +204,15 @@ def hundoslice(fix): # slices larger order into multiple orders of 100 qty
     else:
         fix = dfix.tweak(fix, '38', origqty)  # orig qty
         return fix
+
+def quoter(fix):
+    mdrequesttype = fix.get('263')
+    norelatedsymbols = fix.get('146')
+    symbol = fix.get('55')
+    if mdrequesttype != 1:
+        response = rejectorder(fix, 'only snapshot (263=1) currently supported')
+        return response
+    if norelatedsymbols > 1:
+        response = rejectorder(fix, 'only one symbol allowed for market data requests')
+        return response
+    return response

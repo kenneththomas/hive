@@ -9,6 +9,10 @@ async def fixserver(websocket, path):
         print("received message: " + name)
         if ';35=' in name:
             fixmsg = dfix.dfixformat(name)
+            parsed = dfix.parsefix(fixmsg)
+            sendercomp = parsed.get('49')
+            targetcomp = parsed.get('56')
+            print("processing FIX message from sender " + sendercomp + " to target " + targetcomp)
             fixmsg = hive.fixgateway(name)
         else:
             fixmsg = "invalid message"
