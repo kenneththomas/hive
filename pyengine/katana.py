@@ -1,7 +1,6 @@
 def matcher(qty,book):
 
     slices = []
-    slicefix = []
 
     print(book)
     print(qty)
@@ -14,17 +13,18 @@ def matcher(qty,book):
             return slices
 
         # all of these variables should be replaced by the best possible option
-        lowestprice = 100000 # todo - first quote we look at should be the lowest price as opposed to this arbitrary high number
-        lowestid = 'none' # this becomes the quoteid of the best quote in the book
-        quoteqty = 0
+        lowestprice = 'none'
+        lowestid = 'none'
 
         for quote in book.keys():
             print('trying quote {}'.format(quote))
             price = book[quote][0]
-            qqty = book[quote][1]
-            exchange = book[quote][2]
 
-            if price < lowestprice:
+            # the first quote is always the lowest price
+            if lowestprice == 'none':
+                lowestprice = price
+
+            if price <= lowestprice:
                 print('{}:{} < {}:{}'.format(quote,price,lowestid,lowestprice))
                 lowestprice = price
                 lowestid = quote
