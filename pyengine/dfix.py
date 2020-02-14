@@ -3,6 +3,8 @@ from collections import OrderedDict as odict
 
 #parse fixmsg into ordered dictionary for python processing
 def parsefix(fixmsg):
+    if fixmsg[-1] == ';':
+        fixmsg = fixmsg[:-1]
     return odict(item.split("=") for item in fixmsg.split(";"))
 
 

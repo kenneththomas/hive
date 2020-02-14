@@ -7,6 +7,7 @@ import dfix
 import riskcheck
 import hive
 import mop
+import katana
 
 #reuse this one fixdict
 fixdict = collections.OrderedDict({
@@ -331,6 +332,26 @@ class admintest(unittest.TestCase):
         check = hive.fixgateway(fix2)
         self.assertTrue('58=FIX Session blocked' not in check)
 
+class katanatest(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_match(self):
+
+        # given the below book, we should use the quotes in this order - A,C,B
+        book1 = {
+            'A' : [10.00,100,'NYSE'],
+            'B' : [10.05,600,'NSDQ'],
+            'C' : [10.03,300,'BATS'],
+        }
+        slices = katana.matcher(1000,book1)
+
+        # get quoteids
+        q1 = dfix.parsefix(slices[0])['11']
+        q2 = dfix.parsefix(slices[1])['11']
+        q3 = dfix.parsefix(slices[2])['11']
+
+        self.assertEqual(q1 + q2 + q3,'ACB')
 
 if __name__ == '__main__':
     unittest.main()
