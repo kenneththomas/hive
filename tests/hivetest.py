@@ -353,5 +353,19 @@ class katanatest(unittest.TestCase):
 
         self.assertEqual(q1 + q2 + q3,'ACB')
 
+    def test_limitprice(self):
+
+        # given the below book, we should only use quote A
+
+        book2 = {
+            'A' : [10.00,100,'NYSE'],
+            'B' : [10.05,600,'NSDQ'],
+            'C' : [10.03,300,'BATS'],
+        }
+
+        remainingbook = katana.quotetrimmer(10.01,book2)
+
+        self.assertEqual(len(remainingbook.keys()),1)
+
 if __name__ == '__main__':
     unittest.main()
