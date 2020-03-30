@@ -56,3 +56,11 @@ def matcher(qty,book):
         print(exslice)
 
     return slices
+
+def quotetrimmer(limitprice,book):
+    for quote in book.copy():
+        quoteprice = book[quote][0]
+        if quoteprice > limitprice:
+            print('removing quote {} from book as it does not meet limit price criteria'.format(quote))
+            del book[quote]
+    return book
