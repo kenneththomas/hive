@@ -367,5 +367,19 @@ class katanatest(unittest.TestCase):
 
         self.assertEqual(len(remainingbook.keys()),1)
 
+    def test_directed(self):
+
+        # given the below book, we should only use quote C
+
+        book2 = {
+            'A' : [10.00,100,'NYSE'],
+            'B' : [10.05,600,'NSDQ'],
+            'C' : [10.03,300,'BATS'],
+        }
+
+        remainingbook = katana.directedtrimmer('BATS',book2)
+
+        self.assertEqual(len(remainingbook.keys()),1)
+
 if __name__ == '__main__':
     unittest.main()

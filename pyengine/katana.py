@@ -64,3 +64,11 @@ def quotetrimmer(limitprice,book):
             print('removing quote {} from book as it does not meet limit price criteria'.format(quote))
             del book[quote]
     return book
+
+def directedtrimmer(directedvenue,book):
+    for quote in book.copy():
+        venue = book[quote][2]
+        if venue != directedvenue:
+            print('removing quote {} from book as it does not meet directed venue criteria'.format(quote))
+            del book[quote]
+    return book
