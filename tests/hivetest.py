@@ -355,31 +355,44 @@ class katanatest(unittest.TestCase):
 
     def test_limitprice(self):
 
-        # given the below book, we should only use quote A
+        # given the below book, a limit price of 10.01 should eliminate quotes B and C
 
         book2 = {
             'A' : [10.00,100,'NYSE'],
             'B' : [10.05,600,'NSDQ'],
             'C' : [10.03,300,'BATS'],
+            'D' : [10.01,100,'BATS'],
         }
 
-        remainingbook = katana.quotetrimmer(10.01,book2)
+        limitprice = 10.01
+        remainingbook = katana.quotetrimmer(limitprice,book2)
 
-        self.assertEqual(len(remainingbook.keys()),1)
+        limittestpass = True
+        for quote in remainingbook.keys():
+            if remainingbook[quote][0] > limitprice:
+                limittestpass=False
+
+        self.assertTrue(limittestpass)
 
     def test_directed(self):
 
-        # given the below book, we should only use quote C
+        # given the below book and a directed order for BATS we would only use quotes C and D
 
         book2 = {
             'A' : [10.00,100,'NYSE'],
             'B' : [10.05,600,'NSDQ'],
             'C' : [10.03,300,'BATS'],
+            'D' : [10.01, 100, 'BATS'],
         }
+        directvenue = 'BATS'
+        remainingbook = katana.directedtrimmer(directvenue,book2)
 
-        remainingbook = katana.directedtrimmer('BATS',book2)
+        directtestpass = True
+        for quote in remainingbook.keys():
+            if remainingbook[quote][2] != directvenue:
+                directtestpass=False
 
-        self.assertEqual(len(remainingbook.keys()),1)
+        self.assertTrue(directtestpass)
 
 if __name__ == '__main__':
     unittest.main()
