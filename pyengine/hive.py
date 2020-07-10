@@ -20,20 +20,18 @@ blockedsessions=[] # tag 49 values which will be rejected
 
 def fixgateway(fix):
     clientorder = dfix.parsefix(fix)
-    msgtype = clientorder.get('35')
-    if not fixvalidator(valid35, msgtype):     # check for valid values of tag 35
-        clientorder = rejectorder(clientorder,msgtype + ' is an unsupported value of Tag 35 (MsgType)')
+    cf = dfix.fix(fix)
+    if not fixvalidator(valid35, cf.msgtype):     # check for valid values of tag 35
+        clientorder = rejectorder(clientorder,cf.msgtype + ' is an unsupported value of Tag 35 (MsgType)')
         return dfix.exportfix(clientorder)
-    if msgtype == 'UAC': #UAC is admin command
+    if cf.msgtype == 'UAC': #UAC is admin command
         clientorder = adminmgr(clientorder)
         return dfix.exportfix(clientorder)
-    orderid = clientorder.get('11')
-    sendercompid = clientorder.get('49')
     #check for blocked client
-    if sendercompid in blockedsessions: # blocked sessions
+    if cf.sender in blockedsessions: # blocked sessions
         return dfix.exportfix(rejectorder(clientorder, 'FIX Session blocked'))
     if tag11validation:
-        uniqclord = sendercompid + '-' + orderid # used so different clients can use same value of tag 11
+        uniqclord = cf.sender + '-' + cf.orderid # used so different clients can use same value of tag 11
         if uniqclord in orderidpool: #reject if duplicate 49 - 11
             clientorder = rejectorder(clientorder,'Duplicate value of tag 11 is not allowed')
             return dfix.exportfix(clientorder)

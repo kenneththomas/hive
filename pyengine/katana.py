@@ -33,9 +33,10 @@ def matcher(qty,book):
 
             ordqty = bqqty # in a normal case we use the full quote
             if bqqty > qty: # if we dont need the whole thing, we just use what we actually need
+                print('quote is larger than needed, only sending order with needed qty: {}'.format(qty))
                 ordqty = qty
 
-        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(lowestid,bqqty,lowestprice,bexch)
+        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(lowestid,ordqty,qty,lowestprice,bexch)
         print(exslice)
         slices.append(exslice)
 
