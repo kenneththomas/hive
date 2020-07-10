@@ -36,7 +36,7 @@ def matcher(qty,book):
                 print('quote is larger than needed, only sending order with needed qty: {}'.format(qty))
                 ordqty = qty
 
-        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(lowestid,ordqty,qty,lowestprice,bexch)
+        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(lowestid,ordqty,lowestprice,bexch)
         print(exslice)
         slices.append(exslice)
 
