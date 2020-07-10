@@ -7,5 +7,8 @@ import hive
 import dfix
 
 fix = '8=DFIX;11=4a4964c6;49=Tay;56=Spicii;35=D;55=ZVZZT;54=1;38=300;44=1000;40=1;10=END'
-fix = dfix.parsefix(fix)
-execreport = hive.hundoslice(fix)
+#fix = dfix.parsefix(fix)
+#execreport = hive.hundoslice(fix)
+dfix = dfix.parsefix(fix)
+
+print(dfix)
