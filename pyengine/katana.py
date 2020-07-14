@@ -1,21 +1,19 @@
-def matcher(side,qty,book):
-
-    # buying or selling determines whether we look for the lowest or highest price
+def compareprice(side, p1, p2):
     if side == 'buy':
-        print('order is BUY, will check market data for lowest price')
-        def compareprice(p1,p2):
-            if p1 <= p2:
-                return True
-            else:
-                return False
-
+        print('order is BUY, checking if {} is less than {}'.format(p1,p2))
+        if p1 <= p2:
+            return True
+        else:
+            return False
     elif side == 'sell':
-        print('order is SELL, will check market data for highest price')
-        def compareprice(p1,p2):
-            if p1 >= p2:
-                return True
-            else:
-                return False
+        print('order is SELL, checking if {} is greater than {}'.format(p1,p2))
+        if p1 >= p2:
+            return True
+        else:
+            return False
+
+
+def matcher(side,qty,book):
 
     slices = []
 
@@ -41,8 +39,8 @@ def matcher(side,qty,book):
             if bestprice == 'none':
                 bestprice = price
 
-            if compareprice(price,bestprice):
-                print('{}:{} < {}:{}'.format(quote,price,bestid,bestprice))
+            if compareprice(side,price,bestprice):
+                print('{}:{} selected over {}:{}'.format(quote,price,bestid,bestprice))
                 bestprice = price
                 bestid = quote
                 bqqty = book[quote][1]
@@ -60,12 +58,9 @@ def matcher(side,qty,book):
         oldqty = qty
         qty = qty - bqqty
         print('qty = {} - {} = {} remaining'.format(oldqty,ordqty,qty))
-
+        print(book)
         # remove used quote
         print('removing used quote {}'.format(bestid))
-
-        print(bestid)
-        print(book)
         del book[bestid]
         print(book)
 
@@ -76,25 +71,10 @@ def matcher(side,qty,book):
     return slices
 
 def quotetrimmer(side,limitprice,book):
-    if side == 'buy':
-        print('order is BUY, will check market data for lowest price')
-        def compareprice(p1,p2):
-            if p1 <= p2:
-                return True
-            else:
-                return False
-
-    elif side == 'sell':
-        print('order is SELL, will check market data for highest price')
-        def compareprice(p1,p2):
-            if p1 >= p2:
-                return True
-            else:
-                return False
 
     for quote in book.copy():
         quoteprice = book[quote][0]
-        if compareprice(limitprice,quoteprice):
+        if compareprice(side,limitprice,quoteprice):
             print('removing quote {} from book as it does not meet limit price criteria'.format(quote))
             del book[quote]
     return book
