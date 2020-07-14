@@ -105,6 +105,10 @@ class dfixtest(unittest.TestCase):
         newfix = dfix.multitweak(oldfix,'40=1;8=DFIX')
         self.assertTrue(newfix.get('40') == '1' and newfix.get('8') == 'DFIX')
 
+    def test_newfix(self):
+        sample = '35=D;49=SENDER;56=RECEIVER;11=orderid;'
+        a = dfix.fix(sample)
+        print(a.msgtype)
 
 
 class risktest(unittest.TestCase):

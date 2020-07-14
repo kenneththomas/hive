@@ -31,11 +31,12 @@ def matcher(qty,book):
                 bqqty = book[quote][1]
                 bexch = book[quote][2]
 
-            ordqty = bqqty # in a normal case we use the full quote
-            if bqqty > qty: # if we dont need the whole thing, we just use what we actually need
-                ordqty = qty
+                ordqty = bqqty # in a normal case we use the full quote
+                if bqqty > qty: # if we dont need the whole thing, we just use what we actually need
+                    print('quote is larger than needed {}, will only use needed qty: {}'.format(qty,bqqty))
+                    ordqty = qty
 
-        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(lowestid,bqqty,lowestprice,bexch)
+        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(lowestid,ordqty,lowestprice,bexch)
         print(exslice)
         slices.append(exslice)
 
