@@ -17,7 +17,7 @@ def katana_action():
     for i in range(1,quotes):
         mdbook[str(uuid.uuid4())[0:10]] = [r.randint(1,100),r.randint(1,10) * 100,r.choice(exchanges)]
 
-    katana.matcher(r.randint(1,20) * 100,mdbook)
+    katana.matcher('buy',r.randint(1,20) * 100,mdbook)
 
 for i in range(0,1):
     katana_action()

@@ -1,4 +1,19 @@
-def matcher(qty,book):
+def compareprice(side, p1, p2):
+    if side == 'buy':
+        print('order is BUY, checking if {} is less than {}'.format(p1,p2))
+        if p1 <= p2:
+            return True
+        else:
+            return False
+    elif side == 'sell':
+        print('order is SELL, checking if {} is greater than {}'.format(p1,p2))
+        if p1 >= p2:
+            return True
+        else:
+            return False
+
+
+def matcher(side,qty,book):
 
     slices = []
 
@@ -13,21 +28,21 @@ def matcher(qty,book):
             return slices
 
         # all of these variables should be replaced by the best possible option
-        lowestprice = 'none'
-        lowestid = 'none'
+        bestprice = 'none'
+        bestid = 'none'
 
         for quote in book.keys():
             print('trying quote {}'.format(quote))
             price = book[quote][0]
 
-            # the first quote is always the lowest price
-            if lowestprice == 'none':
-                lowestprice = price
+            # the first quote is inherently the best price as there is nothing to compare to
+            if bestprice == 'none':
+                bestprice = price
 
-            if price <= lowestprice:
-                print('{}:{} < {}:{}'.format(quote,price,lowestid,lowestprice))
-                lowestprice = price
-                lowestid = quote
+            if compareprice(side,price,bestprice):
+                print('{}:{} selected over {}:{}'.format(quote,price,bestid,bestprice))
+                bestprice = price
+                bestid = quote
                 bqqty = book[quote][1]
                 bexch = book[quote][2]
 
@@ -36,20 +51,17 @@ def matcher(qty,book):
                     print('quote is larger than needed {}, will only use needed qty: {}'.format(qty,bqqty))
                     ordqty = qty
 
-        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(lowestid,ordqty,lowestprice,bexch)
+        exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(bestid,ordqty,bestprice,bexch)
         print(exslice)
         slices.append(exslice)
 
         oldqty = qty
         qty = qty - bqqty
         print('qty = {} - {} = {} remaining'.format(oldqty,ordqty,qty))
-
-        # remove used quote
-        print('removing used quote {}'.format(lowestid))
-
-        print(lowestid)
         print(book)
-        del book[lowestid]
+        # remove used quote
+        print('removing used quote {}'.format(bestid))
+        del book[bestid]
         print(book)
 
     print('order completed')
@@ -58,10 +70,11 @@ def matcher(qty,book):
 
     return slices
 
-def quotetrimmer(limitprice,book):
+def quotetrimmer(side,limitprice,book):
+
     for quote in book.copy():
         quoteprice = book[quote][0]
-        if quoteprice > limitprice:
+        if compareprice(side,limitprice,quoteprice):
             print('removing quote {} from book as it does not meet limit price criteria'.format(quote))
             del book[quote]
     return book
