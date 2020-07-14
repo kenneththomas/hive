@@ -340,7 +340,7 @@ class katanatest(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_match(self):
+    def test_buy_match(self):
 
         # given the below book, we should use the quotes in this order - A,C,B
         book1 = {
@@ -348,7 +348,7 @@ class katanatest(unittest.TestCase):
             'B' : [10.05,600,'NSDQ'],
             'C' : [10.03,300,'BATS'],
         }
-        slices = katana.matcher(1000,book1)
+        slices = katana.matcher('buy',1000,book1)
 
         # get quoteids
         q1 = dfix.parsefix(slices[0])['11']
@@ -357,7 +357,24 @@ class katanatest(unittest.TestCase):
 
         self.assertEqual(q1 + q2 + q3,'ACB')
 
-    def test_limitprice(self):
+    def test_sell_match(self):
+
+        # given the below book, we should use the quotes in this order - A,C,B
+        book1 = {
+            'A' : [10.00,100,'NYSE'],
+            'B' : [10.05,600,'NSDQ'],
+            'C' : [10.03,300,'BATS'],
+        }
+        slices = katana.matcher('sell',1000,book1)
+
+        # get quoteids
+        q1 = dfix.parsefix(slices[0])['11']
+        q2 = dfix.parsefix(slices[1])['11']
+        q3 = dfix.parsefix(slices[2])['11']
+
+        self.assertEqual(q1 + q2 + q3,'BCA')
+
+    def test_limitprice_buy(self):
 
         # given the below book, a limit price of 10.01 should eliminate quotes B and C
 
@@ -369,12 +386,33 @@ class katanatest(unittest.TestCase):
         }
 
         limitprice = 10.01
-        remainingbook = katana.quotetrimmer(limitprice,book2)
+        remainingbook = katana.quotetrimmer('buy',limitprice,book2)
 
         limittestpass = True
         for quote in remainingbook.keys():
             if remainingbook[quote][0] > limitprice:
                 limittestpass=False
+
+        self.assertTrue(limittestpass)
+
+    def test_limitprice_sell(self):
+
+        # given the below book, a limit price of 10.02 should eliminate quotes A and D
+
+        book2 = {
+            'A': [10.00, 100, 'NYSE'],
+            'B': [10.05, 600, 'NSDQ'],
+            'C': [10.03, 300, 'BATS'],
+            'D': [10.01, 100, 'BATS'],
+        }
+
+        limitprice = 10.02
+        remainingbook = katana.quotetrimmer('sell', limitprice, book2)
+
+        limittestpass = True
+        for quote in remainingbook.keys():
+            if remainingbook[quote][0] < limitprice:
+                limittestpass = False
 
         self.assertTrue(limittestpass)
 
