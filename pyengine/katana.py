@@ -45,7 +45,6 @@ def matcher(side,qty,book):
                     print('following quotes were evaluated but not selected for this round: {}'.format(unusedquotes))
                     unusedquotes = ''
 
-                print('selected best quote:{}:{}'.format(quote,price))
                 bestprice = price
                 bestid = quote
                 bqqty = book[quote][1]
@@ -58,6 +57,7 @@ def matcher(side,qty,book):
             else:
                 unusedquotes = '{} {} ({} @ {}),'.format(unusedquotes,quote,qqty,price)
 
+        print('selected best quote:{}:{}'.format(quote,price))
         exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(bestid,ordqty,bestprice,bexch)
         print(exslice)
         slices.append(exslice)
