@@ -1,12 +1,10 @@
 def compareprice(side, p1, p2):
     if side == 'buy':
-        print('order is BUY, checking if {} is less than {}'.format(p1,p2))
         if p1 <= p2:
             return True
         else:
             return False
     elif side == 'sell':
-        print('order is SELL, checking if {} is greater than {}'.format(p1,p2))
         if p1 >= p2:
             return True
         else:
@@ -16,6 +14,7 @@ def compareprice(side, p1, p2):
 def matcher(side,qty,book):
 
     slices = []
+    unusedquotes = ''
 
     print(book)
     print(qty)
@@ -32,25 +31,34 @@ def matcher(side,qty,book):
         bestid = 'none'
 
         for quote in book.keys():
-            print('trying quote {}'.format(quote))
             price = book[quote][0]
+            qqty = book[quote][1]
 
             # the first quote is inherently the best price as there is nothing to compare to
             if bestprice == 'none':
                 bestprice = price
 
             if compareprice(side,price,bestprice):
-                print('{}:{} selected over {}:{}'.format(quote,price,bestid,bestprice))
+
                 bestprice = price
                 bestid = quote
                 bqqty = book[quote][1]
                 bexch = book[quote][2]
 
-                ordqty = bqqty # in a normal case we use the full quote
-                if bqqty > qty: # if we dont need the whole thing, we just use what we actually need
-                    print('quote is larger than needed {}, will only use needed qty: {}'.format(qty,bqqty))
-                    ordqty = qty
+            else:
+                unusedquotes = '{} {} ({} @ {}),'.format(unusedquotes,quote,qqty,price)
 
+        ordqty = bqqty # in a normal case we use the full quote
+        if bqqty > qty: # if we dont need the whole thing, we just use what we actually need
+            print('quote is larger than needed {}, will only use needed qty from available {}'.format(qty,bqqty))
+            ordqty = qty
+
+        # log quotes that were evaluated but not chosen on a single line
+        if len(unusedquotes) > 0:
+            print('following quotes were evaluated but not selected for this round: {}'.format(unusedquotes))
+            unusedquotes = ''
+
+        print('selected best quote:{}:{}'.format(quote,price))
         exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(bestid,ordqty,bestprice,bexch)
         print(exslice)
         slices.append(exslice)
