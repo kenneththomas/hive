@@ -32,6 +32,7 @@ def matcher(side,qty,book):
 
         for quote in book.keys():
             price = book[quote][0]
+            qqty = book[quote][1]
 
             # the first quote is inherently the best price as there is nothing to compare to
             if bestprice == 'none':
@@ -44,7 +45,7 @@ def matcher(side,qty,book):
                     print('following quotes were evaluated but not selected for this round: {}'.format(unusedquotes))
                     unusedquotes = ''
 
-                print('{}:{} selected over {}:{}'.format(quote,price,bestid,bestprice))
+                print('selected best quote:{}:{}'.format(quote,price))
                 bestprice = price
                 bestid = quote
                 bqqty = book[quote][1]
@@ -55,7 +56,7 @@ def matcher(side,qty,book):
                     print('quote is larger than needed {}, will only use needed qty from available {}'.format(qty,bqqty))
                     ordqty = qty
             else:
-                unusedquotes = '{} {} ({} @ {}),'.format(unusedquotes,quote,book[quote][1],price)
+                unusedquotes = '{} {} ({} @ {}),'.format(unusedquotes,quote,qqty,price)
 
         exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(bestid,ordqty,bestprice,bexch)
         print(exslice)
