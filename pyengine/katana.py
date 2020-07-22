@@ -1,9 +1,9 @@
-def compareprice(side, p1, p2, q1, q2):
+def compareprice(side, p1, p2, q1=1, q2=0):
     if side == 'buy':
         if p1 < p2:
             return True
         if p1 == p2:
-            if q1 > q2:
+            if q1 >= q2:
                 return True
             else:
                 return False
@@ -13,7 +13,7 @@ def compareprice(side, p1, p2, q1, q2):
         if p1 > p2:
             return True
         if p1 == p2:
-            if q1 > q2:
+            if q1 >= q2:
                 return True
             else:
                 return False
@@ -93,7 +93,7 @@ def quotetrimmer(side,limitprice,book):
 
     for quote in book.copy():
         quoteprice = book[quote][0]
-        if compareprice(side,limitprice,quoteprice,1,0):
+        if compareprice(side,limitprice,quoteprice):
             print('removing quote {} from book as it does not meet limit price criteria'.format(quote))
             del book[quote]
     return book
