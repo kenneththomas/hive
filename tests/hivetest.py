@@ -342,11 +342,12 @@ class katanatest(unittest.TestCase):
 
     def test_buy_match(self):
 
-        # given the below book, we should use the quotes in this order - A,C,B
+        # given the below book, we should use the quotes in this order - A,C,D,B
         book1 = {
             'A' : [10.00,100,'NYSE'],
-            'B' : [10.05,600,'NSDQ'],
+            'B' : [10.05,500,'NSDQ'],
             'C' : [10.03,300,'BATS'],
+            'D' : [10.03,100,'NYSE'],
         }
         slices = katana.matcher('buy',1000,book1)
 
@@ -354,16 +355,18 @@ class katanatest(unittest.TestCase):
         q1 = dfix.parsefix(slices[0])['11']
         q2 = dfix.parsefix(slices[1])['11']
         q3 = dfix.parsefix(slices[2])['11']
+        q4 = dfix.parsefix(slices[3])['11']
 
-        self.assertEqual(q1 + q2 + q3,'ACB')
+        self.assertEqual(q1 + q2 + q3 + q4,'ACDB')
 
     def test_sell_match(self):
 
-        # given the below book, we should use the quotes in this order - A,C,B
+        # given the below book, we should use the quotes in this order - B,C,A,D
         book1 = {
-            'A' : [10.00,100,'NYSE'],
-            'B' : [10.05,600,'NSDQ'],
+            'A' : [10.00,200,'NYSE'],
+            'B' : [10.05,400,'NSDQ'],
             'C' : [10.03,300,'BATS'],
+            'D' : [10.00,100,'NSDQ'],
         }
         slices = katana.matcher('sell',1000,book1)
 
@@ -371,8 +374,9 @@ class katanatest(unittest.TestCase):
         q1 = dfix.parsefix(slices[0])['11']
         q2 = dfix.parsefix(slices[1])['11']
         q3 = dfix.parsefix(slices[2])['11']
+        q4 = dfix.parsefix(slices[3])['11']
 
-        self.assertEqual(q1 + q2 + q3,'BCA')
+        self.assertEqual(q1 + q2 + q3 + q4,'BCAD')
 
     def test_limitprice_buy(self):
 

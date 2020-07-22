@@ -1,12 +1,22 @@
-def compareprice(side, p1, p2):
+def compareprice(side, p1, p2, q1=1, q2=0):
     if side == 'buy':
-        if p1 <= p2:
+        if p1 < p2:
             return True
+        if p1 == p2:
+            if q1 >= q2:
+                return True
+            else:
+                return False
         else:
             return False
     elif side == 'sell':
-        if p1 >= p2:
+        if p1 > p2:
             return True
+        if p1 == p2:
+            if q1 >= q2:
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -37,8 +47,9 @@ def matcher(side,qty,book):
             # the first quote is inherently the best price as there is nothing to compare to
             if bestprice == 'none':
                 bestprice = price
+                bqqty = 0
 
-            if compareprice(side,price,bestprice):
+            if compareprice(side,price,bestprice,qqty,bqqty):
 
                 bestprice = price
                 bestid = quote
@@ -58,7 +69,7 @@ def matcher(side,qty,book):
             print('following quotes were evaluated but not selected for this round: {}'.format(unusedquotes))
             unusedquotes = ''
 
-        print('selected best quote:{}:{}'.format(quote,price))
+        print('selected best quote:{}:{}'.format(bestid,bestprice))
         exslice = '35=D;40=2;54=1;11={};38={};44={};57={};'.format(bestid,ordqty,bestprice,bexch)
         print(exslice)
         slices.append(exslice)
