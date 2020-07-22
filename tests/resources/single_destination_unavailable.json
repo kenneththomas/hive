@@ -1,0 +1,10 @@
+{
+    "routeid": "single_destination_test_unavailable",
+    "type": "single",
+    "destinations": [
+        {
+            "destination": "maspeth:exch1",
+            "available": "no"
+        }
+    ]
+}

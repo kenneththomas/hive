@@ -1,0 +1,10 @@
+{
+    "routeid": "bad_routetype_test",
+    "type": "bad",
+    "destinations": [
+        {
+            "destination": "nowhere",
+            "available": "yes"
+        }
+    ]
+}

@@ -6,3 +6,4 @@ install:
 script:
   - python tests/hivetest.py
   - python tests/katana_action.py
+  - python tests/pathfinder_test.py
