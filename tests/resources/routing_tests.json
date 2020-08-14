@@ -1,0 +1,34 @@
+{
+"testroutes": [
+    {
+        "routeid": "bad_routetype_test",
+        "type": "bad",
+        "destinations": [
+            {
+                "destination": "nowhere",
+                "available": "yes"
+            }
+        ]
+    },
+    {
+        "routeid": "single_destination_test",
+        "type": "single",
+        "destinations": [
+            {
+                "destination": "maspeth:exch1",
+                "available": "yes"
+            }
+        ]
+    },
+    {
+        "routeid": "single_destination_test_unavailable",
+        "type": "single",
+        "destinations": [
+            {
+                "destination": "maspeth:exch1",
+                "available": "no"
+            }
+        ]
+    }
+]
+}
