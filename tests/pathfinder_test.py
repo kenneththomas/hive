@@ -43,5 +43,15 @@ class pathfindertest(unittest.TestCase):
         destination = pf.pathfinder(test_route)
         self.assertFalse(destination)
 
+    def test_priority_dest1(self):
+        test_route = testroutes_map['priority_test_dest1']
+        destination = pf.pathfinder(test_route)
+        self.assertEqual(destination,'maspeth:exch1')
+
+    def test_priority_dest3(self):
+        test_route = testroutes_map['priority_test_dest3']
+        destination = pf.pathfinder(test_route)
+        self.assertEqual(destination,'bushwick:exch1')
+
 if __name__ == '__main__':
     unittest.main()

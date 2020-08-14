@@ -29,6 +29,48 @@
                 "available": "no"
             }
         ]
+    },
+    {
+        "routeid": "priority_test_dest1",
+        "type": "priority",
+        "destinations": [
+            {
+                "destination": "maspeth:exch1",
+                "priority": 1,
+                "available": "yes"
+            },
+            {
+                "destination": "maspeth:exch2",
+                "priority": 2,
+                "available": "yes"
+            },
+            {
+                "destination": "bushwick:exch1",
+                "priority": 3,
+                "available": "yes"
+            }
+        ]
+    },
+    {
+        "routeid": "priority_test_dest3",
+        "type": "priority",
+        "destinations": [
+            {
+                "destination": "maspeth:exch1",
+                "priority": 1,
+                "available": "no"
+            },
+            {
+                "destination": "maspeth:exch2",
+                "priority": 2,
+                "available": "no"
+            },
+            {
+                "destination": "bushwick:exch1",
+                "priority": 3,
+                "available": "yes"
+            }
+        ]
     }
 ]
 }
