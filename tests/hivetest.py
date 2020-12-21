@@ -8,6 +8,7 @@ import riskcheck
 import hive
 import mop
 import katana
+import rain
 
 #reuse this one fixdict
 fixdict = collections.OrderedDict({
@@ -439,6 +440,27 @@ class katanatest(unittest.TestCase):
                 directtestpass=False
 
         self.assertTrue(directtestpass)
+
+class raintest(unittest.TestCase):
+    def setUp(self):
+        rain.schema = rain.parse_schema('tests/resources/rain_schema.json')
+        pass
+
+    def test_maxqty_defined_pass(self):
+        check = rain.process_order('kenneth', 100)
+        self.assertTrue(check)
+
+    def test_maxqty_defined_reject(self):
+        check = rain.process_order('kenneth', 1001)
+        self.assertFalse(check)
+
+    def test_maxqty_default_pass(self):
+        check = rain.process_order('benneth', 99)
+        self.assertTrue(check)
+
+    def test_maxqty_default_reject(self):
+        check = rain.process_order('benneth', 101)
+        self.assertFalse(check)
 
 if __name__ == '__main__':
     unittest.main()
