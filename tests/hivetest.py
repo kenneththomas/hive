@@ -443,12 +443,11 @@ class katanatest(unittest.TestCase):
 
 class raintest(unittest.TestCase):
     def setUp(self):
-        rain.schema = rain.parse_schema('resources/rain_schema.json')
+        rain.schema = rain.parse_schema('tests/resources/rain_schema.json')
         pass
 
     def test_maxqty_defined_pass(self):
         check = rain.process_order('kenneth', 100)
-
         self.assertTrue(check)
 
     def test_maxqty_defined_reject(self):
