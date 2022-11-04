@@ -11,6 +11,8 @@ def parsefix(fixmsg):
 #convert ordered dictionary into fix message
 def exportfix(fixdict):
     genfix=''
+    #move tag 10 to end
+    fixdict.move_to_end('10')
     for key,val in fixdict.items():
         if key != '10':
             genfix = genfix + str(key) + "=" + str(val) + ';'
