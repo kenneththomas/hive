@@ -11,7 +11,7 @@ import uuid
 import datetime
 
 class testutils():
-    def generic_order(desiredtags='8=FIX.4.2'):
+    def generic_order(desiredtags='8=FIX.4.2',exported=False):
         tags = collections.OrderedDict()
 
         tags['8'] = 'FIX.4.2'
@@ -22,6 +22,7 @@ class testutils():
         tags['11'] = str(uuid.uuid4())[:10]
         #set tag 52 to timestamp
         tags['52'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
+        #tags['1'] = 'TEST_ACCOUNT'
         tags['54'] = '1'
         tags['55'] = 'ZVZZT'
         tags['40'] = '2'
@@ -34,10 +35,14 @@ class testutils():
         for tag in parsed.keys():
             tags[tag] = parsed[tag]
 
-        return dfix.exportfix(tags)
+        if exported:
+            return dfix.exportfix(tags)
+        else:
+            return tags
 
-    def validator(output, expected):
-        output = dfix.parsefix(output)
+    def validator(output, expected, parsed=True):
+        if not parsed:
+            output = dfix.parsefix(output)
         expected = dfix.parsefix(expected)
         for tag in expected.keys():
             if tag not in output.keys():
@@ -53,12 +58,24 @@ class TestYeet(unittest.TestCase):
         self.assertFalse(parse_failure_result)
 
     def test_unknown_sendercomp(self):
-        unknown_sendercomp_result = yeet.parse_new_msg(testutils.generic_order('49=rahul.ligma@twitter.com;56=gerg;'))
-        self.assertTrue(testutils.validator(unknown_sendercomp_result, '150=8;'))
+        unknown_sendercomp_result = yeet.parse_new_msg(testutils.generic_order('49=rahul.ligma@twitter.com;56=gerg;',True))
+        self.assertTrue(testutils.validator(unknown_sendercomp_result, '150=8;',False))
     
     def test_unknown_targetcomp(self):
-        unknown_targetcomp_result = yeet.parse_new_msg(testutils.generic_order('49=YEET_DEV;56=nottherightthing;'))
-        self.assertTrue(testutils.validator(unknown_targetcomp_result, '150=8;'))
+        unknown_targetcomp_result = yeet.parse_new_msg(testutils.generic_order('49=YEET_DEV;56=nottherightthing;',True))
+        self.assertTrue(testutils.validator(unknown_targetcomp_result, '150=8;',False))
+
+class TestClientMgr(unittest.TestCase):
+    def test_account_not_found(self):
+        #derive clientid but have account not valid for clientid
+        account_not_found_result = yeet.client_manager(testutils.generic_order('1=baris bank account;'))
+        self.assertTrue(testutils.validator(account_not_found_result, '150=8;109=NO CAP;'))
+
+    def  test_use_default_account(self):
+        #send no value of tag 1 and confirm default account is used
+        use_default_account_result = yeet.client_manager(testutils.generic_order())
+        self.assertTrue(testutils.validator(use_default_account_result, '1=GINGERBREAD;'))
+    
 
 if __name__ == '__main__':
     unittest.main()

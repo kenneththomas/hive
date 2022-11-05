@@ -7,6 +7,9 @@ import devresources as devr
 
 #dev resources, normally this would be in config or database
 clients = devr.clients
+entity = devr.entity
+accounts = devr.accounts
+defaultaccounts = devr.defaultaccounts
 
 def parse_new_msg(fixmsg):
 
@@ -36,6 +39,7 @@ def on_new_msg(pfix):
     client_validation_result = client_validation(sendercompid,targetcompid)
     if client_validation_result[0] == False:
         response = reject_order(pfix, client_validation_result[1])
+        return response
 
     if msgtype == 'D':
         print('on_new_msg() msg is a new order')
@@ -84,4 +88,38 @@ def execreport_builder(fixmsg):
     return fixmsg
 
 def on_new_order(fixmsg):
+
+    fixmsg = client_manager(fixmsg)
+
+    return fixmsg
+
+
+def client_manager(fixmsg):
+    sendercompid =  fixmsg['49']
+    try:
+        clientid = fixmsg['109']
+    except KeyError:
+        print('ClientID missing, will attempt to derive from sendercompid-entity mapping - client_manager()')
+        fixmsg['109'] = entity[sendercompid]
+        clientid = fixmsg['109']
+        print(f'ClientID {clientid} found for {sendercompid}! - client_manager()')
+    if '1' not in fixmsg.keys():
+        #if no account is set, set to default account
+        try:
+            fixmsg['1'] = defaultaccounts[fixmsg['109']]
+            account = fixmsg['1']
+            print(f'Using default account {account} for {clientid} - client_manager()')
+        except KeyError:
+            try:
+                account = fixmsg['1']
+            except KeyError:
+                account = 'guest'
+    else:
+        account = fixmsg['1']
+    
+    #account validation
+    validaccounts = accounts[clientid]
+    if account not in validaccounts:
+        fixmsg = reject_order(fixmsg, f'account "{account}" not found for client "{clientid}"')
+
     return fixmsg
