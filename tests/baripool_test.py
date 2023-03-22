@@ -10,10 +10,16 @@ from collections import OrderedDict
 import unittest
 import devresources as dr
 
+lastusedsendercomp = None
+
 def random_sendercomp():
-    # note that using this actually does put a small risk of breaking the tests due to self-match prevention
-    # but it is more fun this way.
-    return r.choice(list(dr.clients.keys()))
+    # do not reuse lastusedsendercomp, if matched, try again
+    global lastusedsendercomp
+    while True:
+        sendercomp = r.choice(list(dr.clients.keys()))
+        if sendercomp != lastusedsendercomp:
+            lastusedsendercomp = sendercomp
+            return sendercomp
 
 class TestOrderMatchingSimulator(unittest.TestCase):
 
@@ -82,7 +88,32 @@ class TestOrderMatchingSimulator(unittest.TestCase):
         #pass if open qty is 20
         baripool.display_book(baripool.bookshelf['LULU'])
         self.assertEqual(baripool.bookshelf['LULU'][0].qty, 20)
+
+    # send market order, should be rejected (until we implement market orders)
+    def test_market_order(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=FB;38=100;44=150;40=1".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=8
+        self.assertTrue(result.find("150=8") > 0)
+
+    # reject futures order
+    def test_futures_order(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=FB;38=100;44=150;167=FUT".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=8
+        self.assertTrue(result.find("150=8") > 0)
+
+    # reject options order
+    def test_options_order(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=FB;38=100;44=150;167=OPT".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=8
+        self.assertTrue(result.find("150=8") > 0)
         
+
 
 class TestOrderCancellation(unittest.TestCase):
     def setUp(self):
