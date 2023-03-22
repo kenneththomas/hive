@@ -15,6 +15,7 @@ class BariOrder:
         self.qty = int(fix['38'])
         self.limitprice = float(fix['44'])
         self.orderstatus = '0'
+        self.sendercompid = fix['49']
         self.is_canceled = False
 
 
@@ -38,6 +39,11 @@ def generate_execution_report(order, matched_qty, status):
     return report
 
 def matcher(buyer, seller):
+    # Prevent self-match
+    if buyer.sendercompid == seller.sendercompid:
+        print('Self-match prevented! - buyer:', buyer.sendercompid, 'seller:', seller.sendercompid, 'symbol:', buyer.symbol, 'qty:', )
+        return 0
+
     if buyer.limitprice < seller.limitprice:
         return 0
     else:
@@ -94,13 +100,19 @@ def on_new_order(new_order):
 
 
 def display_book(book):
+
+    try:
+        print('Order Book: ', book[0].symbol, 'at', datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3])
+    except IndexError:
+        print('Order Book is empty.')
+
     buys = [order for order in book if order.side == '1']
     sells = [order for order in book if order.side == '2']
 
-    buys_data = [[order.orderid, order.qty, order.limitprice] for order in buys]
-    sells_data = [[order.orderid, order.qty, order.limitprice] for order in sells]
+    buys_data = [[order.orderid, order.qty, order.limitprice, order.sendercompid] for order in buys]
+    sells_data = [[order.orderid, order.qty, order.limitprice, order.sendercompid] for order in sells]
 
-    headers = ['Order ID', 'Quantity', 'Price']
+    headers = ['Order ID', 'Quantity', 'Price','SenderCompID']
 
     print('Buys:')
     print(tabulate(buys_data, headers=headers, tablefmt='grid'))
