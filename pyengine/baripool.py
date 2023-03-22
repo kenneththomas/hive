@@ -9,6 +9,7 @@ bookshelf = {}  # contains books of all symbols
 
 class BariOrder:
     def __init__(self, fix):
+        #mandatory parameters
         self.orderid = fix['11']
         self.side = fix['54']
         self.symbol = fix['55']
@@ -16,6 +17,14 @@ class BariOrder:
         self.limitprice = float(fix['44'])
         self.orderstatus = '0'
         self.sendercompid = fix['49']
+
+        #optional parameters
+        #assume day order if not set
+        self.timeinforce = fix['59'] if '59' in fix else '0'
+        #assume limit order if not set
+        self.ordertype = fix['40'] if '40' in fix else '2'
+
+        #status
         self.is_canceled = False
         self.original_qty = int(fix['38']) # used for calculating the executed quantity
 
@@ -29,15 +38,20 @@ def generate_execution_report(order, matched_qty, status):
     report['54'] = order.side
     report['55'] = order.symbol
     report['150'] = '2' if status == '2' else '1'  # Execution type: '2' for trade, '1' for partial fill
-    report['14'] = matched_qty  # Cumulative quantity executed
-    report['32'] = matched_qty  # Quantity executed for this report
+    report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
+    report['32'] = matched_qty  # Quantity executed for this report (LastShares)
+    report['151'] = order.qty  # LeavesQty (remaining quantity)
     report['31'] = order.limitprice  # Execution price
     report['6'] = order.limitprice  # Average execution price
     report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
     report['52'] = report['60']
     report['30'] = 'BARI'
     report['76'] = 'BARI'
-    return report
+
+    #also print as fix
+    print(dfix.exportfix(report))
+    
+    return report  # Return the report
 
 def matcher(buyer, seller):
     # Prevent self-match
@@ -66,7 +80,6 @@ def matcher(buyer, seller):
 
 
 def evaluate_book(new_order, book):
-
     potential_matches = [
         order for order in book
         if order.side != new_order.side and not order.is_canceled
@@ -85,7 +98,12 @@ def evaluate_book(new_order, book):
                 break
 
     if new_order.qty > 0:
-        book.append(new_order)
+        if new_order.timeinforce != '3':
+            book.append(new_order)
+        else:
+            print(f"Immediate or Cancel order {new_order.orderid} not fully executed. Remaining quantity: {new_order.qty}")
+            unfilled_ioc_exec_report = generate_unfilled_ioc_execution_report(new_order)
+            print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
         bookshelf[new_order.symbol] = book
 
 
@@ -95,12 +113,18 @@ def on_new_order(new_order):
 
     if new_order.symbol not in bookshelf.keys():
         bookshelf[new_order.symbol] = [new_order]
+        # IOCs will create the book if there are is no existing book but will immediately cancel.
+        if new_order.timeinforce == '3':
+            bookshelf[new_order.symbol] = []
+            print(f"Immediate or Cancel order {new_order.orderid} not fully executed. Remaining quantity: {new_order.qty}")
+            unfilled_ioc_exec_report = generate_unfilled_ioc_execution_report(new_order)
+            print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
     else:
         display_book(bookshelf[new_order.symbol])
         evaluate_book(new_order, bookshelf[new_order.symbol])
 
 
-def display_book(book):
+def display_book_legacy(book):
 
     try:
         print('Order Book: ', book[0].symbol, 'at', datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3])
@@ -119,6 +143,42 @@ def display_book(book):
     print(tabulate(buys_data, headers=headers, tablefmt='grid'))
     print('Sells:')
     print(tabulate(sells_data, headers=headers, tablefmt='grid'))
+
+def display_book(book):
+    try:
+        print('Order Book: ', book[0].symbol, 'at', datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3])
+    except IndexError:
+        print('Order Book is empty.')
+
+    buys = [order for order in book if order.side == '1']
+    sells = [order for order in book if order.side == '2']
+
+    max_rows = max(len(buys), len(sells))
+    combined_data = []
+
+    for i in range(max_rows):
+        row = []
+        if i < len(buys):
+            buy_order = buys[i]
+            row.extend([buy_order.orderid, buy_order.sendercompid, buy_order.original_qty, buy_order.qty, buy_order.limitprice])
+        else:
+            row.extend(['', '', '', '', ''])
+
+        if i < len(sells):
+            sell_order = sells[i]
+            row.extend([sell_order.limitprice, sell_order.qty, sell_order.original_qty, sell_order.sendercompid, sell_order.orderid])
+        else:
+            row.extend(['', '', '', '', ''])
+
+        combined_data.append(row)
+
+    headers = [
+        'Bid Order ID', 'Bid SenderCompID', 'Bid Original Qty', 'Bid Remaining Qty', 'Bid Price',
+        'Ask Price', 'Ask Remaining Qty', 'Ask Original Qty', 'Ask SenderCompID', 'Ask Order ID'
+    ]
+
+    print('Combined Order Book:')
+    print(tabulate(combined_data, headers=headers, tablefmt='grid'))
 
 def on_cancel_order(order_id):
     for symbol, book in bookshelf.items():
@@ -145,5 +205,27 @@ def create_cancel_execution_report(order):
     exec_report['55'] = order.symbol
     exec_report['150'] = '4'  # Canceled exec type
     exec_report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S')  # Transaction time
+    print(dfix.exportfix(exec_report))
 
     return exec_report
+
+def generate_unfilled_ioc_execution_report(order):
+    report = OrderedDict()
+    report['11'] = order.orderid
+    report['17'] = str(uuid.uuid4())[:10]
+    report['37'] = order.orderid  # Order ID
+    report['39'] = '4'  # Canceled order status
+    report['54'] = order.side
+    report['55'] = order.symbol
+    report['150'] = '4'  # Canceled exec type
+    report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
+    report['32'] = 0  # Quantity executed for this report
+    report['31'] = order.limitprice  # Execution price
+    report['6'] = order.limitprice  # Average execution price
+    report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
+    report['52'] = report['60']
+    report['30'] = 'BARI'
+    report['76'] = 'BARI'
+
+    print(dfix.exportfix(report))
+    return report

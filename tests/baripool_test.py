@@ -56,6 +56,34 @@ class TestOrderMatchingSimulator(unittest.TestCase):
         self.assertEqual(len(baripool.bookshelf['BAC']), 1)
         self.assertEqual(baripool.bookshelf['BAC'][0].qty, 20)
 
+    # test IOC order. add an IOC order and check that it is not in the bookshelf
+    def test_ioc_order(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=TSLA;38=100;44=150;59=3".format(random_sendercomp())
+        baripool.on_new_order(buy_order_fix)
+
+        self.assertEqual(len(baripool.bookshelf['TSLA']), 0)
+
+
+    # partial match IOC. add an IOC order that should fill partially and check that the remaining quantity is not in the bookshelf
+    def test_partial_match_ioc_order(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=LULU;38=100;44=150;".format(random_sendercomp())
+        baripool.on_new_order(buy_order_fix)
+
+        # Add a sell order ioc order with matching price and higher quantity. The IOC order should fill partially and the remaining quantity should not be in the bookshelf
+        sell_order_fix = "49={};11=1002;54=2;55=LULU;38=120;44=150;59=3".format(random_sendercomp())
+        baripool.on_new_order(sell_order_fix)
+
+        # add a buy order that would fill with the ioc. it should not fill because it was canceled
+        buy_order_fix = "49={};11=1003;54=1;55=LULU;38=20;44=150;".format(random_sendercomp())
+        baripool.on_new_order(buy_order_fix)
+
+        #pass if open qty is 20
+        baripool.display_book(baripool.bookshelf['LULU'])
+        self.assertEqual(baripool.bookshelf['LULU'][0].qty, 20)
+        
+
 class TestOrderCancellation(unittest.TestCase):
     def setUp(self):
         baripool.bookshelf.clear()
