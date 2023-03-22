@@ -17,6 +17,7 @@ class BariOrder:
         self.orderstatus = '0'
         self.sendercompid = fix['49']
         self.is_canceled = False
+        self.original_qty = int(fix['38']) # used for calculating the executed quantity
 
 
 def generate_execution_report(order, matched_qty, status):
@@ -109,10 +110,10 @@ def display_book(book):
     buys = [order for order in book if order.side == '1']
     sells = [order for order in book if order.side == '2']
 
-    buys_data = [[order.orderid, order.qty, order.limitprice, order.sendercompid] for order in buys]
-    sells_data = [[order.orderid, order.qty, order.limitprice, order.sendercompid] for order in sells]
+    buys_data = [[order.orderid, order.original_qty, order.qty, order.limitprice, order.sendercompid] for order in buys]
+    sells_data = [[order.orderid, order.original_qty, order.qty, order.limitprice, order.sendercompid] for order in sells]
 
-    headers = ['Order ID', 'Quantity', 'Price','SenderCompID']
+    headers = ['Order ID', 'Original Quantity', 'Remaining Quantity', 'Price', 'SenderCompID']
 
     print('Buys:')
     print(tabulate(buys_data, headers=headers, tablefmt='grid'))
