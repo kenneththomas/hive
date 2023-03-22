@@ -15,6 +15,7 @@ class BariOrder:
         self.qty = int(fix['38'])
         self.limitprice = float(fix['44'])
         self.orderstatus = '0'
+        self.is_canceled = False
 
 
 def generate_execution_report(order, matched_qty, status):
@@ -58,12 +59,11 @@ def matcher(buyer, seller):
 
 
 def evaluate_book(new_order, book):
-    potential_matches = []
 
-    if new_order.side == '1':
-        potential_matches = [order for order in book if order.side == '2']
-    elif new_order.side == '2':
-        potential_matches = [order for order in book if order.side == '1']
+    potential_matches = [
+        order for order in book
+        if order.side != new_order.side and not order.is_canceled
+    ]
 
     matched_qty = 0
 
@@ -106,3 +106,31 @@ def display_book(book):
     print(tabulate(buys_data, headers=headers, tablefmt='grid'))
     print('Sells:')
     print(tabulate(sells_data, headers=headers, tablefmt='grid'))
+
+def on_cancel_order(order_id):
+    for symbol, book in bookshelf.items():
+        for order in book:
+            if order.orderid == order_id:
+                order.is_canceled = True
+                print(f"Order {order_id} has been canceled.")
+                cancel_exec_report = create_cancel_execution_report(order)
+                print(f"Cancellation Execution Report: {cancel_exec_report}")
+                return
+    print(f"Order {order_id} not found in the order book.")
+
+#TODO - actually use this function
+def remove_canceled_orders():
+    for symbol, book in bookshelf.items():
+        bookshelf[symbol] = [order for order in book if not order.is_canceled]
+
+def create_cancel_execution_report(order):
+    exec_report = OrderedDict()
+    exec_report['11'] = order.orderid
+    exec_report['37'] = order.orderid  # Assuming order ID is the same as the order's unique identifier
+    exec_report['39'] = '4'  # Canceled order status
+    exec_report['54'] = order.side
+    exec_report['55'] = order.symbol
+    exec_report['150'] = '4'  # Canceled exec type
+    exec_report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S')  # Transaction time
+
+    return exec_report
