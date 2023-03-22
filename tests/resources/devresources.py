@@ -49,10 +49,12 @@ clients = {
 }
 entity = {
     'YEET_DEV' : 'NO CAP',
-    'KENNETH_DEV' : 'NO CAP'
+    'KENNETH_DEV' : 'NO CAP',
+    'BROADCAP' : 'BROADCAP',
 }
 accounts = {
-    'NO CAP' : ['GINGERBREAD','GRIME']
+    'NO CAP' : ['GINGERBREAD','GRIME'],
+    'BROADCAP' : ['MICHAEL.JONES'],
 }
 defaultaccounts = {
     'NO CAP' : 'GINGERBREAD',

@@ -3,7 +3,9 @@ import dfix
 import uuid
 import datetime
 sys.path.insert(1, 'tests/resources')
+sys.path.insert(1, 'pyengine')
 import devresources as devr
+import baripool
 
 #dev resources, normally this would be in config or database
 clients = devr.clients
@@ -90,6 +92,12 @@ def execreport_builder(fixmsg):
 def on_new_order(fixmsg):
 
     fixmsg = client_manager(fixmsg)
+
+    # if order was not rejected, send to baripool
+    if '150' != '8':
+        print('on_new_order() sending order to baripool')
+        #send exported fixmsg to baripool
+        fixmsg = dfix.parsefix(baripool.on_new_order(dfix.exportfix(fixmsg)))
 
     return fixmsg
 

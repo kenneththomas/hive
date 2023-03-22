@@ -65,6 +65,16 @@ class TestYeet(unittest.TestCase):
         unknown_targetcomp_result = yeet.parse_new_msg(testutils.generic_order('49=YEET_DEV;56=nottherightthing;',True))
         self.assertTrue(testutils.validator(unknown_targetcomp_result, '150=8;',False))
 
+    def test_working_order(self):
+        working_order_result = yeet.parse_new_msg(testutils.generic_order(exported=True))
+        self.assertTrue(testutils.validator(working_order_result, '150=0;',False))
+
+    def test_working_fill(self):
+        order1 = yeet.parse_new_msg(testutils.generic_order(exported=True))
+        order2 = yeet.parse_new_msg(testutils.generic_order('49=BROADCAP;56=YEET;11=1234567890;54=2;38=100;',exported=True))
+        # right now it only returns acks but we want to check for a fill eventually
+        self.assertTrue(testutils.validator(order1, '150=0;',False))
+
 class TestClientMgr(unittest.TestCase):
     def test_account_not_found(self):
         #derive clientid but have account not valid for clientid

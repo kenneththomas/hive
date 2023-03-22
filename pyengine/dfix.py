@@ -56,12 +56,3 @@ def multitweak(fix,modifyfix):
     for tag in modifyfix:
         newfix = tweak(fix,tag,modifyfix[tag])
     return newfix
-
-class fix:
-
-    def __init__(self, fixmsg):
-        fixdict = parsefix(fixmsg)
-        self.msgtype = fixdict['35']
-        if self.msgtype == 'D':
-            self.sender = fixdict['49']
-            self.orderid = fixdict['11']
