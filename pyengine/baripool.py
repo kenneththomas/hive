@@ -2,6 +2,7 @@ import dfix
 from collections import OrderedDict
 import uuid
 import datetime
+from tabulate import tabulate
 
 bookshelf = {}  # contains books of all symbols
 
@@ -96,9 +97,12 @@ def display_book(book):
     buys = [order for order in book if order.side == '1']
     sells = [order for order in book if order.side == '2']
 
+    buys_data = [[order.orderid, order.qty, order.limitprice] for order in buys]
+    sells_data = [[order.orderid, order.qty, order.limitprice] for order in sells]
+
+    headers = ['Order ID', 'Quantity', 'Price']
+
     print('Buys:')
-    for order in buys:
-        print(f'qty: {order.qty} price: {order.limitprice}')
+    print(tabulate(buys_data, headers=headers, tablefmt='grid'))
     print('Sells:')
-    for order in sells:
-        print(f'qty: {order.qty} price: {order.limitprice}')
+    print(tabulate(sells_data, headers=headers, tablefmt='grid'))
