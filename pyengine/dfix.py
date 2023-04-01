@@ -1,4 +1,6 @@
 from collections import OrderedDict as odict
+import datetime
+import uuid
 
 
 #parse fixmsg into ordered dictionary for python processing
@@ -56,3 +58,116 @@ def multitweak(fix,modifyfix):
     for tag in modifyfix:
         newfix = tweak(fix,tag,modifyfix[tag])
     return newfix
+
+class execreport_gen:
+    def create_cancel_execution_report(order):
+        exec_report = odict()
+        exec_report['8'] = 'FIX.4.2'
+        exec_report['35'] = '8'
+        exec_report['49'] = 'BARI'
+        exec_report['11'] = order.orderid
+        exec_report['37'] = order.orderid  # Assuming order ID is the same as the order's unique identifier
+        exec_report['39'] = '4'  # Canceled order status
+        exec_report['54'] = order.side
+        exec_report['55'] = order.symbol
+        exec_report['150'] = '4'  # Canceled exec type
+        exec_report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S')  # Transaction time
+        print(exportfix(exec_report))
+
+        return exec_report
+    
+    def generate_unfilled_ioc_execution_report(order):
+        report = odict()
+        report['8'] = 'FIX.4.2'
+        report['35'] = '8'
+        report['49'] = 'BARI'
+        report['11'] = order.orderid
+        report['17'] = str(uuid.uuid4())[:10]
+        report['37'] = order.orderid  # Order ID
+        report['39'] = '4'  # Canceled order status
+        report['54'] = order.side
+        report['55'] = order.symbol
+        report['150'] = '4'  # Canceled exec type
+        report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
+        report['32'] = 0  # Quantity executed for this report
+        report['31'] = 0
+        report['6'] = 0
+        report['151'] = order.qty  # Leaves quantity
+        report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
+        report['52'] = report['60']
+        report['30'] = 'BARI'
+        report['76'] = 'BARI'
+
+        print(exportfix(report))
+        return report
+
+    def generate_new_order_execution_report(order):
+        report = odict()
+        report['8'] = 'FIX.4.2'
+        report['35'] = '8'
+        report['49'] = 'BARI'
+        report['11'] = order.orderid
+        report['17'] = str(uuid.uuid4())[:10]
+        report['37'] = order.orderid  # Order ID
+        report['39'] = '0'  # New order status
+        report['54'] = order.side
+        report['55'] = order.symbol
+        report['150'] = '0'  # New order execution type
+        report['14'] = 0  # Cumulative quantity executed
+        report['32'] = 0  # Quantity executed for this report (LastShares)
+        report['151'] = order.qty  # LeavesQty (remaining quantity)
+        report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
+        report['52'] = report['60']
+        report['30'] = 'BARI'
+        report['76'] = 'BARI'
+        print(exportfix(report))
+        return report
+    
+    def generate_reject_execution_report(order, reject_reason):
+        report = odict()
+        report['8'] = 'FIX.4.2'
+        report['35'] = '8'
+        report['49'] = 'BARI'
+        report['11'] = order.orderid
+        report['17'] = str(uuid.uuid4())[:10]
+        report['37'] = order.orderid  # Order ID
+        report['39'] = '8'  # Rejected order status
+        report['54'] = order.side
+        report['55'] = order.symbol
+        report['150'] = '8'  # Rejected execution type
+        report['14'] = 0  # Cumulative quantity executed
+        report['32'] = 0  # Quantity executed for this report (LastShares)
+        report['151'] = order.qty  # LeavesQty (remaining quantity)
+        report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
+        report['52'] = report['60']
+        report['58'] = reject_reason  # Reject reason
+        print(exportfix(report))
+        return report
+    
+    def generate_execution_report(order, matched_qty, status):
+        report = odict()
+        report['8'] = 'FIX.4.2'
+        report['35'] = '8'
+        report['49'] = 'BARI'
+        report['56'] = order.sendercompid
+        report['11'] = order.orderid
+        report['17'] = str(uuid.uuid4())[:10]
+        report['37'] = order.orderid  # Order ID
+        report['39'] = status  # Order status: '2' for fully executed, '1' for partially executed
+        report['54'] = order.side
+        report['55'] = order.symbol
+        report['150'] = '2' if status == '2' else '1'  # Execution type: '2' for trade, '1' for partial fill
+        report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
+        report['32'] = matched_qty  # Quantity executed for this report (LastShares)
+        report['151'] = order.qty  # LeavesQty (remaining quantity)
+        report['31'] = order.limitprice  # Execution price
+        report['6'] = order.limitprice  # Average execution price
+        report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
+        report['52'] = report['60']
+        report['30'] = 'BARI'
+        report['76'] = 'BARI'
+
+        #also print as fix
+        print(exportfix(report))
+        
+        return report  # Return the report

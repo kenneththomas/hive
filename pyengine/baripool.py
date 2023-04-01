@@ -44,33 +44,7 @@ class BariOrder:
             self.rejectreason = 'Invalid quantity'
 
 
-def generate_execution_report(order, matched_qty, status):
-    report = OrderedDict()
-    report['8'] = 'FIX.4.2'
-    report['35'] = '8'
-    report['49'] = 'BARI'
-    report['56'] = order.sendercompid
-    report['11'] = order.orderid
-    report['17'] = str(uuid.uuid4())[:10]
-    report['37'] = order.orderid  # Order ID
-    report['39'] = status  # Order status: '2' for fully executed, '1' for partially executed
-    report['54'] = order.side
-    report['55'] = order.symbol
-    report['150'] = '2' if status == '2' else '1'  # Execution type: '2' for trade, '1' for partial fill
-    report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
-    report['32'] = matched_qty  # Quantity executed for this report (LastShares)
-    report['151'] = order.qty  # LeavesQty (remaining quantity)
-    report['31'] = order.limitprice  # Execution price
-    report['6'] = order.limitprice  # Average execution price
-    report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
-    report['52'] = report['60']
-    report['30'] = 'BARI'
-    report['76'] = 'BARI'
 
-    #also print as fix
-    print(dfix.exportfix(report))
-    
-    return report  # Return the report
 
 def matcher(buyer, seller):
     # Prevent self-match
@@ -88,8 +62,8 @@ def matcher(buyer, seller):
         buyer_status = '2' if buyer.qty == 0 else '1'
         seller_status = '2' if seller.qty == 0 else '1'
 
-        buyer_execution_report = generate_execution_report(buyer, matched_qty, buyer_status)
-        seller_execution_report = generate_execution_report(seller, matched_qty, seller_status)
+        buyer_execution_report = dfix.execreport_gen.generate_execution_report(buyer, matched_qty, buyer_status)
+        seller_execution_report = dfix.execreport_gen.generate_execution_report(seller, matched_qty, seller_status)
 
         # Send execution reports to buyer and seller
         print("Buyer Execution Report:", buyer_execution_report)
@@ -121,7 +95,7 @@ def evaluate_book(new_order, book):
             book.append(new_order)
         else:
             print(f"Immediate or Cancel order {new_order.orderid} not fully executed. Remaining quantity: {new_order.qty}")
-            unfilled_ioc_exec_report = generate_unfilled_ioc_execution_report(new_order)
+            unfilled_ioc_exec_report = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
             print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
         bookshelf[new_order.symbol] = book
 
@@ -184,7 +158,7 @@ def on_new_order(new_order):
     
     
 
-    new_order_execution_report = generate_new_order_execution_report(new_order)
+    new_order_execution_report = dfix.execreport_gen.generate_new_order_execution_report(new_order)
     print("New Order Execution Report:", new_order_execution_report)
 
     if new_order.symbol not in bookshelf.keys():
@@ -192,7 +166,7 @@ def on_new_order(new_order):
         if new_order.timeinforce == '3':
             bookshelf[new_order.symbol] = []
             print(f"Immediate or Cancel order {new_order.orderid} not fully executed. Remaining quantity: {new_order.qty}")
-            unfilled_ioc_exec_report = generate_unfilled_ioc_execution_report(new_order)
+            unfilled_ioc_exec_report = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
             print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
     else:
         display_book(bookshelf[new_order.symbol])
@@ -264,7 +238,7 @@ def on_cancel_order(order_id):
             if order.orderid == order_id:
                 order.is_canceled = True
                 print(f"Order {order_id} has been canceled.")
-                cancel_exec_report = create_cancel_execution_report(order)
+                cancel_exec_report = dfix.execreport_gen.create_cancel_execution_report(order)
                 print(f"Cancellation Execution Report: {cancel_exec_report}")
                 return
     print(f"Order {order_id} not found in the order book.")
@@ -274,94 +248,15 @@ def remove_canceled_orders():
     for symbol, book in bookshelf.items():
         bookshelf[symbol] = [order for order in book if not order.is_canceled]
 
-def create_cancel_execution_report(order):
-    exec_report = OrderedDict()
-    exec_report['8'] = 'FIX.4.2'
-    exec_report['35'] = '8'
-    exec_report['49'] = 'BARI'
-    exec_report['11'] = order.orderid
-    exec_report['37'] = order.orderid  # Assuming order ID is the same as the order's unique identifier
-    exec_report['39'] = '4'  # Canceled order status
-    exec_report['54'] = order.side
-    exec_report['55'] = order.symbol
-    exec_report['150'] = '4'  # Canceled exec type
-    exec_report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S')  # Transaction time
-    print(dfix.exportfix(exec_report))
 
-    return exec_report
 
-def generate_unfilled_ioc_execution_report(order):
-    report = OrderedDict()
-    report['8'] = 'FIX.4.2'
-    report['35'] = '8'
-    report['49'] = 'BARI'
-    report['11'] = order.orderid
-    report['17'] = str(uuid.uuid4())[:10]
-    report['37'] = order.orderid  # Order ID
-    report['39'] = '4'  # Canceled order status
-    report['54'] = order.side
-    report['55'] = order.symbol
-    report['150'] = '4'  # Canceled exec type
-    report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
-    report['32'] = 0  # Quantity executed for this report
-    report['31'] = 0
-    report['6'] = 0
-    report['151'] = order.qty  # Leaves quantity
-    report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
-    report['52'] = report['60']
-    report['30'] = 'BARI'
-    report['76'] = 'BARI'
 
-    print(dfix.exportfix(report))
-    return report
-
-def generate_new_order_execution_report(order):
-    report = OrderedDict()
-    report['8'] = 'FIX.4.2'
-    report['35'] = '8'
-    report['49'] = 'BARI'
-    report['11'] = order.orderid
-    report['17'] = str(uuid.uuid4())[:10]
-    report['37'] = order.orderid  # Order ID
-    report['39'] = '0'  # New order status
-    report['54'] = order.side
-    report['55'] = order.symbol
-    report['150'] = '0'  # New order execution type
-    report['14'] = 0  # Cumulative quantity executed
-    report['32'] = 0  # Quantity executed for this report (LastShares)
-    report['151'] = order.qty  # LeavesQty (remaining quantity)
-    report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
-    report['52'] = report['60']
-    report['30'] = 'BARI'
-    report['76'] = 'BARI'
-    print(dfix.exportfix(report))
-    return report
 
 def reject_order(order, reject_reason):
-    reject_execution_report = generate_reject_execution_report(order, reject_reason)
+    reject_execution_report = dfix.execreport_gen.generate_reject_execution_report(order, reject_reason)
     print("Reject Execution Report:", reject_execution_report)
     return reject_execution_report
 
-def generate_reject_execution_report(order, reject_reason):
-    report = OrderedDict()
-    report['8'] = 'FIX.4.2'
-    report['35'] = '8'
-    report['49'] = 'BARI'
-    report['11'] = order.orderid
-    report['17'] = str(uuid.uuid4())[:10]
-    report['37'] = order.orderid  # Order ID
-    report['39'] = '8'  # Rejected order status
-    report['54'] = order.side
-    report['55'] = order.symbol
-    report['150'] = '8'  # Rejected execution type
-    report['14'] = 0  # Cumulative quantity executed
-    report['32'] = 0  # Quantity executed for this report (LastShares)
-    report['151'] = order.qty  # LeavesQty (remaining quantity)
-    report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
-    report['52'] = report['60']
-    report['58'] = reject_reason  # Reject reason
-    print(dfix.exportfix(report))
-    return report
 
 #currency rejection reasons
 slurs = {
