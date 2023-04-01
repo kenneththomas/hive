@@ -89,13 +89,30 @@ class TestOrderMatchingSimulator(unittest.TestCase):
         baripool.display_book(baripool.bookshelf['LULU'])
         self.assertEqual(baripool.bookshelf['LULU'][0].qty, 20)
 
-    # send market order, should be rejected (until we implement market orders)
-    def test_market_order(self):
+    # send market order + IOC, should not fill
+    def test_market_order_ioc_nofill(self):
         # Add a buy order
-        buy_order_fix = "49={};11=1001;54=1;55=FB;38=100;44=150;40=1".format(random_sendercomp())
+        buy_order_fix = "49={};11=1001;54=1;55=TM;38=100;44=150;40=1;59=3;".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=4
+        self.assertTrue(result.find("150=4") > 0)
+
+    def test_market_order_ioc_day_reject(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=FB;38=100;44=150;40=1;59=1;".format(random_sendercomp())
         result = baripool.on_new_order(buy_order_fix)
         # result should have 150=8
         self.assertTrue(result.find("150=8") > 0)
+
+    def test_market_order_ioc_fill(self):
+        # add a day limit order to match with
+        buy_order_fix = "49={};11=1001;54=1;55=PINS;38=100;44=150;40=2;59=1;".format(random_sendercomp())
+        baripool.on_new_order(buy_order_fix)
+        # add a sell market order with IOC
+        sell_order_fix = "49={};11=iocmkt;54=2;55=PINS;38=100;44=150;40=1;59=3;".format(random_sendercomp())
+        baripool.on_new_order(sell_order_fix)
+        # check that the order is filled
+        self.assertTrue(baripool.fillcontainer['iocmkt']['150'] == '2')
 
     # reject futures order
     def test_futures_order(self):

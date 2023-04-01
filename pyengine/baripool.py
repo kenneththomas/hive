@@ -22,18 +22,27 @@ class BariOrder:
             self.shouldreject = True
             self.rejectreason = 'Invalid quantity'
             self.qty = float(fix['38'])
-        self.limitprice = float(fix['44'])
         self.orderstatus = '0'
         self.sendercompid = fix['49']
 
 
-        #optional parameters
+
         #assume day order if not set
         self.timeinforce = fix['59'] if '59' in fix else '0'
         #assume limit order if not set
         self.ordertype = fix['40'] if '40' in fix else '2'
         #assume USD if not set
         self.currency = fix['15'] if '15' in fix else 'USD'
+
+        #if limit order, need limit price
+        if self.ordertype == '2':
+            try:
+                self.limitprice = float(fix['44'])
+            except ValueError:
+                self.shouldreject = True
+                self.rejectreason = 'Invalid limit price'
+        elif self.ordertype == '1':
+            self.limitprice = 'MKT'
 
         #status
         self.is_canceled = False
@@ -46,8 +55,6 @@ class BariOrder:
 
         #change to lastpx (tag 31) if order gets executed
         self.lastpx = False
-
-
 
 
 def matcher(buyer, seller, potential_lastpx):
@@ -120,7 +127,22 @@ def on_new_order(new_order):
     parsed_fix = dfix.parsefix(new_order)
     new_order = BariOrder(parsed_fix)
 
-    # validations
+    # market order handling
+
+    # Reject market order if not IOC
+    if new_order.ordertype == '1' and new_order.timeinforce != '3':
+        rejectreport = reject_order(new_order, 'Market orders must be immediate or cancel')
+        return dfix.exportfix(rejectreport)
+
+    if new_order.ordertype == '1':
+        # Set limit price based on the best available price in the bookshelf
+        if new_order.symbol in bookshelf.keys():
+            best_price = bookshelf[new_order.symbol][0].limitprice if new_order.side == '1' else bookshelf[new_order.symbol][-1].limitprice
+            new_order.limitprice = best_price
+        else:
+            # Reject like an IOC if symbol not in bookshelf
+            rejectreport = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
+            return dfix.exportfix(rejectreport)
 
     # side validation
     if new_order.side not in ['1', '2']:
@@ -135,9 +157,9 @@ def on_new_order(new_order):
         rejectreport = reject_order(new_order, new_order.rejectreason)
         return dfix.exportfix(rejectreport)
 
-    #reject if not limit order
-    if new_order.ordertype != '2':
-        rejectreport = reject_order(new_order, 'Only limit orders are supported')
+    #reject if not limit or market order
+    if new_order.ordertype not in ['1', '2']:
+        rejectreport = reject_order(new_order, 'Only limit and market orders are supported')
         return dfix.exportfix(rejectreport)
     
     # reject if futures or options using tag 167 FUT or OPT
@@ -167,12 +189,10 @@ def on_new_order(new_order):
         rejectreport = reject_order(new_order, f'MURRRRRKAH - we dont take {new_order.currency} round here')
         return dfix.exportfix(rejectreport)
     
-
-    
-    
-
     new_order_execution_report = dfix.execreport_gen.generate_new_order_execution_report(new_order)
     print("New Order Execution Report:", new_order_execution_report)
+
+
 
     if new_order.symbol not in bookshelf.keys():
         bookshelf[new_order.symbol] = [new_order]
