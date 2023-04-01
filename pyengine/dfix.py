@@ -144,7 +144,7 @@ class execreport_gen:
         print(exportfix(report))
         return report
     
-    def generate_execution_report(order, matched_qty, status):
+    def generate_execution_report(order, matched_qty, status,last_px=0):
         report = odict()
         report['8'] = 'FIX.4.2'
         report['35'] = '8'
@@ -160,7 +160,7 @@ class execreport_gen:
         report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
         report['32'] = matched_qty  # Quantity executed for this report (LastShares)
         report['151'] = order.qty  # LeavesQty (remaining quantity)
-        report['31'] = order.limitprice  # Execution price
+        report['31'] = last_px
         report['6'] = order.limitprice  # Average execution price
         report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
         report['52'] = report['60']

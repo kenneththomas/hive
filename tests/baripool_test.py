@@ -145,6 +145,32 @@ class TestOrderMatchingSimulator(unittest.TestCase):
         # result should have 150=8
         self.assertTrue(result.find("150=8") > 0)
 
+    # check lastpx
+    def test_lastpx_aggressive_sell(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=passivebuy;54=1;55=SBUX;38=100;44=155".format(random_sendercomp())
+        baripool.on_new_order(buy_order_fix)
+
+        # Add a sell order
+        sell_order_fix = "49={};11=aggressivesell;54=2;55=SBUX;38=100;44=150".format(random_sendercomp())
+        baripool.on_new_order(sell_order_fix)
+
+        # check lastpx
+        self.assertEqual(baripool.fillcontainer['passivebuy']['31'], 155)
+        self.assertEqual(baripool.fillcontainer['aggressivesell']['31'], 155)
+
+    def test_lastpx_aggressive_buy(self):
+        # Add a sell order
+        sell_order_fix = "49={};11=passivesell;54=2;55=SBUX;38=100;44=154".format(random_sendercomp())
+        baripool.on_new_order(sell_order_fix)
+
+        # Add a buy order
+        buy_order_fix = "49={};11=aggressivebuy;54=1;55=SBUX;38=100;44=155".format(random_sendercomp())
+        baripool.on_new_order(buy_order_fix)
+
+        # check lastpx
+        self.assertEqual(baripool.fillcontainer['passivesell']['31'], 154)
+        self.assertEqual(baripool.fillcontainer['aggressivebuy']['31'], 154)
         
 
 

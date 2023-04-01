@@ -5,6 +5,7 @@ import datetime
 from tabulate import tabulate
 
 bookshelf = {}  # contains books of all symbols
+fillcontainer = {}  # contains all fills
 
 
 class BariOrder:
@@ -43,13 +44,16 @@ class BariOrder:
             self.shouldreject = True
             self.rejectreason = 'Invalid quantity'
 
+        #change to lastpx (tag 31) if order gets executed
+        self.lastpx = False
 
 
 
-def matcher(buyer, seller):
+
+def matcher(buyer, seller, potential_lastpx):
     # Prevent self-match
     if buyer.sendercompid == seller.sendercompid:
-        print('Self-match prevented! - buyer:', buyer.sendercompid, 'seller:', seller.sendercompid, 'symbol:', buyer.symbol, 'qty:', )
+        print('Self-match prevented! - buyer:', buyer.sendercompid, 'seller:', seller.sendercompid, 'symbol:', buyer.symbol, 'qty:')
         return 0
 
     if buyer.limitprice < seller.limitprice:
@@ -62,12 +66,17 @@ def matcher(buyer, seller):
         buyer_status = '2' if buyer.qty == 0 else '1'
         seller_status = '2' if seller.qty == 0 else '1'
 
-        buyer_execution_report = dfix.execreport_gen.generate_execution_report(buyer, matched_qty, buyer_status)
-        seller_execution_report = dfix.execreport_gen.generate_execution_report(seller, matched_qty, seller_status)
+        # Calculate fill price based on passive (resting) order's limit price
+        fill_price = potential_lastpx
+
+        buyer_execution_report = dfix.execreport_gen.generate_execution_report(buyer, matched_qty, buyer_status, fill_price)
+        seller_execution_report = dfix.execreport_gen.generate_execution_report(seller, matched_qty, seller_status, fill_price)
 
         # Send execution reports to buyer and seller
         print("Buyer Execution Report:", buyer_execution_report)
         print("Seller Execution Report:", seller_execution_report)
+        fillcontainer[buyer.orderid] = buyer_execution_report
+        fillcontainer[seller.orderid] = seller_execution_report
 
         return matched_qty
 
@@ -81,9 +90,13 @@ def evaluate_book(new_order, book):
     matched_qty = 0
 
     for potential_match in potential_matches:
-        fill_qty = matcher(new_order, potential_match) if new_order.side == '1' else matcher(potential_match, new_order)
+        # potential fill price is the passive (resting) order's limit price
+        potential_lastpx = potential_match.limitprice
+        fill_qty = matcher(new_order, potential_match, potential_lastpx) if new_order.side == '1' else matcher(potential_match, new_order, potential_lastpx)
 
         if fill_qty > 0:
+            new_order.lastpx = potential_lastpx
+            potential_match.lastpx = potential_lastpx
             matched_qty += fill_qty
             if potential_match.qty == 0:
                 book.remove(potential_match)
