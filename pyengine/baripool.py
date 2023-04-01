@@ -281,10 +281,6 @@ def remove_canceled_orders():
     for symbol, book in bookshelf.items():
         bookshelf[symbol] = [order for order in book if not order.is_canceled]
 
-
-
-
-
 def reject_order(order, reject_reason):
     reject_execution_report = dfix.execreport_gen.generate_reject_execution_report(order, reject_reason)
     print("Reject Execution Report:", reject_execution_report)
@@ -297,7 +293,7 @@ slurs = {
         'EUR': 'MURRRRRKAH!!',
         'CAD': 'canadian money is literally just monopoly money',
         'JPY': 'lets eat this raw fish even though we have the means to cook it',
-        'AUD' : 'im in australia. oh noirrr.',
+        'AUD' : 'im in australia. oh naurr.',
         'NZD' : 'get out of here with your lord of the rings money',
         'FRF' : 'hon hon hon, that is not a thing anymore',
         'HKD' : 'what is this, a chinese currency for ants?',
