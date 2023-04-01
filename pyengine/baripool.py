@@ -9,24 +9,39 @@ bookshelf = {}  # contains books of all symbols
 
 class BariOrder:
     def __init__(self, fix):
+
+        self.shouldreject = False
         #mandatory parameters
         self.orderid = fix['11']
         self.side = fix['54']
         self.symbol = fix['55']
-        self.qty = int(fix['38'])
+        try:
+            self.qty = int(fix['38'])
+        except ValueError:
+            self.shouldreject = True
+            self.rejectreason = 'Invalid quantity'
+            self.qty = float(fix['38'])
         self.limitprice = float(fix['44'])
         self.orderstatus = '0'
         self.sendercompid = fix['49']
+
 
         #optional parameters
         #assume day order if not set
         self.timeinforce = fix['59'] if '59' in fix else '0'
         #assume limit order if not set
         self.ordertype = fix['40'] if '40' in fix else '2'
+        #assume USD if not set
+        self.currency = fix['15'] if '15' in fix else 'USD'
 
         #status
         self.is_canceled = False
-        self.original_qty = int(fix['38']) # used for calculating the executed quantity
+        self.is_rejected = False
+        try:
+            self.original_qty = int(fix['38']) # used for calculating the executed quantity
+        except ValueError:
+            self.shouldreject = True
+            self.rejectreason = 'Invalid quantity'
 
 
 def generate_execution_report(order, matched_qty, status):
@@ -110,6 +125,9 @@ def evaluate_book(new_order, book):
             print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
         bookshelf[new_order.symbol] = book
 
+def side_to_str(side):
+    return 'Buy' if side == '1' else 'Sell'
+
 def on_new_order(new_order):
     print(f'Received Order: {new_order}')
     parsed_fix = dfix.parsefix(new_order)
@@ -117,7 +135,20 @@ def on_new_order(new_order):
 
     # validations
 
-    # reject if not limit order
+    # side validation
+    if new_order.side not in ['1', '2']:
+        if new_order.side == '5':
+            rejectreport = reject_order(new_order, 'Please send short sell orders as sell orders.')
+            return
+        rejectreport = reject_order(new_order, f'Invalid side - {new_order.side}')
+        return dfix.exportfix(rejectreport)
+
+    # parsing error rejects
+    if new_order.shouldreject:
+        rejectreport = reject_order(new_order, new_order.rejectreason)
+        return dfix.exportfix(rejectreport)
+
+    #reject if not limit order
     if new_order.ordertype != '2':
         rejectreport = reject_order(new_order, 'Only limit orders are supported')
         return dfix.exportfix(rejectreport)
@@ -126,6 +157,32 @@ def on_new_order(new_order):
     if '167' in parsed_fix:
         rejectreport = reject_order(new_order, 'Futures and options are not supported')
         return dfix.exportfix(rejectreport)
+    
+    #reject if negative quantity
+    if new_order.qty < 0:
+        rejectreport = reject_order(new_order, f'are u kidding me? ur telling me u want to {side_to_str(new_order.side)} {new_order.qty} shares of {new_order.symbol}?')
+        return dfix.exportfix(rejectreport)
+    
+    #reject if fractional quantity - on 3/31/2023 this code cant actually be hit because the fix parser expects int and it will reject earlier.
+    if new_order.qty % 1 != 0:
+        rejectreport = reject_order(new_order, f'Invalid QTY: {new_order.qty} - fractional shares are not supported')
+        return dfix.exportfix(rejectreport)
+    
+    #reject if negative price
+    if new_order.limitprice < 0:
+        rejectreport = reject_order(new_order, f'((({new_order.sendercompid}))) - REEEEEEEJECTED - negative price: {new_order.limitprice} is not supported')
+        return dfix.exportfix(rejectreport)
+    
+    #reject if not 15=USD
+    if new_order.currency != 'USD':
+        if new_order.currency in slurs.keys():
+            rejectreport = reject_order(new_order, f'CurrencyValidationReject: {slurs[new_order.currency]} - we dont take {new_order.currency} round here')
+        rejectreport = reject_order(new_order, f'MURRRRRKAH - we dont take {new_order.currency} round here')
+        return dfix.exportfix(rejectreport)
+    
+
+    
+    
 
     new_order_execution_report = generate_new_order_execution_report(new_order)
     print("New Order Execution Report:", new_order_execution_report)
@@ -310,3 +367,29 @@ def generate_reject_execution_report(order, reject_reason):
     report['58'] = reject_reason  # Reject reason
     print(dfix.exportfix(report))
     return report
+
+#currency rejection reasons
+slurs = {
+        'GBP': 'no tea no shade',
+        'EUR': 'MURRRRRKAH!!',
+        'CAD': 'canadian money is literally just monopoly money',
+        'JPY': 'lets eat this raw fish even though we have the means to cook it',
+        'AUD' : 'im in australia. oh noirrr.',
+        'NZD' : 'get out of here with your lord of the rings money',
+        'FRF' : 'hon hon hon, that is not a thing anymore',
+        'HKD' : 'what is this, a chinese currency for ants?',
+        'CHF' : 'this is probably fraud and we dont have a legal department',
+        'SGD' : 'can is can lah, cannot cannot.',
+        'RUB' : 'i dont want to go to jail so i cannot accept this',
+        'MXN' : 'taco bell is not a currency',
+        'SEK' : 'i dont know what this is but it sounds like a disease',
+        'CNY' : 'china #1 but',
+        'TWD' : 'taiwan is part of china',
+        'KRW' : 'what, did you win squid game?',
+        'BRL' : 'huehuehue come to brazil!',
+        'INR' : 'slow down ganondorf',
+        'ZAR' : 'why don\'t you just go and invest in a vuvuzela factory instead?',
+        'SAR' : 'just send me some oil instead',
+        'ITL' : 'italian boomer money',
+        'BTC' : 'buy the dip, short the VIX, FUCK BITCO'
+}

@@ -112,6 +112,39 @@ class TestOrderMatchingSimulator(unittest.TestCase):
         result = baripool.on_new_order(buy_order_fix)
         # result should have 150=8
         self.assertTrue(result.find("150=8") > 0)
+
+    # reject non-USD currency
+    def test_non_usd_currency(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=VOD;38=100;44=150;15=GBP".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=8
+        self.assertTrue(result.find("150=8") > 0)
+
+    # reject negative price
+    def test_negative_price(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=VOD;38=100;44=-150".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=8
+        self.assertTrue(result.find("150=8") > 0)
+
+    # reject negative quantity
+    def test_negative_quantity(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=VOD;38=-100;44=150".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=8
+        self.assertTrue(result.find("150=8") > 0)
+
+    #reject fractional quantity
+    def test_fractional_quantity(self):
+        # Add a buy order
+        buy_order_fix = "49={};11=1001;54=1;55=VOD;38=100.5;44=150".format(random_sendercomp())
+        result = baripool.on_new_order(buy_order_fix)
+        # result should have 150=8
+        self.assertTrue(result.find("150=8") > 0)
+
         
 
 
