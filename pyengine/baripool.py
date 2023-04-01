@@ -304,8 +304,9 @@ def generate_unfilled_ioc_execution_report(order):
     report['150'] = '4'  # Canceled exec type
     report['14'] = order.original_qty - order.qty  # Cumulative quantity executed
     report['32'] = 0  # Quantity executed for this report
-    report['31'] = order.limitprice  # Execution price
-    report['6'] = order.limitprice  # Average execution price
+    report['31'] = 0
+    report['6'] = 0
+    report['151'] = order.qty  # Leaves quantity
     report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
     report['52'] = report['60']
     report['30'] = 'BARI'
@@ -329,8 +330,6 @@ def generate_new_order_execution_report(order):
     report['14'] = 0  # Cumulative quantity executed
     report['32'] = 0  # Quantity executed for this report (LastShares)
     report['151'] = order.qty  # LeavesQty (remaining quantity)
-    report['31'] = order.limitprice  # Execution price
-    report['6'] = 0  # Average execution price
     report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
     report['52'] = report['60']
     report['30'] = 'BARI'
@@ -358,12 +357,8 @@ def generate_reject_execution_report(order, reject_reason):
     report['14'] = 0  # Cumulative quantity executed
     report['32'] = 0  # Quantity executed for this report (LastShares)
     report['151'] = order.qty  # LeavesQty (remaining quantity)
-    report['31'] = order.limitprice  # Execution price
-    report['6'] = 0  # Average execution price
     report['60'] = datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3]
     report['52'] = report['60']
-    report['30'] = 'BARI'
-    report['76'] = 'BARI'
     report['58'] = reject_reason  # Reject reason
     print(dfix.exportfix(report))
     return report
@@ -391,5 +386,5 @@ slurs = {
         'ZAR' : 'why don\'t you just go and invest in a vuvuzela factory instead?',
         'SAR' : 'just send me some oil instead',
         'ITL' : 'italian boomer money',
-        'BTC' : 'buy the dip, short the VIX, FUCK BITCO'
+        'BTC' : 'buy the dip, short the VIX, FUCK BITCOIN'
 }

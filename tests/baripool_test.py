@@ -116,7 +116,7 @@ class TestOrderMatchingSimulator(unittest.TestCase):
     # reject non-USD currency
     def test_non_usd_currency(self):
         # Add a buy order
-        buy_order_fix = "49={};11=1001;54=1;55=VOD;38=100;44=150;15=GBP".format(random_sendercomp())
+        buy_order_fix = "49={};11=1001;54=1;55=VOD;38=100;44=150;15=BTC".format(random_sendercomp())
         result = baripool.on_new_order(buy_order_fix)
         # result should have 150=8
         self.assertTrue(result.find("150=8") > 0)
