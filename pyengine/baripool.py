@@ -111,6 +111,7 @@ def evaluate_book(new_order, book):
         bookshelf[new_order.symbol] = book
 
 def on_new_order(new_order):
+    print(f'Received Order: {new_order}')
     parsed_fix = dfix.parsefix(new_order)
     new_order = BariOrder(parsed_fix)
 
