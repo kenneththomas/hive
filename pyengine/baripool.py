@@ -6,6 +6,7 @@ from tabulate import tabulate
 
 bookshelf = {}  # contains books of all symbols
 fillcontainer = {}  # contains all fills
+orderid_container = {} # contains orderids to prevent duplicate orderids
 
 
 class BariOrder:
@@ -126,6 +127,14 @@ def on_new_order(new_order):
     print(f'Received Order: {new_order}')
     parsed_fix = dfix.parsefix(new_order)
     new_order = BariOrder(parsed_fix)
+
+
+    # Duplicate Order Validation with key as tag 49 and tag 11 combined
+    if new_order.sendercompid + new_order.orderid in orderid_container.keys():
+        rejectreport = reject_order(new_order, f'Duplicate Order Reject - {new_order.sendercompid} {new_order.orderid}')
+        return dfix.exportfix(rejectreport)
+    else:
+        orderid_container[new_order.sendercompid + new_order.orderid] = new_order
 
     # market order handling
 
