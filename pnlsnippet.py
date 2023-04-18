@@ -18,14 +18,16 @@ def parse_fix_messages(fix_messages):
             
     return trades
 
-def calculate_pnl(trades):
+def calculate_pnl_and_positions(trades):
     pnl = defaultdict(float)
+    positions = defaultdict(int)
     
     for symbol, trades_list in trades.items():
         for trade in trades_list:
             pnl[symbol] += (trade['last_px'] * trade['last_shares'] * (1 if trade['side'] == 1 else -1))
+            positions[symbol] += (trade['last_shares'] * (1 if trade['side'] == 1 else -1))
             
-    return pnl
+    return pnl, positions
 
 # Example FIX messages
 fix_messages = [
@@ -34,7 +36,11 @@ fix_messages = [
 ]
 
 trades = parse_fix_messages(fix_messages)
-pnl = calculate_pnl(trades)
+pnl, positions = calculate_pnl_and_positions(trades)
 
 for symbol, pnl_value in pnl.items():
     print(f"PnL for {symbol}: {pnl_value}")
+
+for symbol, position in positions.items():
+    print(f"Open position for {symbol}: {position}")
+
