@@ -1,46 +1,48 @@
-from collections import defaultdict
+import csv
 
-def parse_fix_messages(fix_messages):
-    trades = defaultdict(list)
-    
-    for fix_message in fix_messages:
-        fields = fix_message.split(';')
-        message_dict = {field.split('=')[0]: field.split('=')[1] for field in fields}
-        
-        if message_dict['35'] == '8':  # Execution Report
-            symbol = message_dict['55']
-            side = int(message_dict['54'])
-            last_px = float(message_dict['31'])
-            last_shares = int(message_dict['32'])
-            
-            trade = {'side': side, 'last_px': last_px, 'last_shares': last_shares}
-            trades[symbol].append(trade)
-            
-    return trades
+def process_trades(file_name):
+    open_positions = {}
+    total_pnl = 0
 
-def calculate_pnl_and_positions(trades):
-    pnl = defaultdict(float)
-    positions = defaultdict(int)
-    
-    for symbol, trades_list in trades.items():
-        for trade in trades_list:
-            pnl[symbol] += (trade['last_px'] * trade['last_shares'] * (1 if trade['side'] == 1 else -1))
-            positions[symbol] += (trade['last_shares'] * (1 if trade['side'] == 1 else -1))
-            
-    return pnl, positions
+    with open(file_name, newline='') as csvfile:
+        trades = csv.DictReader(csvfile)
+        for trade in trades:
+            symbol = trade['symbol']
+            side = trade['side']
+            price = float(trade['price'])
+            qty = int(trade['qty'])
 
-# Example FIX messages
-fix_messages = [
-    "8=FIX.4.2;35=8;49=BARI;11=12345;17=abcd1234;37=12345;39=2;54=1;55=AAPL;150=2;14=100;31=150.00;32=100;151=0;60=20230101-12:00:00.000;52=20230101-12:00:00.000;30=BARI;76=BARI",
-    "8=FIX.4.2;35=8;49=BARI;11=67890;17=efgh5678;37=67890;39=2;54=2;55=AAPL;150=2;14=100;31=160.00;32=100;151=0;60=20230101-12:05:00.000;52=20230101-12:05:00.000;30=BARI;76=BARI",
-]
+            if symbol not in open_positions:
+                open_positions[symbol] = {'quantity': 0, 'avg_price': 0, 'realized_pnl': 0}
 
-trades = parse_fix_messages(fix_messages)
-pnl, positions = calculate_pnl_and_positions(trades)
+            current_quantity = open_positions[symbol]['quantity']
+            current_avg_price = open_positions[symbol]['avg_price']
 
-for symbol, pnl_value in pnl.items():
-    print(f"PnL for {symbol}: {pnl_value}")
+            if side == 'Buy':
+                new_quantity = current_quantity + qty
+                new_avg_price = ((current_avg_price * current_quantity) + (price * qty)) / new_quantity
+            else:  # 'Sell'
+                new_quantity = current_quantity - qty
+                pnl = (current_avg_price - price) * qty
+                total_pnl += pnl
+                open_positions[symbol]['realized_pnl'] += pnl
 
-for symbol, position in positions.items():
-    print(f"Open position for {symbol}: {position}")
+                if new_quantity == 0:
+                    new_avg_price = 0
+                else:
+                    new_avg_price = current_avg_price
+
+            open_positions[symbol]['quantity'] = new_quantity
+            open_positions[symbol]['avg_price'] = new_avg_price
+
+    for symbol, position in open_positions.items():
+        if position['quantity'] == 0:
+            print(f"Symbol: {symbol} - Realized PnL: {position['realized_pnl']}")
+        else:
+            print(f"Symbol: {symbol} - Open Quantity: {position['quantity']} - Open Avg Px: {position['avg_price']}")
+
+    print(f"Total Realized PnL: {total_pnl}")
+
+# Assuming the CSV file is named 'trades.csv'
+process_trades('trades.csv')
 
