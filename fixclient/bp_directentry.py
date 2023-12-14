@@ -36,36 +36,44 @@ style.configure('TEntry', font=('Arial', 12))
 
 mainframe = ttk.Frame(root, padding="20 20 20 20")
 mainframe.grid(column=0, row=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+mainframe['padding'] = (30, 15)
+font = ('Arial', 12)
+
+# Create a StringVar for the dropdown
+side_var = tk.StringVar()
 
 # Create a StringVar for the dropdown
 side_var = tk.StringVar()
 
 # Create the dropdown with options "Buy" and "Sell"
-side_dropdown = ttk.OptionMenu(mainframe, side_var, "Buy", "Sell")
+side_dropdown = ttk.Combobox(mainframe, textvariable=side_var)
+side_dropdown['values'] = ("Buy", "Sell")
 side_dropdown.grid(column=1, row=0, padx=10, pady=10)
+side_dropdown.current(0)  # set initial value to "Buy"
 
 # Change the entry for the side to use the StringVar
-side_entry = ttk.Entry(mainframe, textvariable=side_var)
+side_entry = ttk.Entry(mainframe, textvariable=side_var, font=font)
 side_entry.grid_forget()
 
-
-symbol_entry = ttk.Entry(mainframe)
+symbol_entry = ttk.Entry(mainframe, font=font)
 symbol_entry.grid(column=1, row=1, padx=10, pady=10)
 
-quantity_entry = ttk.Entry(mainframe)
+quantity_entry = ttk.Entry(mainframe, font=font)
 quantity_entry.grid(column=1, row=2, padx=10, pady=10)
 
-price_entry = ttk.Entry(mainframe)
+price_entry = ttk.Entry(mainframe, font=font)
 price_entry.grid(column=1, row=3, padx=10, pady=10)
 
-sender_entry = ttk.Entry(mainframe)
+sender_entry = ttk.Entry(mainframe, font=font)
 sender_entry.grid(column=1, row=4, padx=10, pady=10)
 
-ttk.Label(mainframe, text="Side (54):").grid(column=0, row=0, sticky=tk.E)
-ttk.Label(mainframe, text="Symbol (55):").grid(column=0, row=1, sticky=tk.E)
-ttk.Label(mainframe, text="Quantity (38):").grid(column=0, row=2, sticky=tk.E)
-ttk.Label(mainframe, text="Price (44):").grid(column=0, row=3, sticky=tk.E)
-ttk.Label(mainframe, text="SenderCompID (49):").grid(column=0, row=4, sticky=tk.E)
+label_font = ('Arial', 12, 'bold')
+
+ttk.Label(mainframe, text="Side (54):", font=label_font).grid(column=0, row=0, sticky=tk.E)
+ttk.Label(mainframe, text="Symbol (55):", font=label_font).grid(column=0, row=1, sticky=tk.E)
+ttk.Label(mainframe, text="Quantity (38):", font=label_font).grid(column=0, row=2, sticky=tk.E)
+ttk.Label(mainframe, text="Price (44):", font=label_font).grid(column=0, row=3, sticky=tk.E)
+ttk.Label(mainframe, text="SenderCompID (49):", font=label_font).grid(column=0, row=4, sticky=tk.E)
 
 submit_button = ttk.Button(mainframe, text="Submit Order", command=submit_form)
 submit_button.grid(column=1, row=5, pady=20)
