@@ -46,10 +46,14 @@ class Program
         // Add tag 14 (Cumulative Quantity) to match the order quantity, indicating full fill
         fillMessage += $"14={orderQty};";
 
+        // Add the current timestamp to tag 52
+        string timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HH:mm:ss.fff");
+        fillMessage += $"52={timestamp};";
+
         foreach (KeyValuePair<string, string> item in fixMessage)
         {
-            // Skip adding tag 17, 37, 150, and 14 if they already exist in the original message
-            if (item.Key == "17" || item.Key == "37" || item.Key == "150" || item.Key == "14")
+            // Skip adding tag 17, 37, 150, 14, and 52 if they already exist in the original message
+            if (item.Key == "17" || item.Key == "37" || item.Key == "150" || item.Key == "14" || item.Key == "52")
             {
                 continue;
             }
