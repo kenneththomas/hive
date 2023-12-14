@@ -65,8 +65,9 @@ class Program
             }
         }
 
-        // Move tag 8 to the front of the fill message
+        // 8 in the front 10 at the end, eventually enforce the header/footer in this section
         fillMessage = MoveTag8ToFront(fillMessage);
+        fillMessage = MoveTag10ToEnd(fillMessage);
 
         return fillMessage;
     }
@@ -95,5 +96,32 @@ class Program
 
         return newMessage;
     }
+
+    public static string MoveTag10ToEnd(string message)
+    {
+        // Split the message into key-value pairs
+        string[] keyValuePairs = message.Split(';');
+
+        // Find the pair with tag 10 and remove it from the array
+        string tag10Pair = "";
+        List<string> otherPairs = new List<string>();
+        foreach (string pair in keyValuePairs)
+        {
+            if (pair.StartsWith("10="))
+            {
+                tag10Pair = pair;
+            }
+            else
+            {
+                otherPairs.Add(pair);
+            }
+        }
+
+        // Reconstruct the message with tag 10 at the end
+        string newMessage = string.Join(";", otherPairs) + ";" + tag10Pair;
+
+        return newMessage;
+    }
+
 }
 
