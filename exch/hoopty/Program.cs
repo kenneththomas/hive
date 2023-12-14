@@ -50,15 +50,16 @@ class Program
         string timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HH:mm:ss.fff");
         fillMessage += $"52={timestamp};";
 
+        // Add "HPTY" as the value for the LastMkt and ExecBroker
+        fillMessage += "30=HPTY;76=HPTY;";
+
+        // Create a set of tags that are already included in the fill message
+        HashSet<string> includedTags = new HashSet<string> { "17", "37", "150", "14", "52", "30", "76" };
+
         foreach (KeyValuePair<string, string> item in fixMessage)
         {
-            // Skip adding tag 17, 37, 150, 14, and 52 if they already exist in the original message
-            if (item.Key == "17" || item.Key == "37" || item.Key == "150" || item.Key == "14" || item.Key == "52")
-            {
-                continue;
-            }
-            // Include all other tags from the original message
-            else
+            // Skip adding tags that are already included in the fill message
+            if (!includedTags.Contains(item.Key))
             {
                 fillMessage += $"{item.Key}={item.Value};";
             }
