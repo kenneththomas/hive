@@ -9,5 +9,6 @@
     "python.testing.pytestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.unittestEnabled": true,
-    "dotnet.defaultSolution": "hoopty.sln"
+    "dotnet.defaultSolution": "hoopty.sln",
+    "dotnet-test-explorer.testProjectPath": "exch/hoopty/*.csproj"
 }
