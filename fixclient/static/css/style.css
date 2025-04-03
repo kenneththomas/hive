@@ -137,3 +137,76 @@ select.form-control {
     font-family: 'Courier New', monospace;
     font-size: 10px;
 } 
+
+/* Order Book Styles */
+.order-book-section {
+    margin-top: 20px;
+    border-top: 1px solid #444;
+    padding-top: 15px;
+}
+
+.section-title {
+    color: #0f0;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+#order-book-container {
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #111;
+    border: 1px solid #444;
+    padding: 10px;
+}
+
+.symbol-section {
+    margin-bottom: 20px;
+}
+
+.symbol-section h3 {
+    color: #0f0;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.book-display {
+    display: flex;
+    gap: 20px;
+}
+
+.order-table {
+    flex: 1;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9em;
+}
+
+.order-table th, .order-table td {
+    padding: 5px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+}
+
+.order-table th {
+    background-color: #222;
+    color: #0f0;
+}
+
+.buy-table .bid-indicator {
+    color: #0f0;
+}
+
+.sell-table .ask-indicator {
+    color: #f00;
+}
+
+.no-data-message, .error-message, .empty-message {
+    color: #888;
+    text-align: center;
+    padding: 10px;
+}
+
+.error-message {
+    color: #f00;
+} 

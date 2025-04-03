@@ -48,5 +48,43 @@ def get_time():
         'date': datetime.now().strftime("%d-%b-%Y")
     })
 
+@app.route('/get_order_book')
+def get_order_book():
+    books_data = {}
+    
+    for symbol, book in baripool.bookshelf.items():
+        if not book:  # Skip empty books
+            continue
+            
+        buys = [order for order in book if order.side == '1' and not order.is_canceled]
+        sells = [order for order in book if order.side == '2' and not order.is_canceled]
+        
+        # Sort buys by price (descending) and sells by price (ascending)
+        buys.sort(key=lambda x: x.limitprice, reverse=True)
+        sells.sort(key=lambda x: x.limitprice)
+        
+        books_data[symbol] = {
+            'buys': [
+                {
+                    'order_id': order.orderid,
+                    'sender': order.sendercompid,
+                    'original_qty': order.original_qty,
+                    'remaining_qty': order.qty,
+                    'price': order.limitprice
+                } for order in buys
+            ],
+            'sells': [
+                {
+                    'order_id': order.orderid,
+                    'sender': order.sendercompid,
+                    'original_qty': order.original_qty,
+                    'remaining_qty': order.qty,
+                    'price': order.limitprice
+                } for order in sells
+            ]
+        }
+    
+    return jsonify(books_data)
+
 if __name__ == '__main__':
     app.run(debug=True) 
