@@ -710,3 +710,101 @@ select.form-control {
 .context-menu-item:hover {
     background-color: #004080;
 }
+
+/* Order Entry Button Styles */
+.order-entry-button-container {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.order-entry-button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.order-entry-button:hover {
+    background-color: #0066CC;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background-color: #151515;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #333333;
+    width: 400px;
+    border-radius: 3px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333333;
+}
+
+.modal-header h2 {
+    color: #FF8000;
+    font-size: 16px;
+    margin: 0;
+}
+
+.close-modal {
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: #FF8000;
+}
+
+.modal-body {
+    margin-bottom: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #333333;
+}
+
+.modal-button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.modal-button:hover {
+    background-color: #0066CC;
+}
