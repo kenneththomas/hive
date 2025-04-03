@@ -92,7 +92,7 @@ setInterval(updateTime, 1000);
 // Add this to your existing JavaScript file
 
 // Helper function to create an order table
-function createOrderTable(orders, sideLabel) {
+function createOrderTable(orders, sideLabel, symbol, changes) {
     const table = document.createElement('table');
     
     // Create header row
@@ -124,6 +124,19 @@ function createOrderTable(orders, sideLabel) {
     } else {
         orders.forEach(order => {
             const row = document.createElement('tr');
+            
+            // Add appropriate animation class based on order status
+            if (changes && symbol) {
+                const side = sideLabel === 'BID' ? 'buys' : 'sells';
+                
+                if (changes.newOrders[symbol] && changes.newOrders[symbol][side].includes(order.order_id)) {
+                    row.classList.add('new-order');
+                } else if (changes.partialFills[symbol] && changes.partialFills[symbol][side].includes(order.order_id)) {
+                    row.classList.add('partial-fill');
+                } else if (changes.fullFills[symbol] && changes.fullFills[symbol][side].includes(order.order_id)) {
+                    row.classList.add('full-fill');
+                }
+            }
             
             // Side indicator cell (just for visual distinction)
             const sideCell = document.createElement('td');
@@ -176,16 +189,25 @@ function formatQuantity(qty) {
 let fullOrderBookData = {};
 let currentSymbolFilter = '';
 
+// Global variable to store previous state of the order book for comparison
+let previousOrderBookData = {};
+
 // Function to fetch and update the order book
 function updateOrderBook() {
     fetch('/get_order_book')
         .then(response => response.json())
         .then(data => {
+            // Analyze changes to determine what animations to show
+            const changes = analyzeOrderChanges(previousOrderBookData, data);
+            
+            // Store the current data for next comparison
+            previousOrderBookData = JSON.parse(JSON.stringify(data));
+            
             // Store the full data
             fullOrderBookData = data;
             
-            // Display filtered data
-            displayOrderBook(data);
+            // Display filtered data with animations
+            displayOrderBook(data, changes);
         })
         .catch(error => {
             console.error('Error fetching order book:', error);
@@ -194,8 +216,113 @@ function updateOrderBook() {
         });
 }
 
-// Function to display order book with optional filtering
-function displayOrderBook(data) {
+// Function to analyze changes between previous and current order book
+function analyzeOrderChanges(previous, current) {
+    const changes = {
+        newOrders: {},
+        partialFills: {},
+        fullFills: {}
+    };
+    
+    // If no previous data, all orders are considered new
+    if (!previous || Object.keys(previous).length === 0) {
+        for (const symbol in current) {
+            changes.newOrders[symbol] = {
+                buys: current[symbol].buys.map(order => order.order_id),
+                sells: current[symbol].sells.map(order => order.order_id)
+            };
+        }
+        return changes;
+    }
+    
+    // Check each symbol
+    for (const symbol in current) {
+        changes.newOrders[symbol] = { buys: [], sells: [] };
+        changes.partialFills[symbol] = { buys: [], sells: [] };
+        changes.fullFills[symbol] = { buys: [], sells: [] };
+        
+        // If the symbol is new
+        if (!previous[symbol]) {
+            changes.newOrders[symbol] = {
+                buys: current[symbol].buys.map(order => order.order_id),
+                sells: current[symbol].sells.map(order => order.order_id)
+            };
+            continue;
+        }
+        
+        // Check buys
+        analyzeOrderSide(
+            previous[symbol].buys, 
+            current[symbol].buys, 
+            changes.newOrders[symbol].buys,
+            changes.partialFills[symbol].buys,
+            changes.fullFills[symbol].buys
+        );
+        
+        // Check sells
+        analyzeOrderSide(
+            previous[symbol].sells, 
+            current[symbol].sells, 
+            changes.newOrders[symbol].sells,
+            changes.partialFills[symbol].sells,
+            changes.fullFills[symbol].sells
+        );
+    }
+    
+    // Check for fully filled orders (those that were in previous but not in current)
+    for (const symbol in previous) {
+        if (!changes.fullFills[symbol]) {
+            changes.fullFills[symbol] = { buys: [], sells: [] };
+        }
+        
+        if (current[symbol]) {
+            // Find orders that existed in previous but are gone in current
+            const prevBuyIds = previous[symbol].buys.map(order => order.order_id);
+            const currBuyIds = current[symbol].buys.map(order => order.order_id);
+            const prevSellIds = previous[symbol].sells.map(order => order.order_id);
+            const currSellIds = current[symbol].sells.map(order => order.order_id);
+            
+            // Orders that disappeared are considered fully filled
+            prevBuyIds.forEach(id => {
+                if (!currBuyIds.includes(id)) {
+                    changes.fullFills[symbol].buys.push(id);
+                }
+            });
+            
+            prevSellIds.forEach(id => {
+                if (!currSellIds.includes(id)) {
+                    changes.fullFills[symbol].sells.push(id);
+                }
+            });
+        }
+    }
+    
+    return changes;
+}
+
+// Helper function to analyze changes in one side of the order book
+function analyzeOrderSide(prevOrders, currOrders, newOrders, partialFills, fullFills) {
+    const prevOrderMap = {};
+    
+    // Create a map of previous orders by ID
+    prevOrders.forEach(order => {
+        prevOrderMap[order.order_id] = order;
+    });
+    
+    // Check each current order
+    currOrders.forEach(order => {
+        if (!prevOrderMap[order.order_id]) {
+            // This is a new order
+            newOrders.push(order.order_id);
+        } else if (parseFloat(order.remaining_qty) < parseFloat(prevOrderMap[order.order_id].remaining_qty)) {
+            // This order has been partially filled
+            partialFills.push(order.order_id);
+        }
+    });
+}
+
+// Update the display function to use the changes information
+function displayOrderBook(data, changes) {
     const container = document.getElementById('order-book-container');
     
     // Clear previous content
@@ -241,12 +368,12 @@ function displayOrderBook(data) {
         const bookDisplay = document.createElement('div');
         bookDisplay.className = 'book-display';
         
-        // Buy side (bids)
-        const buyTable = createOrderTable(bookData.buys, 'BID');
+        // Buy side (bids) - now with changes parameter
+        const buyTable = createOrderTable(bookData.buys, 'BID', symbol, changes);
         buyTable.className = 'order-table buy-table';
         
-        // Sell side (asks)
-        const sellTable = createOrderTable(bookData.sells, 'ASK');
+        // Sell side (asks) - now with changes parameter
+        const sellTable = createOrderTable(bookData.sells, 'ASK', symbol, changes);
         sellTable.className = 'order-table sell-table';
         
         // Add tables to book display

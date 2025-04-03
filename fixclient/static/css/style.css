@@ -330,4 +330,37 @@ select.form-control {
 
 .symbol-filter button.reset:hover {
     background-color: #555;
+}
+
+/* Order Book Row Animations */
+@keyframes newOrderFlash {
+    0% { background-color: rgba(0, 204, 0, 0.6); }
+    100% { background-color: transparent; }
+}
+
+@keyframes partialFillFlash {
+    0% { background-color: rgba(255, 204, 0, 0.6); }
+    100% { background-color: transparent; }
+}
+
+@keyframes fullFillFlash {
+    0% { background-color: rgba(255, 51, 51, 0.6); }
+    100% { background-color: transparent; }
+}
+
+.order-table tr.new-order {
+    animation: newOrderFlash 1.5s ease-out;
+}
+
+.order-table tr.partial-fill {
+    animation: partialFillFlash 1.5s ease-out;
+}
+
+.order-table tr.full-fill {
+    animation: fullFillFlash 1.5s ease-out;
+}
+
+/* Additional highlight effect for row hover that doesn't interfere with animations */
+.order-table tr:hover {
+    background-color: rgba(30, 30, 30, 0.7) !important;
 } 
