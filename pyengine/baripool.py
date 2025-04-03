@@ -128,15 +128,12 @@ def on_new_order(new_order):
     parsed_fix = dfix.parsefix(new_order)
     new_order = BariOrder(parsed_fix)
 
-
     # Duplicate Order Validation with key as tag 49 and tag 11 combined
     if new_order.sendercompid + new_order.orderid in orderid_container.keys():
         rejectreport = reject_order(new_order, f'Duplicate Order Reject - {new_order.sendercompid} {new_order.orderid}')
         return dfix.exportfix(rejectreport)
     else:
         orderid_container[new_order.sendercompid + new_order.orderid] = new_order
-
-    # market order handling
 
     # Reject market order if not IOC
     if new_order.ordertype == '1' and new_order.timeinforce != '3':
@@ -145,19 +142,29 @@ def on_new_order(new_order):
 
     if new_order.ordertype == '1':
         # Set limit price based on the best available price in the bookshelf
-        if new_order.symbol in bookshelf.keys():
-            best_price = bookshelf[new_order.symbol][0].limitprice if new_order.side == '1' else bookshelf[new_order.symbol][-1].limitprice
-            new_order.limitprice = best_price
+        if new_order.symbol in bookshelf and bookshelf[new_order.symbol]:  # Check if list is not empty
+            opposite_side_orders = [order for order in bookshelf[new_order.symbol] 
+                                   if order.side != new_order.side and not order.is_canceled]
+            if opposite_side_orders:
+                if new_order.side == '1':  # Buy order
+                    best_price = min([order.limitprice for order in opposite_side_orders])
+                else:  # Sell order
+                    best_price = max([order.limitprice for order in opposite_side_orders])
+                new_order.limitprice = best_price
+            else:
+                # No opposite side orders available
+                rejectreport = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
+                return dfix.exportfix(rejectreport)
         else:
-            # Reject like an IOC if symbol not in bookshelf
+            # Reject like an IOC if symbol not in bookshelf or empty
             rejectreport = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
             return dfix.exportfix(rejectreport)
-
+    
     # side validation
     if new_order.side not in ['1', '2']:
         if new_order.side == '5':
             rejectreport = reject_order(new_order, 'Please send short sell orders as sell orders.')
-            return
+            return dfix.exportfix(rejectreport)
         rejectreport = reject_order(new_order, f'Invalid side - {new_order.side}')
         return dfix.exportfix(rejectreport)
 
@@ -193,8 +200,9 @@ def on_new_order(new_order):
     
     #reject if not 15=USD
     if new_order.currency != 'USD':
-        if new_order.currency in slurs.keys():
+        if new_order.currency in slurs:  # Fixed dict access
             rejectreport = reject_order(new_order, f'CurrencyValidationReject: {slurs[new_order.currency]} - we dont take {new_order.currency} round here')
+            return dfix.exportfix(rejectreport)  # Added missing return
         rejectreport = reject_order(new_order, f'MURRRRRKAH - we dont take {new_order.currency} round here')
         return dfix.exportfix(rejectreport)
     
