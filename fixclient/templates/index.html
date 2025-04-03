@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Floating Order Entry Button -->
+        <button id="floating-order-entry" class="floating-order-entry-button">New Order</button>
+        
+        <!-- Context Menu -->
+        <div id="context-menu" class="context-menu">
+            <div class="context-menu-item" id="trade-against">Trade Against</div>
+        </div>
+        
+        <!-- Header bar -->
+        <div class="header-bar">
+            <div class="header-title">BAR Trading Terminal</div>
+            <div class="header-date" id="date-display"></div>
+            <div class="header-time" id="time-display"></div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
+                <button class="tab-button" data-tab="recent-trades">RECENT TRADES</button>
+                <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
+                <button class="tab-button" data-tab="management">MANAGEMENT</button>
+            </div>
+
+            <div class="tab-content">
+                <!-- Order Entry Tab -->
+                <div class="trader-id-container">
+                    <label for="trader-id">Trader ID:</label>
+                    <input type="text" id="trader-id" value="TRADER1">
+                    <button id="update-trader-id">Update</button>
+                </div>
+                <div class="tab-pane active" id="order-entry-tab">
+                    <h1 class="title">ORDER ENTRY</h1>
+
+                    <!-- Order Entry Button -->
+                    <div class="order-entry-button-container">
+                        <button id="open-order-entry" class="order-entry-button">New Order</button>
+                    </div>
+
+                    <!-- Order Blotter -->
+                    <div class="order-blotter-section">
+                        <h2 class="section-title">ORDER BLOTTER</h2>
+                        <div class="blotter-container">
+                            <table id="order-blotter" class="blotter-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Order ID</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Price</th>
+                                        <th>Qty</th>
+                                        <th>Fill Progress</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="blotter-body">
+                                    <!-- Orders will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    
+                    <!-- Order Book Display Section -->
+                    <div class="order-book-section">
+                        <h2 class="section-title">MARKET DEPTH - ORDER BOOK</h2>
+                        <div class="symbol-filter">
+                            <label for="symbol-filter">Filter Symbol:</label>
+                            <input type="text" id="symbol-filter" placeholder="Enter symbol...">
+                            <button id="apply-filter">Apply</button>
+                            <button id="reset-filter" class="reset">Reset</button>
+                        </div>
+                        <div id="order-book-container" class="order-book-container">
+                            <div class="no-data-message">No active orders</div>
+                        </div>
+                    </div>
+
+
+                    <!-- Output terminal -->
+                    <div class="output-container">
+                        <div id="output-box" class="output-box">*** BARIPOOL TRADING TERMINAL READY ***</div>
+                    </div>
+
+                    <!-- Function keys -->
+                    <div class="function-keys">
+                        <button class="f-key" onclick="showHelp()">F1:Help</button>
+                        <button class="f-key" onclick="submitForm()">F2:Submit</button>
+                        <button class="f-key" onclick="clearForm()">F3:Clear</button>
+                        <button class="f-key" onclick="window.close()">F4:Exit</button>
+                    </div>
+                    
+                </div>
+
+                <!-- Recent Trades Tab -->
+                <div class="tab-pane" id="recent-trades-tab">
+                    <h1 class="title">RECENT TRADES</h1>
+                    <div class="ticker-section">
+                        <div class="ticker-container">
+                            <div id="trade-ticker" class="trade-ticker">
+                                <div class="no-trades-message">No recent trades</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Entry Modal -->
+                <div id="order-entry-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Order Entry</h2>
+                            <span class="close-modal">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <form id="order-form">
+                                <div class="form-group">
+                                    <label for="side">SIDE: (54)</label>
+                                    <select id="side" name="side" class="form-control">
+                                        <option value="Buy">Buy</option>
+                                        <option value="Sell">Sell</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="symbol">SYMBOL: (55)</label>
+                                    <input type="text" id="symbol" name="symbol" class="form-control">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="quantity">QTY: (38)</label>
+                                    <input type="text" id="quantity" name="quantity" class="form-control">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="price">PRICE: (44)</label>
+                                    <input type="text" id="price" name="price" class="form-control">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="sender">SENDER: (49)</label>
+                                    <input type="text" id="sender" name="sender" class="form-control">
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="modal-button" onclick="submitForm()">Submit</button>
+                            <button class="modal-button" onclick="clearForm()">Clear</button>
+                            <button class="modal-button" onclick="closeOrderEntry()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ScopeChat Tab -->
+                <div class="tab-pane" id="scopechat-tab">
+                    <h1 class="title">SCOPE CHAT</h1>
+                    
+                    <div class="scope-chat-container">
+                        <div class="scope-chat-settings">
+                            <div class="form-group">
+                                <label for="scope-id">SCOPE ID:</label>
+                                <input type="text" id="scope-id" class="form-control" placeholder="Enter trader ID">
+                                <button id="connect-scope" class="scope-button">Connect</button>
+                                <button id="clear-chat" class="scope-button">Clear Chat</button>
+                                <button id="view-profile" class="scope-button">View Profile</button>
+                            </div>
+                            
+                            <div class="profile-display" id="profile-display" style="display: none;">
+                                <div class="profile-header">
+                                    <img id="profile-picture" src="" alt="Profile Picture" class="profile-picture">
+                                    <div class="profile-info">
+                                        <h3 id="profile-name"></h3>
+                                        <p id="profile-title"></p>
+                                        <p id="profile-department"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group prompt-group">
+                                <label for="custom-prompt">CUSTOM PROMPT:</label>
+                                <textarea id="custom-prompt" class="form-control" rows="5"></textarea>
+                                <button id="reset-prompt" class="scope-button">Reset to Default</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Minimizable Order Blotters -->
+                        <div class="minimizable-blotter">
+                            <div class="blotter-header">
+                                <h2 class="section-title">TRADER ORDERS</h2>
+                                <button class="minimize-button">−</button>
+                            </div>
+                            <div class="blotter-content">
+                                <div class="blotter-container">
+                                    <table id="trader-blotter" class="blotter-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Order ID</th>
+                                                <th>Symbol</th>
+                                                <th>Side</th>
+                                                <th>Price</th>
+                                                <th>Qty</th>
+                                                <th>Fill Progress</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="trader-blotter-body">
+                                            <!-- Trader orders will be added here dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="minimizable-blotter">
+                            <div class="blotter-header">
+                                <h2 class="section-title">SCOPE ORDERS</h2>
+                                <button class="minimize-button">−</button>
+                            </div>
+                            <div class="blotter-content">
+                                <div class="blotter-container">
+                                    <table id="scope-blotter" class="blotter-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Order ID</th>
+                                                <th>Symbol</th>
+                                                <th>Side</th>
+                                                <th>Price</th>
+                                                <th>Qty</th>
+                                                <th>Fill Progress</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="scope-blotter-body">
+                                            <!-- Scope orders will be added here dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="scope-chat-messages">
+                            <div id="chat-messages" class="chat-messages">
+                                <div class="system-message">Connect to a SCOPE ID to start chatting</div>
+                            </div>
+                            
+                            <div class="chat-input-container">
+                                <input type="text" id="chat-input" class="chat-input" placeholder="Type your message...">
+                                <button id="send-message" class="scope-button send-button">Send</button>
+                            </div>
+
+                            <div class="chat-stats">
+                                <div class="token-stats">
+                                    <div class="token-stat">
+                                        <span class="stat-label">Total Input Tokens:</span>
+                                        <span id="total-input-tokens" class="stat-value">0</span>
+                                    </div>
+                                    <div class="token-stat">
+                                        <span class="stat-label">Total Output Tokens:</span>
+                                        <span id="total-output-tokens" class="stat-value">0</span>
+                                    </div>
+                                    <div class="token-stat">
+                                        <span class="stat-label">Total Cost:</span>
+                                        <span id="total-cost" class="stat-value">$0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Management Tab -->
+                <div class="tab-pane" id="management-tab">
+                    <h1 class="title">MANAGEMENT CONTROLS</h1>
+                    
+                    <div class="management-controls">
+                        <div class="control-group">
+                            <h2>Random Trade Generator</h2>
+                            <div class="control-item">
+                                <input type="checkbox" id="random-trades-toggle">
+                                <label for="random-trades-toggle">Enable Random Trades</label>
+                            </div>
+                            <div class="control-info">
+                                <p>When enabled, random trades will be generated every 15 seconds using random employees as senders.</p>
+                                <p>If no orders exist in the book, AAPL trades will be generated.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="status-bar">
+            <div id="status-display">READY</div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 

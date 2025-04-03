@@ -1,0 +1,12 @@
+CREATE TABLE employee (
+	id INTEGER NOT NULL, 
+	name VARCHAR NOT NULL, 
+	title VARCHAR NOT NULL, 
+	department VARCHAR, 
+	email VARCHAR, 
+	phone VARCHAR, 
+	picture_url VARCHAR, 
+	reports_to INTEGER, bio TEXT, location TEXT, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(reports_to) REFERENCES employee (id)
+)

@@ -1,4 +1,6 @@
 *.pyc
+fixclient/maricon.py
+fixclient/instance/ourteam.db
 
 # .gitignore file for Visual Studio and .NET Core
 

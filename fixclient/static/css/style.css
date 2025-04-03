@@ -1,0 +1,1302 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', monospace;
+    background-color: black;
+    color: #FFFFFF;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Header styles */
+.header-bar {
+    background-color: #004080;
+    display: flex;
+    padding: 5px 10px;
+}
+
+.header-title {
+    flex: 1;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+}
+
+.header-date, .header-time {
+    margin-left: 10px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+}
+
+/* Main content styles */
+.main-content {
+    flex: 1;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    color: #FF8000;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 10px 5px;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    margin: 2px 0;
+}
+
+.form-group label {
+    min-width: 150px;
+    text-align: right;
+    margin-right: 5px;
+}
+
+.form-control {
+    background-color: #151515;
+    color: #FFFFFF;
+    border: 1px solid #333333;
+    padding: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    width: 150px;
+}
+
+select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23FF8000'%3E%3Cpath d='M3.5 5l2.5 2.5L8.5 5h-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+/* Output box styles */
+.output-container {
+    flex: 1;
+    margin: 10px 5px;
+    border: 2px solid #333333;
+}
+
+.output-box {
+    background-color: #151515;
+    color: #FFFFFF;
+    height: 100%;
+    padding: 5px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+/* Function keys styles */
+.function-keys {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px;
+}
+
+.f-key {
+    background-color: black;
+    color: #FF8000;
+    border: 1px solid #333333;
+    padding: 5px 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    flex: 1;
+    margin: 0 5px;
+}
+
+.f-key:hover {
+    background-color: #FF8000;
+    color: black;
+}
+
+.f-key:active {
+    background-color: #004080;
+    color: white;
+}
+
+/* Status bar styles */
+.status-bar {
+    background-color: #303030;
+    padding: 3px 10px;
+}
+
+#status-display {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+} 
+
+/* Order Book Styles - Improved */
+.order-book-section {
+    margin-top: 20px;
+    border-top: 1px solid #444;
+    padding-top: 15px;
+}
+
+.section-title {
+    color: #00BFFF;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+.order-book-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: #0A0A0A;
+    border: 1px solid #333;
+    padding: 10px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.order-book-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.order-book-container::-webkit-scrollbar-track {
+    background: #0A0A0A;
+}
+
+.order-book-container::-webkit-scrollbar-thumb {
+    background-color: #333;
+    border-radius: 4px;
+}
+
+.order-book-container::-webkit-scrollbar-thumb:hover {
+    background-color: #444;
+}
+
+.symbol-section {
+    flex: 1 1 45%;
+    min-width: 300px;
+    margin-bottom: 20px;
+    background-color: #111;
+    border-radius: 3px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.symbol-section h3 {
+    color: #FF8000;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+.book-display {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.order-table {
+    flex: 1;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.85em;
+    border: 1px solid #222;
+}
+
+.order-table th, .order-table td {
+    padding: 6px 8px;
+    text-align: right;
+    border-bottom: 1px solid #222;
+}
+
+.order-table th:first-child, .order-table td:first-child,
+.order-table th:nth-child(2), .order-table td:nth-child(2) {
+    text-align: left;
+}
+
+.order-table th {
+    background-color: #1A1A1A;
+    color: #00BFFF;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+}
+
+.order-table tr:hover {
+    background-color: #1E1E1E;
+}
+
+.buy-table .bid-indicator {
+    color: #00CC00;
+    font-weight: bold;
+    background-color: rgba(0, 204, 0, 0.1);
+}
+
+.sell-table .ask-indicator {
+    color: #FF3333;
+    font-weight: bold;
+    background-color: rgba(255, 51, 51, 0.1);
+}
+
+.no-data-message, .error-message, .empty-message {
+    color: #888;
+    text-align: center;
+    padding: 15px;
+    font-style: italic;
+}
+
+.error-message {
+    color: #FF3333;
+    background-color: rgba(255, 0, 0, 0.1);
+    border-radius: 3px;
+    padding: 10px;
+}
+
+/* Price column styling */
+.order-table td:nth-child(4) {
+    font-weight: bold;
+}
+
+.buy-table td:nth-child(4) {
+    color: #00CC00;
+}
+
+.sell-table td:nth-child(4) {
+    color: #FF3333;
+}
+
+/* Quantity column styling */
+.order-table td:nth-child(5) {
+    font-weight: bold;
+}
+
+/* Symbol filter styles */
+.symbol-filter {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.symbol-filter label {
+    color: #00BFFF;
+    margin-right: 10px;
+    font-size: 0.9em;
+}
+
+.symbol-filter input {
+    background-color: #151515;
+    color: #FFFFFF;
+    border: 1px solid #333333;
+    padding: 5px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    width: 120px;
+    margin-right: 10px;
+}
+
+.symbol-filter button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 10px;
+    border-radius: 2px;
+}
+
+.symbol-filter button:hover {
+    background-color: #0066CC;
+}
+
+.symbol-filter button.reset {
+    background-color: #333;
+    margin-left: 5px;
+}
+
+.symbol-filter button.reset:hover {
+    background-color: #555;
+}
+
+/* Order Book Row Animations */
+@keyframes newOrderFlash {
+    0% { background-color: rgba(0, 204, 0, 0.6); }
+    100% { background-color: transparent; }
+}
+
+@keyframes partialFillFlash {
+    0% { background-color: rgba(255, 204, 0, 0.6); }
+    100% { background-color: transparent; }
+}
+
+@keyframes fullFillFlash {
+    0% { background-color: rgba(255, 51, 51, 0.6); }
+    100% { background-color: transparent; }
+}
+
+.order-table tr.new-order {
+    animation: newOrderFlash 1.5s ease-out;
+}
+
+.order-table tr.partial-fill {
+    animation: partialFillFlash 1.5s ease-out;
+}
+
+.order-table tr.full-fill {
+    animation: fullFillFlash 1.5s ease-out;
+}
+
+/* Additional highlight effect for row hover that doesn't interfere with animations */
+.order-table tr:hover {
+    background-color: rgba(30, 30, 30, 0.7) !important;
+}
+
+/* Trade Ticker Styles */
+.ticker-section {
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #333;
+    background-color: #0A0A0A;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    padding: 8px;
+}
+
+.ticker-container {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #222;
+    background-color: #111;
+}
+
+.ticker-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ticker-container::-webkit-scrollbar-track {
+    background: #0A0A0A;
+}
+
+.ticker-container::-webkit-scrollbar-thumb {
+    background-color: #333;
+    border-radius: 4px;
+}
+
+.ticker-container::-webkit-scrollbar-thumb:hover {
+    background-color: #444;
+}
+
+.ticker-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+
+.ticker-table th {
+    background-color: #1A1A1A;
+    color: #00BFFF;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid #222;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.ticker-table td {
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid #222;
+}
+
+.ticker-table tr:hover {
+    background-color: #1E1E1E;
+}
+
+.ticker-symbol {
+    font-weight: bold;
+    color: #FF8000;
+}
+
+.ticker-price {
+    font-weight: bold;
+    color: #FFCC00;
+}
+
+.ticker-buyer {
+    color: #00CC00;
+}
+
+.ticker-seller {
+    color: #FF3333;
+}
+
+.no-trades-message {
+    color: #888;
+    text-align: center;
+    padding: 10px;
+    font-style: italic;
+}
+
+/* Animation for new trades */
+@keyframes newTradeFlash {
+    0% { background-color: rgba(255, 204, 0, 0.6); }
+    100% { background-color: transparent; }
+}
+
+.ticker-table tr.new-trade {
+    animation: newTradeFlash 1.5s ease-out;
+}
+
+/* Add the ticker section title style if needed */
+.ticker-section .section-title {
+    color: #00BFFF;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+/* Tab Navigation Styles */
+.tabs {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.tab-button {
+    background-color: #151515;
+    color: #888;
+    border: none;
+    padding: 8px 15px;
+    margin-right: 2px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tab-button:hover {
+    background-color: #222;
+    color: #FF8000;
+}
+
+.tab-button.active {
+    background-color: #004080;
+    color: white;
+    border-bottom: 2px solid #FF8000;
+}
+
+.tab-content {
+    width: 100%;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* ScopeChat Styles */
+.scope-chat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.scope-chat-settings {
+    padding: 10px;
+    background-color: #151515;
+    border-bottom: 1px solid #333;
+}
+
+.scope-button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin-left: 5px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+.scope-button:hover {
+    background-color: #0066CC;
+}
+
+.prompt-group {
+    margin-top: 10px;
+}
+
+.prompt-group textarea {
+    width: 100%;
+    resize: vertical;
+    background-color: #151515;
+    color: #FFFFFF;
+    border: 1px solid #333333;
+    padding: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+.scope-chat-messages {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #0A0A0A;
+}
+
+.system-message {
+    text-align: center;
+    color: #888;
+    padding: 10px;
+    font-style: italic;
+}
+
+.chat-message {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #2a2a2a;
+}
+
+.chat-message.user {
+    background: #1a1a1a;
+}
+
+.chat-message .message-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.chat-message .message-content {
+    flex: 1;
+}
+
+.chat-message .message-text {
+    color: #fff;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.chat-message .message-time {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.chat-input-container {
+    display: flex;
+    padding: 10px;
+    background-color: #151515;
+    border-top: 1px solid #333;
+}
+
+.chat-input {
+    flex: 1;
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+    border: 1px solid #333333;
+    padding: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+.send-button {
+    background-color: #FF8000;
+    color: black;
+}
+
+.send-button:hover {
+    background-color: #FFA040;
+}
+
+.chat-stats {
+    background-color: #151515;
+    padding: 10px;
+    border-top: 1px solid #333;
+}
+
+.token-stats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #888;
+}
+
+.token-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    color: #FF8000;
+    font-weight: bold;
+}
+
+.user-message {
+    float: right;
+    background-color: #004080;
+    color: white;
+    border-radius: 10px 10px 0 10px;
+    padding: 8px 12px;
+}
+
+.trader-message {
+    float: left;
+    background-color: #222;
+    color: #DDD;
+    border-radius: 10px 10px 10px 0;
+    padding: 8px 12px;
+}
+
+.message-time {
+    font-size: 8px;
+    color: #888;
+    clear: both;
+    margin-top: 2px;
+}
+
+.user-time {
+    float: right;
+}
+
+.trader-time {
+    float: left;
+}
+
+/* Shared Trade Details Styles */
+.shared-trade-details {
+    clear: both;
+    margin: 10px 0;
+    background-color: #1A1A2A;
+    border: 1px solid #3A3A5A;
+    border-radius: 5px;
+    padding: 8px;
+    width: 80%;
+    margin-left: 10%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.trade-details-header {
+    color: #FF8000;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #3A3A5A;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.trade-details-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+
+.trade-detail {
+    font-size: 0.85em;
+    color: #DDD;
+}
+
+.trade-detail span {
+    color: #00BFFF;
+    font-weight: bold;
+}
+
+/* Context Menu Styles */
+.context-menu {
+    display: none;
+    position: fixed;
+    background-color: #151515;
+    border: 1px solid #333333;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    color: #FFFFFF;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+.context-menu-item:hover {
+    background-color: #004080;
+}
+
+/* Order Entry Button Styles */
+.order-entry-button-container {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.order-entry-button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.order-entry-button:hover {
+    background-color: #0066CC;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background-color: #151515;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #333333;
+    width: 400px;
+    border-radius: 3px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333333;
+}
+
+.modal-header h2 {
+    color: #FF8000;
+    font-size: 16px;
+    margin: 0;
+}
+
+.close-modal {
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: #FF8000;
+}
+
+.modal-body {
+    margin-bottom: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #333333;
+}
+
+.modal-button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.modal-button:hover {
+    background-color: #0066CC;
+}
+
+/* Trader ID Container */
+.trader-id-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    padding: 0 20px;
+}
+
+.trader-id-container label {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+.trader-id-container input {
+    background: #000;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 5px;
+    width: 100px;
+}
+
+.trader-id-container button {
+    background: #000;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.trader-id-container button:hover {
+    background: #00ff00;
+    color: #000;
+}
+
+/* Order Blotter */
+.order-blotter-section {
+    margin: 20px 0;
+    border: 1px solid #333;
+    background-color: #0A0A0A;
+    padding: 10px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.blotter-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #222;
+    background-color: #111;
+}
+
+.blotter-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.blotter-container::-webkit-scrollbar-track {
+    background: #0A0A0A;
+}
+
+.blotter-container::-webkit-scrollbar-thumb {
+    background-color: #333;
+    border-radius: 4px;
+}
+
+.blotter-container::-webkit-scrollbar-thumb:hover {
+    background-color: #444;
+}
+
+.blotter-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+
+.blotter-table th,
+.blotter-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #222;
+}
+
+.blotter-table th {
+    background-color: #1A1A1A;
+    color: #00BFFF;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.blotter-table tr:hover {
+    background-color: #1E1E1E;
+}
+
+/* Status colors - updated to match the theme */
+.status-new {
+    color: #00CC00;
+    font-weight: bold;
+}
+
+.status-partial {
+    color: #FFCC00;
+    font-weight: bold;
+}
+
+.status-filled {
+    color: #00BFFF;
+    font-weight: bold;
+}
+
+.status-rejected {
+    color: #FF3333;
+    font-weight: bold;
+}
+
+/* Animation for new orders in blotter */
+@keyframes newOrderBlotterFlash {
+    0% { background-color: rgba(0, 204, 0, 0.3); }
+    100% { background-color: transparent; }
+}
+
+.blotter-table tr.new-order {
+    animation: newOrderBlotterFlash 1.5s ease-out;
+}
+
+/* Animation for partial fills in blotter */
+@keyframes partialFillBlotterFlash {
+    0% { background-color: rgba(255, 204, 0, 0.3); }
+    100% { background-color: transparent; }
+}
+
+.blotter-table tr.partial-fill {
+    animation: partialFillBlotterFlash 1.5s ease-out;
+}
+
+/* Animation for full fills in blotter */
+@keyframes fullFillBlotterFlash {
+    0% { background-color: rgba(0, 191, 255, 0.3); }
+    100% { background-color: transparent; }
+}
+
+.blotter-table tr.full-fill {
+    animation: fullFillBlotterFlash 1.5s ease-out;
+}
+
+/* Recent Trades Tab */
+#recent-trades-tab {
+    padding: 20px;
+}
+
+#recent-trades-tab .ticker-section {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+#recent-trades-tab .trade-ticker {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.trade-item {
+    padding: 10px;
+    border: 1px solid #00ff00;
+    margin-bottom: 5px;
+}
+
+.trade-item.buy {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.trade-item.sell {
+    background: rgba(255, 0, 0, 0.1);
+}
+
+/* No orders message in blotter */
+.no-orders-message {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+    background-color: #1A1A1A;
+}
+
+.progress-container {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    position: absolute;
+    height: 100%;
+    background-color: #4CAF50;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #333;
+    z-index: 1;
+}
+
+/* Add some color variations for different order statuses */
+.status-new .progress-bar {
+    background-color: #2196F3;
+}
+
+.status-partial .progress-bar {
+    background-color: #FFC107;
+}
+
+.status-filled .progress-bar {
+    background-color: #4CAF50;
+}
+
+.minimizable-blotter {
+    margin-bottom: 15px;
+    border: 1px solid #333;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.blotter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1A1A1A;
+    padding: 8px 15px;
+    border-bottom: 1px solid #333;
+}
+
+.blotter-header .section-title {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+.minimize-button {
+    background: none;
+    border: none;
+    color: #FF8000;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.minimize-button:hover {
+    color: #FFFFFF;
+}
+
+.blotter-content {
+    max-height: 200px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.blotter-content.minimized {
+    max-height: 0;
+}
+
+#scopechat-blotter {
+    width: 100%;
+    margin: 0;
+}
+
+#scopechat-blotter th,
+#scopechat-blotter td {
+    padding: 5px 8px;
+    font-size: 0.9em;
+}
+
+#scopechat-blotter th {
+    background-color: #1A1A1A;
+    color: #00BFFF;
+}
+
+#scopechat-blotter tr:hover {
+    background-color: #1E1E1E;
+}
+
+/* Profile Display Styles */
+.profile-display {
+    background: #2a2a2a;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #3a3a3a;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-picture {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #4a4a4a;
+}
+
+.profile-info h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+}
+
+.profile-info p {
+    margin: 4px 0 0;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.profile-bio {
+    background-color: white;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.profile-bio h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+/* Profile Page Styles */
+.profile-page {
+    padding: 20px;
+}
+
+.profile-details {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-section {
+    background-color: white;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.profile-section h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.profile-actions button {
+    padding: 8px 16px;
+}
+
+/* Form styles for profile page */
+.profile-page .form-group {
+    margin-bottom: 15px;
+}
+
+.profile-page .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+}
+
+.profile-page .form-group input,
+.profile-page .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.profile-page .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.profile-page .form-group input:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+/* Floating Order Entry Button */
+.floating-order-entry-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 999;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.3s ease;
+}
+
+.floating-order-entry-button:hover {
+    background-color: #0066CC;
+}
