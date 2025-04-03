@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - {{ scope_id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <div class="header-title">Profile</div>
+            <div class="header-date" id="date-display"></div>
+            <div class="header-time" id="time-display"></div>
+        </div>
+
+        <div class="profile-page">
+            <div class="profile-header">
+                <img id="profile-picture" src="{{ profile.picture_url if profile else '' }}" alt="Profile Picture" class="profile-picture">
+                <div class="profile-info">
+                    <h1 id="profile-name">{{ profile.name if profile else scope_id }}</h1>
+                    <p id="profile-title">{{ profile.title if profile else 'No title' }}</p>
+                    <p id="profile-department">{{ profile.department if profile else 'No department' }}</p>
+                </div>
+            </div>
+
+            <div class="profile-details">
+                <div class="profile-section">
+                    <h2>Contact Information</h2>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" value="{{ profile.email if profile else scope_id }}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone:</label>
+                        <input type="text" id="phone" value="{{ profile.phone if profile else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="location">Location:</label>
+                        <input type="text" id="location" value="{{ profile.location if profile else '' }}">
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h2>Professional Information</h2>
+                    <div class="form-group">
+                        <label for="title">Title:</label>
+                        <input type="text" id="title" value="{{ profile.title if profile else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="department">Department:</label>
+                        <input type="text" id="department" value="{{ profile.department if profile else '' }}">
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h2>Bio</h2>
+                    <div class="form-group">
+                        <textarea id="bio" rows="5">{{ profile.bio if profile else '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h2>Profile Picture</h2>
+                    <div class="form-group">
+                        <label for="picture_url">Picture URL:</label>
+                        <input type="text" id="picture_url" value="{{ profile.picture_url if profile else '' }}">
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button id="save-profile" class="scope-button">Save Changes</button>
+                    <button id="cancel-profile" class="scope-button">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Update time and date
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('time-display').textContent = now.toLocaleTimeString();
+            document.getElementById('date-display').textContent = now.toLocaleDateString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Profile management
+        document.getElementById('save-profile').addEventListener('click', function() {
+            const profileData = {
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                location: document.getElementById('location').value,
+                title: document.getElementById('title').value,
+                department: document.getElementById('department').value,
+                bio: document.getElementById('bio').value,
+                picture_url: document.getElementById('picture_url').value
+            };
+
+            fetch(`/api/profile/${encodeURIComponent('{{ scope_id }}')}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(profileData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Profile updated successfully!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating profile');
+            });
+        });
+
+        document.getElementById('cancel-profile').addEventListener('click', function() {
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html> 

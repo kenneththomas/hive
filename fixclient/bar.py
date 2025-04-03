@@ -3,14 +3,37 @@ import sys
 import uuid
 from datetime import datetime
 import logging
+import sqlite3
+from pathlib import Path
 sys.path.insert(1, 'pyengine')
 sys.path.insert(1, 'tests')
 import baripool
 import baripool_action
 import dfix
 from scopechat import scope_chat, DEFAULT_PROMPT  # Import the ScopeChat module and DEFAULT_PROMPT
+from profile import register_profile_routes  # Import the new profile module
 
 app = Flask(__name__)
+
+# Register profile routes
+register_profile_routes(app)
+
+# Database setup
+DB_PATH = Path('fixclient/instance/ourteam.db')
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def get_profile(scope_id):
+    """Get profile information for a given scope_id (email)"""
+    conn = get_db()
+    try:
+        profile = conn.execute('SELECT * FROM employee WHERE email = ?', (scope_id,)).fetchone()
+        return dict(profile) if profile else None
+    finally:
+        conn.close()
 
 # Configure Flask's logging to filter out specific endpoints
 class EndpointFilter(logging.Filter):

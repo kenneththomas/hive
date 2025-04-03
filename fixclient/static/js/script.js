@@ -552,6 +552,9 @@ function connectToScope() {
     // Load chat history
     fetchChatHistory(scopeId);
     
+    // Update profile display
+    updateProfileDisplay(scopeId);
+    
     // Update UI to show connected state
     document.getElementById('connect-scope').textContent = 'Reconnect';
     document.getElementById('chat-input').focus();
@@ -1235,3 +1238,47 @@ function addOrderToScopeBlotter(order, side, blotterBody) {
     
     blotterBody.appendChild(row);
 }
+
+// Profile functionality
+function updateProfileDisplay(scopeId) {
+    fetch(`/api/profile/${encodeURIComponent(scopeId)}`)
+        .then(response => response.json())
+        .then(profile => {
+            const profileDisplay = document.getElementById('profile-display');
+            if (profile && Object.keys(profile).length > 0) {
+                profileDisplay.style.display = 'block';
+                document.getElementById('profile-picture').src = profile.picture_url || '';
+                document.getElementById('profile-name').textContent = profile.name || scopeId;
+                document.getElementById('profile-title').textContent = profile.title || 'No title';
+                document.getElementById('profile-department').textContent = profile.department || 'No department';
+                document.getElementById('profile-bio').textContent = profile.bio || 'No bio available';
+                
+                // Create a comprehensive prompt that includes name, title, department, and bio
+                let customPrompt = '';
+                if (profile.name) customPrompt += `Name: ${profile.name}\n`;
+                if (profile.title) customPrompt += `Title: ${profile.title}\n`;
+                if (profile.department) customPrompt += `Department: ${profile.department}\n`;
+                if (profile.bio) customPrompt += `\nBio:\n${profile.bio}`;
+                
+                if (customPrompt) {
+                    document.getElementById('custom-prompt').value = customPrompt;
+                }
+            } else {
+                profileDisplay.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching profile:', error);
+            document.getElementById('profile-display').style.display = 'none';
+        });
+}
+
+// Add event listener for view profile button
+document.getElementById('view-profile').addEventListener('click', function() {
+    const scopeId = document.getElementById('scope-id').value.trim();
+    if (scopeId) {
+        window.location.href = `/profile/${encodeURIComponent(scopeId)}`;
+    } else {
+        alert('Please enter a SCOPE ID first');
+    }
+});

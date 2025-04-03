@@ -1133,3 +1133,112 @@ select.form-control {
 #scopechat-blotter tr:hover {
     background-color: #1E1E1E;
 }
+
+/* Profile Display Styles */
+.profile-display {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.profile-picture {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+}
+
+.profile-info h3 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.profile-info p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.profile-bio {
+    background-color: white;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.profile-bio h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+/* Profile Page Styles */
+.profile-page {
+    padding: 20px;
+}
+
+.profile-details {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-section {
+    background-color: white;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.profile-section h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.profile-actions button {
+    padding: 8px 16px;
+}
+
+/* Form styles for profile page */
+.profile-page .form-group {
+    margin-bottom: 15px;
+}
+
+.profile-page .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+}
+
+.profile-page .form-group input,
+.profile-page .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.profile-page .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.profile-page .form-group input:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
