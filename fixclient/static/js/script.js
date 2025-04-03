@@ -955,3 +955,171 @@ function submitForm() {
         closeOrderEntry();
     });
 }
+
+// Global variables
+let currentTraderId = 'TRADER1';
+let orderBlotter = new Map(); // Map to store order status
+let previousOrderStates = new Map(); // Map to store previous order states
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial trader ID
+    document.getElementById('sender').value = currentTraderId;
+    
+    // Add event listeners
+    document.getElementById('update-trader-id').addEventListener('click', updateTraderId);
+    
+    // Start polling for updates
+    setInterval(updateOrderBlotter, 1000);
+    setInterval(updateRecentTrades, 1000);
+});
+
+// Update trader ID
+function updateTraderId() {
+    const newTraderId = document.getElementById('trader-id').value.trim();
+    if (newTraderId) {
+        currentTraderId = newTraderId;
+        document.getElementById('sender').value = currentTraderId;
+        updateOrderBlotter(); // Refresh blotter for new trader
+    }
+}
+
+// Update order blotter
+function updateOrderBlotter() {
+    fetch('/get_order_book')
+        .then(response => response.json())
+        .then(data => {
+            const blotterBody = document.getElementById('blotter-body');
+            blotterBody.innerHTML = ''; // Clear the blotter first
+            const currentOrderStates = new Map();
+            
+            // Get the current filter value
+            const filterSymbol = document.getElementById('symbol-filter').value.trim().toUpperCase();
+            
+            // Process all orders and find those belonging to current trader
+            for (const symbol in data) {
+                // Skip if filter is active and symbol doesn't match
+                if (filterSymbol && !symbol.toUpperCase().includes(filterSymbol)) {
+                    continue;
+                }
+                
+                const book = data[symbol];
+                
+                // Process buy orders
+                book.buys.forEach(order => {
+                    if (order.sender === currentTraderId) {
+                        currentOrderStates.set(order.order_id, {
+                            filled: order.original_qty - order.remaining_qty,
+                            originalQty: order.original_qty
+                        });
+                        addOrderToBlotter(order, 'Buy', currentOrderStates);
+                    }
+                });
+                
+                // Process sell orders
+                book.sells.forEach(order => {
+                    if (order.sender === currentTraderId) {
+                        currentOrderStates.set(order.order_id, {
+                            filled: order.original_qty - order.remaining_qty,
+                            originalQty: order.original_qty
+                        });
+                        addOrderToBlotter(order, 'Sell', currentOrderStates);
+                    }
+                });
+            }
+            
+            // Show "No orders" message if blotter is empty
+            if (blotterBody.children.length === 0) {
+                const noOrdersRow = document.createElement('tr');
+                noOrdersRow.innerHTML = `
+                    <td colspan="9" class="no-orders-message">
+                        ${filterSymbol ? `No orders found for symbol: ${filterSymbol}` : 'No active orders'}
+                    </td>
+                `;
+                blotterBody.appendChild(noOrdersRow);
+            }
+            
+            // Update previous states for next comparison
+            previousOrderStates = currentOrderStates;
+        })
+        .catch(error => console.error('Error updating order blotter:', error));
+}
+
+// Add order to blotter
+function addOrderToBlotter(order, side, currentOrderStates) {
+    const blotterBody = document.getElementById('blotter-body');
+    const row = document.createElement('tr');
+    
+    // Calculate filled and remaining quantities
+    const filled = order.original_qty - order.remaining_qty;
+    const status = getOrderStatus(filled, order.original_qty);
+    
+    // Check if this is a new order or if the status has changed
+    const previousState = previousOrderStates.get(order.order_id);
+    const currentState = currentOrderStates.get(order.order_id);
+    
+    // Only add animation class if there's a change in status
+    if (!previousState) {
+        // New order
+        row.classList.add('new-order');
+    } else if (previousState.filled !== currentState.filled) {
+        // Status changed
+        if (filled === order.original_qty) {
+            row.classList.add('full-fill');
+        } else if (filled > 0) {
+            row.classList.add('partial-fill');
+        }
+    }
+    
+    row.innerHTML = `
+        <td>${order.time || ''}</td>
+        <td>${order.order_id}</td>
+        <td>${order.symbol}</td>
+        <td>${side}</td>
+        <td>${order.price}</td>
+        <td>${order.original_qty}</td>
+        <td>${filled}</td>
+        <td>${order.remaining_qty}</td>
+        <td class="status-${status.toLowerCase()}">${status}</td>
+    `;
+    
+    blotterBody.appendChild(row);
+}
+
+// Get order status
+function getOrderStatus(filled, originalQty) {
+    if (filled === 0) return 'NEW';
+    if (filled === originalQty) return 'FILLED';
+    return 'PARTIAL';
+}
+
+// Update recent trades
+function updateRecentTrades() {
+    fetch('/get_recent_trades')
+        .then(response => response.json())
+        .then(trades => {
+            const tradeTicker = document.getElementById('trade-ticker');
+            
+            if (trades.length === 0) {
+                tradeTicker.innerHTML = '<div class="no-trades-message">No recent trades</div>';
+                return;
+            }
+            
+            tradeTicker.innerHTML = '';
+            trades.forEach(trade => {
+                const tradeItem = document.createElement('div');
+                tradeItem.className = `trade-item ${trade.side.toLowerCase()}`;
+                
+                tradeItem.innerHTML = `
+                    <div class="trade-time">${trade.time}</div>
+                    <div class="trade-details">
+                        ${trade.symbol} ${trade.quantity} @ ${trade.price}
+                        (${trade.buyer} ↔ ${trade.seller})
+                    </div>
+                `;
+                
+                tradeTicker.appendChild(tradeItem);
+            });
+        })
+        .catch(error => console.error('Error updating recent trades:', error));
+}

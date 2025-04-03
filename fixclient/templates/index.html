@@ -18,12 +18,18 @@
             <div class="header-title">BAR Trading Terminal</div>
             <div class="header-date" id="date-display"></div>
             <div class="header-time" id="time-display"></div>
+            <div class="trader-id-container">
+                <label for="trader-id">Trader ID:</label>
+                <input type="text" id="trader-id" value="TRADER1">
+                <button id="update-trader-id">Update</button>
+            </div>
         </div>
 
         <!-- Main content -->
         <div class="main-content">
             <div class="tabs">
                 <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
+                <button class="tab-button" data-tab="recent-trades">RECENT TRADES</button>
                 <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
             </div>
 
@@ -32,19 +38,34 @@
                 <div class="tab-pane active" id="order-entry-tab">
                     <h1 class="title">ORDER ENTRY</h1>
 
-                    <!-- Add Trade Ticker Section -->
-                    <div class="ticker-section">
-                        <h2 class="section-title">RECENT TRADES</h2>
-                        <div class="ticker-container">
-                            <div id="trade-ticker" class="trade-ticker">
-                                <div class="no-trades-message">No recent trades</div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Order Entry Button -->
                     <div class="order-entry-button-container">
                         <button id="open-order-entry" class="order-entry-button">New Order</button>
+                    </div>
+
+                    <!-- Order Blotter -->
+                    <div class="order-blotter-section">
+                        <h2 class="section-title">ORDER BLOTTER</h2>
+                        <div class="blotter-container">
+                            <table id="order-blotter" class="blotter-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Order ID</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Price</th>
+                                        <th>Qty</th>
+                                        <th>Filled</th>
+                                        <th>Remaining</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="blotter-body">
+                                    <!-- Orders will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- Output terminal -->
@@ -71,6 +92,18 @@
                         </div>
                         <div id="order-book-container" class="order-book-container">
                             <div class="no-data-message">No active orders</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Trades Tab -->
+                <div class="tab-pane" id="recent-trades-tab">
+                    <h1 class="title">RECENT TRADES</h1>
+                    <div class="ticker-section">
+                        <div class="ticker-container">
+                            <div id="trade-ticker" class="trade-ticker">
+                                <div class="no-trades-message">No recent trades</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -109,7 +142,7 @@
 
                                 <div class="form-group">
                                     <label for="sender">SENDER: (49)</label>
-                                    <input type="text" id="sender" name="sender" class="form-control">
+                                    <input type="text" id="sender" name="sender" class="form-control" readonly>
                                 </div>
                             </form>
                         </div>

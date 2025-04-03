@@ -124,7 +124,10 @@ def get_order_book():
                     'sender': order.sendercompid,
                     'original_qty': order.original_qty,
                     'remaining_qty': order.qty,
-                    'price': order.limitprice
+                    'price': order.limitprice,
+                    'symbol': symbol,
+                    'time': baripool.fillcontainer.get(order.orderid, {}).get('60', '') or 
+                           baripool.fillcontainer.get(order.orderid, {}).get('52', '')
                 } for order in buys
             ],
             'sells': [
@@ -133,7 +136,10 @@ def get_order_book():
                     'sender': order.sendercompid,
                     'original_qty': order.original_qty,
                     'remaining_qty': order.qty,
-                    'price': order.limitprice
+                    'price': order.limitprice,
+                    'symbol': symbol,
+                    'time': baripool.fillcontainer.get(order.orderid, {}).get('60', '') or 
+                           baripool.fillcontainer.get(order.orderid, {}).get('52', '')
                 } for order in sells
             ]
         }
@@ -146,10 +152,6 @@ def get_recent_trades():
     
     for order_id, execution_report in baripool.fillcontainer.items():
         try:
-            # Check if execution_report is a valid string
-            #if not execution_report or not isinstance(execution_report, str):
-                #continue
-                
             # Parse the FIX execution report to extract trade details
             parsed_report = execution_report
             
@@ -162,7 +164,8 @@ def get_recent_trades():
                     'time': parsed_report.get('60', datetime.now().strftime("%H:%M:%S")),
                     'buyer': parsed_report.get('49', 'Unknown'),  # SenderCompID
                     'seller': parsed_report.get('56', 'Unknown'), # TargetCompID
-                    'order_id': order_id
+                    'order_id': order_id,
+                    'side': 'Buy' if parsed_report.get('54') == '1' else 'Sell'
                 }
                 trades.append(trade)
         except Exception as e:
