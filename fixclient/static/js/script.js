@@ -393,8 +393,8 @@ window.onload = function() {
     // Initial update of the order book
     updateOrderBook();
     
-    // Set interval to update the order book (every 5 seconds)
-    setInterval(updateOrderBook, 5000);
+    // Set interval to update the order book more frequently (every 1 second instead of 5)
+    setInterval(updateOrderBook, 1000);
     
     // Set up symbol filter functionality
     document.getElementById('apply-filter').addEventListener('click', function() {
