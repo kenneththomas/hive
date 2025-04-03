@@ -91,61 +91,6 @@ setInterval(updateTime, 1000);
 
 // Add this to your existing JavaScript file
 
-// Function to fetch and update the order book
-function updateOrderBook() {
-    fetch('/get_order_book')
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('order-book-container');
-            
-            // Clear previous content
-            container.innerHTML = '';
-            
-            // Check if there are any books
-            if (Object.keys(data).length === 0) {
-                container.innerHTML = '<div class="no-data-message">No active orders</div>';
-                return;
-            }
-            
-            // Create a section for each symbol
-            for (const symbol in data) {
-                const bookData = data[symbol];
-                const symbolSection = document.createElement('div');
-                symbolSection.className = 'symbol-section';
-                
-                // Create symbol header
-                const symbolHeader = document.createElement('h3');
-                symbolHeader.textContent = symbol;
-                symbolSection.appendChild(symbolHeader);
-                
-                // Create book display with buy and sell sides
-                const bookDisplay = document.createElement('div');
-                bookDisplay.className = 'book-display';
-                
-                // Buy side (bids)
-                const buyTable = createOrderTable(bookData.buys, 'BID');
-                buyTable.className = 'order-table buy-table';
-                
-                // Sell side (asks)
-                const sellTable = createOrderTable(bookData.sells, 'ASK');
-                sellTable.className = 'order-table sell-table';
-                
-                // Add tables to book display
-                bookDisplay.appendChild(buyTable);
-                bookDisplay.appendChild(sellTable);
-                symbolSection.appendChild(bookDisplay);
-                
-                // Add the symbol section to the container
-                container.appendChild(symbolSection);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching order book:', error);
-            document.getElementById('order-book-container').innerHTML = 
-                '<div class="error-message">Error loading order book data</div>';
-        });
-}
-
 // Helper function to create an order table
 function createOrderTable(orders, sideLabel) {
     const table = document.createElement('table');
@@ -186,19 +131,25 @@ function createOrderTable(orders, sideLabel) {
             row.appendChild(sideCell);
             
             // Order details
-            const cells = [
-                order.order_id,
-                order.sender,
-                order.price,
-                order.remaining_qty,
-                order.original_qty
-            ];
+            const orderIdCell = document.createElement('td');
+            orderIdCell.textContent = order.order_id;
+            row.appendChild(orderIdCell);
             
-            cells.forEach(text => {
-                const td = document.createElement('td');
-                td.textContent = text;
-                row.appendChild(td);
-            });
+            const senderCell = document.createElement('td');
+            senderCell.textContent = order.sender;
+            row.appendChild(senderCell);
+            
+            const priceCell = document.createElement('td');
+            priceCell.textContent = formatPrice(order.price);
+            row.appendChild(priceCell);
+            
+            const qtyCell = document.createElement('td');
+            qtyCell.textContent = formatQuantity(order.remaining_qty);
+            row.appendChild(qtyCell);
+            
+            const origQtyCell = document.createElement('td');
+            origQtyCell.textContent = formatQuantity(order.original_qty);
+            row.appendChild(origQtyCell);
             
             tbody.appendChild(row);
         });
@@ -206,6 +157,103 @@ function createOrderTable(orders, sideLabel) {
     
     table.appendChild(tbody);
     return table;
+}
+
+// Format price with 2 decimal places
+function formatPrice(price) {
+    return parseFloat(price).toFixed(2);
+}
+
+// Format quantity with commas for thousands
+function formatQuantity(qty) {
+    return parseInt(qty).toLocaleString();
+}
+
+// Global variable to store the complete order book data
+let fullOrderBookData = {};
+let currentSymbolFilter = '';
+
+// Function to fetch and update the order book
+function updateOrderBook() {
+    fetch('/get_order_book')
+        .then(response => response.json())
+        .then(data => {
+            // Store the full data
+            fullOrderBookData = data;
+            
+            // Display filtered data
+            displayOrderBook(data);
+        })
+        .catch(error => {
+            console.error('Error fetching order book:', error);
+            document.getElementById('order-book-container').innerHTML = 
+                '<div class="error-message">Error loading order book data</div>';
+        });
+}
+
+// Function to display order book with optional filtering
+function displayOrderBook(data) {
+    const container = document.getElementById('order-book-container');
+    
+    // Clear previous content
+    container.innerHTML = '';
+    
+    // Filter data if a filter is applied
+    let filteredData = {};
+    if (currentSymbolFilter) {
+        // Case-insensitive filter
+        const filterLower = currentSymbolFilter.toLowerCase();
+        
+        for (const symbol in data) {
+            if (symbol.toLowerCase().includes(filterLower)) {
+                filteredData[symbol] = data[symbol];
+            }
+        }
+    } else {
+        filteredData = data;
+    }
+    
+    // Check if there are any books after filtering
+    if (Object.keys(filteredData).length === 0) {
+        if (currentSymbolFilter) {
+            container.innerHTML = `<div class="no-data-message">No matching symbols for "${currentSymbolFilter}"</div>`;
+        } else {
+            container.innerHTML = '<div class="no-data-message">No active orders in the book</div>';
+        }
+        return;
+    }
+    
+    // Create a section for each symbol
+    for (const symbol in filteredData) {
+        const bookData = filteredData[symbol];
+        const symbolSection = document.createElement('div');
+        symbolSection.className = 'symbol-section';
+        
+        // Create symbol header
+        const symbolHeader = document.createElement('h3');
+        symbolHeader.textContent = symbol;
+        symbolSection.appendChild(symbolHeader);
+        
+        // Create book display with buy and sell sides
+        const bookDisplay = document.createElement('div');
+        bookDisplay.className = 'book-display';
+        
+        // Buy side (bids)
+        const buyTable = createOrderTable(bookData.buys, 'BID');
+        buyTable.className = 'order-table buy-table';
+        
+        // Sell side (asks)
+        const sellTable = createOrderTable(bookData.sells, 'ASK');
+        sellTable.className = 'order-table sell-table';
+        
+        // Add tables to book display
+        bookDisplay.appendChild(buyTable);
+        bookDisplay.appendChild(sellTable);
+        symbolSection.appendChild(bookDisplay);
+        
+        // Add the symbol section to the container
+        container.appendChild(symbolSection);
+    }
 }
 
 // Add this to your existing window.onload function
@@ -217,4 +265,25 @@ window.onload = function() {
     
     // Set interval to update the order book (every 5 seconds)
     setInterval(updateOrderBook, 5000);
+    
+    // Set up symbol filter functionality
+    document.getElementById('apply-filter').addEventListener('click', function() {
+        currentSymbolFilter = document.getElementById('symbol-filter').value.trim();
+        displayOrderBook(fullOrderBookData);
+    });
+    
+    document.getElementById('reset-filter').addEventListener('click', function() {
+        document.getElementById('symbol-filter').value = '';
+        currentSymbolFilter = '';
+        displayOrderBook(fullOrderBookData);
+    });
+    
+    // Allow pressing Enter in the filter input to apply the filter
+    document.getElementById('symbol-filter').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            currentSymbolFilter = this.value.trim();
+            displayOrderBook(fullOrderBookData);
+        }
+    });
 };

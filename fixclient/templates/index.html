@@ -64,7 +64,13 @@
             
             <!-- Order Book Display Section -->
             <div class="order-book-section">
-                <h2 class="section-title">ORDER BOOK (ADMIN VIEW)</h2>
+                <h2 class="section-title">MARKET DEPTH - ORDER BOOK</h2>
+                <div class="symbol-filter">
+                    <label for="symbol-filter">Filter Symbol:</label>
+                    <input type="text" id="symbol-filter" placeholder="Enter symbol...">
+                    <button id="apply-filter">Apply</button>
+                    <button id="reset-filter" class="reset">Reset</button>
+                </div>
                 <div id="order-book-container">
                     <div class="no-data-message">No active orders</div>
                 </div>

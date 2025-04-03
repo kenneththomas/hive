@@ -138,7 +138,7 @@ select.form-control {
     font-size: 10px;
 } 
 
-/* Order Book Styles */
+/* Order Book Styles - Improved */
 .order-book-section {
     margin-top: 20px;
     border-top: 1px solid #444;
@@ -146,67 +146,183 @@ select.form-control {
 }
 
 .section-title {
-    color: #0f0;
+    color: #00BFFF;
     font-size: 1.2em;
     margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
 }
 
 #order-book-container {
-    max-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
-    background-color: #111;
-    border: 1px solid #444;
+    background-color: #0A0A0A;
+    border: 1px solid #333;
     padding: 10px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .symbol-section {
     margin-bottom: 20px;
+    background-color: #111;
+    border-radius: 3px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .symbol-section h3 {
-    color: #0f0;
+    color: #FF8000;
     border-bottom: 1px solid #333;
     padding-bottom: 5px;
     margin-bottom: 10px;
+    font-size: 1.1em;
+    text-align: center;
 }
 
 .book-display {
     display: flex;
-    gap: 20px;
+    gap: 15px;
 }
 
 .order-table {
     flex: 1;
     border-collapse: collapse;
     width: 100%;
-    font-size: 0.9em;
+    font-size: 0.85em;
+    border: 1px solid #222;
 }
 
 .order-table th, .order-table td {
-    padding: 5px;
+    padding: 6px 8px;
+    text-align: right;
+    border-bottom: 1px solid #222;
+}
+
+.order-table th:first-child, .order-table td:first-child,
+.order-table th:nth-child(2), .order-table td:nth-child(2) {
     text-align: left;
-    border-bottom: 1px solid #333;
 }
 
 .order-table th {
-    background-color: #222;
-    color: #0f0;
+    background-color: #1A1A1A;
+    color: #00BFFF;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+}
+
+.order-table tr:hover {
+    background-color: #1E1E1E;
 }
 
 .buy-table .bid-indicator {
-    color: #0f0;
+    color: #00CC00;
+    font-weight: bold;
+    background-color: rgba(0, 204, 0, 0.1);
 }
 
 .sell-table .ask-indicator {
-    color: #f00;
+    color: #FF3333;
+    font-weight: bold;
+    background-color: rgba(255, 51, 51, 0.1);
 }
 
 .no-data-message, .error-message, .empty-message {
     color: #888;
     text-align: center;
-    padding: 10px;
+    padding: 15px;
+    font-style: italic;
 }
 
 .error-message {
-    color: #f00;
+    color: #FF3333;
+    background-color: rgba(255, 0, 0, 0.1);
+    border-radius: 3px;
+    padding: 10px;
+}
+
+/* Price column styling */
+.order-table td:nth-child(4) {
+    font-weight: bold;
+}
+
+.buy-table td:nth-child(4) {
+    color: #00CC00;
+}
+
+.sell-table td:nth-child(4) {
+    color: #FF3333;
+}
+
+/* Quantity column styling */
+.order-table td:nth-child(5) {
+    font-weight: bold;
+}
+
+/* Scrollbar styling */
+#order-book-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#order-book-container::-webkit-scrollbar-track {
+    background: #0A0A0A;
+}
+
+#order-book-container::-webkit-scrollbar-thumb {
+    background-color: #333;
+    border-radius: 4px;
+}
+
+#order-book-container::-webkit-scrollbar-thumb:hover {
+    background-color: #444;
+}
+
+/* Symbol filter styles */
+.symbol-filter {
+    display: flex;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.symbol-filter label {
+    color: #00BFFF;
+    margin-right: 10px;
+    font-size: 0.9em;
+}
+
+.symbol-filter input {
+    background-color: #151515;
+    color: #FFFFFF;
+    border: 1px solid #333333;
+    padding: 5px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    width: 120px;
+    margin-right: 10px;
+}
+
+.symbol-filter button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 10px;
+    border-radius: 2px;
+}
+
+.symbol-filter button:hover {
+    background-color: #0066CC;
+}
+
+.symbol-filter button.reset {
+    background-color: #333;
+    margin-left: 5px;
+}
+
+.symbol-filter button.reset:hover {
+    background-color: #555;
 } 
