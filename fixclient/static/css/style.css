@@ -363,4 +363,115 @@ select.form-control {
 /* Additional highlight effect for row hover that doesn't interfere with animations */
 .order-table tr:hover {
     background-color: rgba(30, 30, 30, 0.7) !important;
+}
+
+/* Trade Ticker Styles */
+.ticker-section {
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #333;
+    background-color: #0A0A0A;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    padding: 8px;
+}
+
+.ticker-container {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #222;
+    background-color: #111;
+}
+
+.ticker-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ticker-container::-webkit-scrollbar-track {
+    background: #0A0A0A;
+}
+
+.ticker-container::-webkit-scrollbar-thumb {
+    background-color: #333;
+    border-radius: 4px;
+}
+
+.ticker-container::-webkit-scrollbar-thumb:hover {
+    background-color: #444;
+}
+
+.ticker-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+
+.ticker-table th {
+    background-color: #1A1A1A;
+    color: #00BFFF;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.5px;
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid #222;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.ticker-table td {
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid #222;
+}
+
+.ticker-table tr:hover {
+    background-color: #1E1E1E;
+}
+
+.ticker-symbol {
+    font-weight: bold;
+    color: #FF8000;
+}
+
+.ticker-price {
+    font-weight: bold;
+    color: #FFCC00;
+}
+
+.ticker-buyer {
+    color: #00CC00;
+}
+
+.ticker-seller {
+    color: #FF3333;
+}
+
+.no-trades-message {
+    color: #888;
+    text-align: center;
+    padding: 10px;
+    font-style: italic;
+}
+
+/* Animation for new trades */
+@keyframes newTradeFlash {
+    0% { background-color: rgba(255, 204, 0, 0.6); }
+    100% { background-color: transparent; }
+}
+
+.ticker-table tr.new-trade {
+    animation: newTradeFlash 1.5s ease-out;
+}
+
+/* Add the ticker section title style if needed */
+.ticker-section .section-title {
+    color: #00BFFF;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
 } 

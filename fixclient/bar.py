@@ -6,6 +6,7 @@ sys.path.insert(1, 'pyengine')
 sys.path.insert(1, 'tests')
 import baripool
 import baripool_action
+import dfix
 
 app = Flask(__name__)
 
@@ -85,6 +86,43 @@ def get_order_book():
         }
     
     return jsonify(books_data)
+
+@app.route('/get_recent_trades')
+def get_recent_trades():
+    print(baripool.fillcontainer)
+    trades = []
+    
+    for order_id, execution_report in baripool.fillcontainer.items():
+        try:
+            # Check if execution_report is a valid string
+            #if not execution_report or not isinstance(execution_report, str):
+                #continue
+                
+            # Parse the FIX execution report to extract trade details
+            parsed_report = execution_report
+            
+            # Only include actual executions (ExecType=F for Fill or Partial Fill)
+            if '150' in parsed_report and parsed_report['150'] in ['1', '2']:  # 1=Partial Fill, 2=Fill
+                trade = {
+                    'symbol': parsed_report.get('55', 'Unknown'),
+                    'price': parsed_report.get('31', 'Unknown'),  # LastPx
+                    'quantity': parsed_report.get('32', '0'),     # LastQty
+                    'time': parsed_report.get('60', datetime.now().strftime("%H:%M:%S")),
+                    'buyer': parsed_report.get('49', 'Unknown'),  # SenderCompID
+                    'seller': parsed_report.get('56', 'Unknown'), # TargetCompID
+                    'order_id': order_id
+                }
+                trades.append(trade)
+        except Exception as e:
+            # Log the error but continue processing other trades
+            print(f"Error processing trade {order_id}: {str(e)}")
+            continue
+    
+    # Sort by time, most recent first
+    trades.sort(key=lambda x: x['time'], reverse=True)
+    
+    # Limit to most recent 20 trades
+    return jsonify(trades[:20])
 
 if __name__ == '__main__':
     app.run(debug=True) 

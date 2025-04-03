@@ -386,15 +386,126 @@ function displayOrderBook(data, changes) {
     }
 }
 
+// Global variable to store recent trades
+let recentTrades = [];
+let lastTradeCount = 0;
+
+// Function to fetch and update the trade ticker
+function updateTradeTicker() {
+    fetch('/get_recent_trades')
+        .then(response => response.json())
+        .then(data => {
+            // Check if we have new trades
+            const hasNewTrades = data.length > lastTradeCount;
+            lastTradeCount = data.length;
+            
+            // Store the trades
+            recentTrades = data;
+            
+            // Display the trades
+            displayTradeTicker(recentTrades, hasNewTrades);
+        })
+        .catch(error => {
+            console.error('Error fetching recent trades:', error);
+            document.getElementById('trade-ticker').innerHTML = 
+                '<div class="error-message">Error loading trade data</div>';
+        });
+}
+
+// Function to display the trade ticker
+function displayTradeTicker(trades, hasNewTrades) {
+    const tickerContainer = document.getElementById('trade-ticker');
+    
+    // Clear previous content
+    tickerContainer.innerHTML = '';
+    
+    // Check if there are any trades
+    if (trades.length === 0) {
+        tickerContainer.innerHTML = '<div class="no-trades-message">No recent trades</div>';
+        return;
+    }
+    
+    // Create a table for the trades
+    const table = document.createElement('table');
+    table.className = 'ticker-table';
+    
+    // Create header row
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    
+    const headers = ['Time', 'Symbol', 'Quantity', 'Price', 'Buyer', 'Seller'];
+    headers.forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        headerRow.appendChild(th);
+    });
+    
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    // Create body rows
+    const tbody = document.createElement('tbody');
+    
+    trades.forEach((trade, index) => {
+        const row = document.createElement('tr');
+        
+        // Add new trade animation
+        if (hasNewTrades && index === 0) {
+            row.classList.add('new-trade');
+        }
+        
+        // Time cell
+        const timeCell = document.createElement('td');
+        timeCell.textContent = trade.time;
+        row.appendChild(timeCell);
+        
+        // Symbol cell
+        const symbolCell = document.createElement('td');
+        symbolCell.textContent = trade.symbol;
+        symbolCell.className = 'ticker-symbol';
+        row.appendChild(symbolCell);
+        
+        // Quantity cell
+        const qtyCell = document.createElement('td');
+        qtyCell.textContent = formatQuantity(trade.quantity);
+        row.appendChild(qtyCell);
+        
+        // Price cell
+        const priceCell = document.createElement('td');
+        priceCell.textContent = formatPrice(trade.price);
+        priceCell.className = 'ticker-price';
+        row.appendChild(priceCell);
+        
+        // Buyer cell
+        const buyerCell = document.createElement('td');
+        buyerCell.textContent = trade.buyer;
+        buyerCell.className = 'ticker-buyer';
+        row.appendChild(buyerCell);
+        
+        // Seller cell
+        const sellerCell = document.createElement('td');
+        sellerCell.textContent = trade.seller;
+        sellerCell.className = 'ticker-seller';
+        row.appendChild(sellerCell);
+        
+        tbody.appendChild(row);
+    });
+    
+    table.appendChild(tbody);
+    tickerContainer.appendChild(table);
+}
+
 // Add this to your existing window.onload function
 window.onload = function() {
     // Your existing code...
     
-    // Initial update of the order book
+    // Initial update of the order book and trade ticker
     updateOrderBook();
+    updateTradeTicker();
     
-    // Set interval to update the order book more frequently (every 1 second instead of 5)
+    // Set intervals to update the data
     setInterval(updateOrderBook, 1000);
+    setInterval(updateTradeTicker, 1000);
     
     // Set up symbol filter functionality
     document.getElementById('apply-filter').addEventListener('click', function() {
