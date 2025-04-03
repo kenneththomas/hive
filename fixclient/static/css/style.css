@@ -1027,3 +1027,44 @@ select.form-control {
     font-style: italic;
     background-color: #1A1A1A;
 }
+
+.progress-container {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    position: absolute;
+    height: 100%;
+    background-color: #4CAF50;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #333;
+    z-index: 1;
+}
+
+/* Add some color variations for different order statuses */
+.status-new .progress-bar {
+    background-color: #2196F3;
+}
+
+.status-partial .progress-bar {
+    background-color: #FFC107;
+}
+
+.status-filled .progress-bar {
+    background-color: #4CAF50;
+}

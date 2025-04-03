@@ -1078,8 +1078,12 @@ function addOrderToBlotter(order, side, currentOrderStates) {
         <td>${side}</td>
         <td>${order.price}</td>
         <td>${order.original_qty}</td>
-        <td>${filled}</td>
-        <td>${order.remaining_qty}</td>
+        <td>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: ${(filled / order.original_qty) * 100}%"></div>
+                <div class="progress-text">${filled}/${order.original_qty}</div>
+            </div>
+        </td>
         <td class="status-${status.toLowerCase()}">${status}</td>
     `;
     
