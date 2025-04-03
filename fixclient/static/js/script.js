@@ -99,7 +99,8 @@ function createOrderTable(orders, sideLabel) {
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
     
-    const headers = [sideLabel, 'Order ID', 'Sender', 'Price', 'Qty', 'Orig Qty'];
+    // Remove 'Orig Qty' from headers
+    const headers = [sideLabel, 'Order ID', 'Sender', 'Price', 'Qty'];
     headers.forEach(text => {
         const th = document.createElement('th');
         th.textContent = text;
@@ -146,10 +147,6 @@ function createOrderTable(orders, sideLabel) {
             const qtyCell = document.createElement('td');
             qtyCell.textContent = formatQuantity(order.remaining_qty);
             row.appendChild(qtyCell);
-            
-            const origQtyCell = document.createElement('td');
-            origQtyCell.textContent = formatQuantity(order.original_qty);
-            row.appendChild(origQtyCell);
             
             tbody.appendChild(row);
         });
