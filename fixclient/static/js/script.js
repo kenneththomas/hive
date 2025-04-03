@@ -149,6 +149,12 @@ function createOrderTable(orders, sideLabel) {
             row.appendChild(qtyCell);
             
             tbody.appendChild(row);
+            
+            // Add a temporary highlight effect for new rows
+            row.classList.add('highlight');
+            setTimeout(() => {
+                row.classList.remove('highlight');
+            }, 1000);
         });
     }
     

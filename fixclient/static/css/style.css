@@ -154,7 +154,10 @@ select.form-control {
     font-weight: bold;
 }
 
-#order-book-container {
+.order-book-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
     max-height: 400px;
     overflow-y: auto;
     background-color: #0A0A0A;
@@ -164,7 +167,26 @@ select.form-control {
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
+.order-book-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.order-book-container::-webkit-scrollbar-track {
+    background: #0A0A0A;
+}
+
+.order-book-container::-webkit-scrollbar-thumb {
+    background-color: #333;
+    border-radius: 4px;
+}
+
+.order-book-container::-webkit-scrollbar-thumb:hover {
+    background-color: #444;
+}
+
 .symbol-section {
+    flex: 1 1 45%;
+    min-width: 300px;
     margin-bottom: 20px;
     background-color: #111;
     border-radius: 3px;
@@ -183,6 +205,7 @@ select.form-control {
 
 .book-display {
     display: flex;
+    justify-content: space-between;
     gap: 15px;
 }
 
@@ -260,24 +283,6 @@ select.form-control {
 /* Quantity column styling */
 .order-table td:nth-child(5) {
     font-weight: bold;
-}
-
-/* Scrollbar styling */
-#order-book-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-#order-book-container::-webkit-scrollbar-track {
-    background: #0A0A0A;
-}
-
-#order-book-container::-webkit-scrollbar-thumb {
-    background-color: #333;
-    border-radius: 4px;
-}
-
-#order-book-container::-webkit-scrollbar-thumb:hover {
-    background-color: #444;
 }
 
 /* Symbol filter styles */
