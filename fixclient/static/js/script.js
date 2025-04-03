@@ -18,9 +18,6 @@ function submitForm() {
         setTimeout(() => {
             document.getElementById('status-display').textContent = 'READY';
         }, 2000);
-
-        // Close the modal after successful submission
-        closeOrderEntry();
     });
 }
 
@@ -916,10 +913,16 @@ tradeAgainstOption.addEventListener('click', () => {
 // Modal Functionality
 const modal = document.getElementById('order-entry-modal');
 const openOrderEntryBtn = document.getElementById('open-order-entry');
+const floatingOrderEntryBtn = document.getElementById('floating-order-entry');
 const closeModalBtn = document.querySelector('.close-modal');
 
 // Open modal when clicking the New Order button
 openOrderEntryBtn.addEventListener('click', () => {
+    modal.style.display = 'block';
+});
+
+// Open modal when clicking the floating New Order button
+floatingOrderEntryBtn.addEventListener('click', () => {
     modal.style.display = 'block';
 });
 
@@ -938,32 +941,6 @@ window.addEventListener('click', (event) => {
 // Function to close the order entry modal
 function closeOrderEntry() {
     modal.style.display = 'none';
-}
-
-// Modify the submitForm function to close the modal after submission
-function submitForm() {
-    const formData = new FormData(document.getElementById('order-form'));
-    
-    fetch('/submit_order', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        const outputBox = document.getElementById('output-box');
-        outputBox.innerHTML += '\n' + data.output;
-        // Auto-scroll to the bottom
-        outputBox.scrollTop = outputBox.scrollHeight;
-        
-        // Update status and reset after delay
-        document.getElementById('status-display').textContent = data.status;
-        setTimeout(() => {
-            document.getElementById('status-display').textContent = 'READY';
-        }, 2000);
-
-        // Close the modal after successful submission
-        closeOrderEntry();
-    });
 }
 
 // Global variables
