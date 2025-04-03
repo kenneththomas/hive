@@ -1,4 +1,5 @@
 *.pyc
+fixclient/maricon.py
 
 # .gitignore file for Visual Studio and .NET Core
 

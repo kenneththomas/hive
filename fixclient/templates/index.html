@@ -17,72 +17,115 @@
 
         <!-- Main content -->
         <div class="main-content">
-            <h1 class="title">ORDER ENTRY</h1>
+            <div class="tabs">
+                <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
+                <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
+            </div>
 
-            <!-- Add Trade Ticker Section -->
-            <div class="ticker-section">
-                <h2 class="section-title">RECENT TRADES</h2>
-                <div class="ticker-container">
-                    <div id="trade-ticker" class="trade-ticker">
-                        <div class="no-trades-message">No recent trades</div>
+            <div class="tab-content">
+                <!-- Order Entry Tab -->
+                <div class="tab-pane active" id="order-entry-tab">
+                    <h1 class="title">ORDER ENTRY</h1>
+
+                    <!-- Add Trade Ticker Section -->
+                    <div class="ticker-section">
+                        <h2 class="section-title">RECENT TRADES</h2>
+                        <div class="ticker-container">
+                            <div id="trade-ticker" class="trade-ticker">
+                                <div class="no-trades-message">No recent trades</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="order-form">
+                        <div class="form-group">
+                            <label for="side">SIDE: (54)</label>
+                            <select id="side" name="side" class="form-control">
+                                <option value="Buy">Buy</option>
+                                <option value="Sell">Sell</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="symbol">SYMBOL: (55)</label>
+                            <input type="text" id="symbol" name="symbol" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">QTY: (38)</label>
+                            <input type="text" id="quantity" name="quantity" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="price">PRICE: (44)</label>
+                            <input type="text" id="price" name="price" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sender">SENDER: (49)</label>
+                            <input type="text" id="sender" name="sender" class="form-control">
+                        </div>
+                    </form>
+
+                    <!-- Output terminal -->
+                    <div class="output-container">
+                        <div id="output-box" class="output-box">*** BARIPOOL TRADING TERMINAL READY ***</div>
+                    </div>
+
+                    <!-- Function keys -->
+                    <div class="function-keys">
+                        <button class="f-key" onclick="showHelp()">F1:Help</button>
+                        <button class="f-key" onclick="submitForm()">F2:Submit</button>
+                        <button class="f-key" onclick="clearForm()">F3:Clear</button>
+                        <button class="f-key" onclick="window.close()">F4:Exit</button>
+                    </div>
+                    
+                    <!-- Order Book Display Section -->
+                    <div class="order-book-section">
+                        <h2 class="section-title">MARKET DEPTH - ORDER BOOK</h2>
+                        <div class="symbol-filter">
+                            <label for="symbol-filter">Filter Symbol:</label>
+                            <input type="text" id="symbol-filter" placeholder="Enter symbol...">
+                            <button id="apply-filter">Apply</button>
+                            <button id="reset-filter" class="reset">Reset</button>
+                        </div>
+                        <div id="order-book-container" class="order-book-container">
+                            <div class="no-data-message">No active orders</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <form id="order-form">
-                <div class="form-group">
-                    <label for="side">SIDE: (54)</label>
-                    <select id="side" name="side" class="form-control">
-                        <option value="Buy">Buy</option>
-                        <option value="Sell">Sell</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="symbol">SYMBOL: (55)</label>
-                    <input type="text" id="symbol" name="symbol" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label for="quantity">QTY: (38)</label>
-                    <input type="text" id="quantity" name="quantity" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label for="price">PRICE: (44)</label>
-                    <input type="text" id="price" name="price" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label for="sender">SENDER: (49)</label>
-                    <input type="text" id="sender" name="sender" class="form-control">
-                </div>
-            </form>
-
-            <!-- Output terminal -->
-            <div class="output-container">
-                <div id="output-box" class="output-box">*** BARIPOOL TRADING TERMINAL READY ***</div>
-            </div>
-
-            <!-- Function keys -->
-            <div class="function-keys">
-                <button class="f-key" onclick="showHelp()">F1:Help</button>
-                <button class="f-key" onclick="submitForm()">F2:Submit</button>
-                <button class="f-key" onclick="clearForm()">F3:Clear</button>
-                <button class="f-key" onclick="window.close()">F4:Exit</button>
-            </div>
-            
-            <!-- Order Book Display Section -->
-            <div class="order-book-section">
-                <h2 class="section-title">MARKET DEPTH - ORDER BOOK</h2>
-                <div class="symbol-filter">
-                    <label for="symbol-filter">Filter Symbol:</label>
-                    <input type="text" id="symbol-filter" placeholder="Enter symbol...">
-                    <button id="apply-filter">Apply</button>
-                    <button id="reset-filter" class="reset">Reset</button>
-                </div>
-                <div id="order-book-container" class="order-book-container">
-                    <div class="no-data-message">No active orders</div>
+                <!-- ScopeChat Tab -->
+                <div class="tab-pane" id="scopechat-tab">
+                    <h1 class="title">SCOPE CHAT</h1>
+                    
+                    <div class="scope-chat-container">
+                        <div class="scope-chat-settings">
+                            <div class="form-group">
+                                <label for="scope-id">SCOPE ID:</label>
+                                <input type="text" id="scope-id" class="form-control" placeholder="Enter trader ID">
+                                <button id="connect-scope" class="scope-button">Connect</button>
+                                <button id="clear-chat" class="scope-button">Clear Chat</button>
+                            </div>
+                            
+                            <div class="form-group prompt-group">
+                                <label for="custom-prompt">CUSTOM PROMPT:</label>
+                                <textarea id="custom-prompt" class="form-control" rows="5"></textarea>
+                                <button id="reset-prompt" class="scope-button">Reset to Default</button>
+                            </div>
+                        </div>
+                        
+                        <div class="scope-chat-messages">
+                            <div id="chat-messages" class="chat-messages">
+                                <div class="system-message">Connect to a SCOPE ID to start chatting</div>
+                            </div>
+                            
+                            <div class="chat-input-container">
+                                <input type="text" id="chat-input" class="chat-input" placeholder="Type your message...">
+                                <button id="send-message" class="scope-button send-button">Send</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -7,11 +7,30 @@ sys.path.insert(1, 'tests')
 import baripool
 import baripool_action
 import dfix
+from scopechat import scope_chat  # Import the ScopeChat module
 
 app = Flask(__name__)
 
 def unique_id():
     return str(uuid.uuid4())[:8]
+
+# Define the order handler function that will be used by ScopeChat
+def handle_ai_order(side, symbol, quantity, price, sender):
+    """Handle order submission from AI trader"""
+    fix_message = f"11={unique_id()};54={side};55={symbol};38={quantity};44={price};49={sender}"
+    
+    # Simulate some trades to match with
+    baripool_action.bp_directentry_sim()
+    output = baripool.on_new_order(fix_message)
+    
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    return {
+        'output': f"[{timestamp}] {output}",
+        'status': "ORDER SENT"
+    }
+
+# Set the order handler for ScopeChat
+scope_chat.set_order_handler(handle_ai_order)
 
 @app.route('/')
 def index():
@@ -123,6 +142,38 @@ def get_recent_trades():
     
     # Limit to most recent 20 trades
     return jsonify(trades[:20])
+
+@app.route('/scope_chat/send', methods=['POST'])
+def scope_chat_send():
+    scope_id = request.form.get('scope_id')
+    message = request.form.get('message')
+    custom_prompt = request.form.get('custom_prompt')
+    
+    if not scope_id or not message:
+        return jsonify({"error": "Scope ID and message are required"}), 400
+    
+    result = scope_chat.send_message(scope_id, message, custom_prompt)
+    return jsonify(result)
+
+@app.route('/scope_chat/history', methods=['GET'])
+def scope_chat_history():
+    scope_id = request.args.get('scope_id')
+    
+    if not scope_id:
+        return jsonify({"error": "Scope ID is required"}), 400
+    
+    history = scope_chat.get_chat_history(scope_id)
+    return jsonify({"history": history, "scope_id": scope_id})
+
+@app.route('/scope_chat/clear', methods=['POST'])
+def scope_chat_clear():
+    scope_id = request.form.get('scope_id')
+    
+    if not scope_id:
+        return jsonify({"error": "Scope ID is required"}), 400
+    
+    result = scope_chat.clear_chat(scope_id)
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True) 

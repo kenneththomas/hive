@@ -495,7 +495,275 @@ function displayTradeTicker(trades, hasNewTrades) {
     tickerContainer.appendChild(table);
 }
 
-// Add this to your existing window.onload function
+// Default prompt for trader simulation
+const DEFAULT_PROMPT = `You are an experienced financial trader. You're conversing with another trader or market participant who may ask you questions about market conditions, trading strategies, or specific orders.
+
+Respond in a realistic way, using trader lingo and being somewhat brief in your responses. You can discuss market trends, trading ideas, and respond to questions about specific symbols.
+
+Current market conditions:
+- SPY is trending higher with strong momentum
+- AAPL had a recent earnings beat
+- TSLA is volatile due to recent news
+- Interest rates are expected to remain stable
+
+Respond as if you're busy and managing multiple positions, but still helpful.`;
+
+// Tab Switching Functionality
+function switchTab(tabId) {
+    // Hide all tab panes
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+    
+    // Deactivate all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show the selected tab pane
+    document.getElementById(tabId + '-tab').classList.add('active');
+    
+    // Activate the clicked tab button
+    document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+}
+
+// ScopeChat Functionality
+let currentScopeId = '';
+let isConnected = false;
+
+// Connect to a scope ID
+function connectToScope() {
+    const scopeId = document.getElementById('scope-id').value.trim();
+    
+    if (!scopeId) {
+        alert('Please enter a SCOPE ID');
+        return;
+    }
+    
+    currentScopeId = scopeId;
+    isConnected = true;
+    
+    // Clear the chat display
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.innerHTML = '';
+    
+    // Add connection message
+    const systemMessage = document.createElement('div');
+    systemMessage.className = 'system-message';
+    systemMessage.textContent = `Connected to SCOPE ID: ${scopeId}`;
+    chatMessages.appendChild(systemMessage);
+    
+    // Load chat history
+    fetchChatHistory(scopeId);
+    
+    // Update UI to show connected state
+    document.getElementById('connect-scope').textContent = 'Reconnect';
+    document.getElementById('chat-input').focus();
+}
+
+// Fetch chat history for a scope ID
+function fetchChatHistory(scopeId) {
+    fetch(`/scope_chat/history?scope_id=${scopeId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.history && data.history.length > 0) {
+                displayChatHistory(data.history);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching chat history:', error);
+            const chatMessages = document.getElementById('chat-messages');
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'system-message';
+            errorMessage.textContent = 'Error loading chat history.';
+            chatMessages.appendChild(errorMessage);
+        });
+}
+
+// Display chat history
+function displayChatHistory(history) {
+    const chatMessages = document.getElementById('chat-messages');
+    
+    history.forEach(message => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${message.role === 'user' ? 'user-message' : 'trader-message'}`;
+        messageDiv.textContent = message.content;
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = `message-time ${message.role === 'user' ? 'user-time' : 'trader-time'}`;
+        timeDiv.textContent = message.timestamp;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.appendChild(timeDiv);
+    });
+    
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Send a message to the trader
+function sendMessage() {
+    if (!isConnected) {
+        alert('Please connect to a SCOPE ID first');
+        return;
+    }
+    
+    const messageInput = document.getElementById('chat-input');
+    const message = messageInput.value.trim();
+    
+    if (!message) {
+        return;
+    }
+    
+    // Clear input field
+    messageInput.value = '';
+    
+    // Get custom prompt if exists
+    const customPrompt = document.getElementById('custom-prompt').value.trim();
+    
+    // Display user message immediately
+    const chatMessages = document.getElementById('chat-messages');
+    const userMessageDiv = document.createElement('div');
+    userMessageDiv.className = 'chat-message user-message';
+    userMessageDiv.textContent = message;
+    
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'message-time user-time';
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString();
+    timeDiv.textContent = timestamp;
+    
+    chatMessages.appendChild(userMessageDiv);
+    chatMessages.appendChild(timeDiv);
+    
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Show thinking indicator
+    const thinkingDiv = document.createElement('div');
+    thinkingDiv.className = 'chat-message trader-message';
+    thinkingDiv.textContent = 'Thinking...';
+    thinkingDiv.id = 'thinking-indicator';
+    chatMessages.appendChild(thinkingDiv);
+    
+    // Send message to server
+    const formData = new FormData();
+    formData.append('scope_id', currentScopeId);
+    formData.append('message', message);
+    if (customPrompt) {
+        formData.append('custom_prompt', customPrompt);
+    }
+    
+    fetch('/scope_chat/send', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove thinking indicator
+        document.getElementById('thinking-indicator').remove();
+        
+        // Display trader response
+        const traderMessageDiv = document.createElement('div');
+        traderMessageDiv.className = 'chat-message trader-message';
+        traderMessageDiv.textContent = data.response;
+        
+        const responseTimeDiv = document.createElement('div');
+        responseTimeDiv.className = 'message-time trader-time';
+        responseTimeDiv.textContent = data.timestamp;
+        
+        chatMessages.appendChild(traderMessageDiv);
+        chatMessages.appendChild(responseTimeDiv);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    })
+    .catch(error => {
+        console.error('Error sending message:', error);
+        // Remove thinking indicator
+        document.getElementById('thinking-indicator').remove();
+        
+        // Display error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'system-message';
+        errorDiv.textContent = 'Error sending message. Please try again.';
+        chatMessages.appendChild(errorDiv);
+    });
+}
+
+// Clear chat history
+function clearChat() {
+    if (!currentScopeId) {
+        alert('Please connect to a SCOPE ID first');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to clear the chat history?')) {
+        const formData = new FormData();
+        formData.append('scope_id', currentScopeId);
+        
+        fetch('/scope_chat/clear', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            
+            const systemMessage = document.createElement('div');
+            systemMessage.className = 'system-message';
+            systemMessage.textContent = 'Chat history cleared';
+            chatMessages.appendChild(systemMessage);
+        })
+        .catch(error => {
+            console.error('Error clearing chat:', error);
+            alert('Error clearing chat history. Please try again.');
+        });
+    }
+}
+
+// Reset prompt to default
+function resetPrompt() {
+    document.getElementById('custom-prompt').value = DEFAULT_PROMPT;
+}
+
+// Initialize ScopeChat when page loads
+function initScopeChat() {
+    // Set default prompt
+    document.getElementById('custom-prompt').value = DEFAULT_PROMPT;
+    
+    // Add event listeners
+    document.getElementById('connect-scope').addEventListener('click', connectToScope);
+    document.getElementById('clear-chat').addEventListener('click', clearChat);
+    document.getElementById('reset-prompt').addEventListener('click', resetPrompt);
+    document.getElementById('send-message').addEventListener('click', sendMessage);
+    
+    // Send message on Enter key
+    document.getElementById('chat-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Allow scope ID connection on Enter key
+    document.getElementById('scope-id').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            connectToScope();
+        }
+    });
+    
+    // Add event listeners for tab switching
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            switchTab(this.dataset.tab);
+        });
+    });
+}
+
+// Update window.onload function to include ScopeChat initialization
 window.onload = function() {
     // Your existing code...
     
@@ -527,4 +795,7 @@ window.onload = function() {
             displayOrderBook(fullOrderBookData);
         }
     });
+    
+    // Initialize ScopeChat
+    initScopeChat();
 };
