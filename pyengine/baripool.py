@@ -97,6 +97,14 @@ def evaluate_book(new_order, book):
 
     matched_qty = 0
 
+    # Sort potential matches by price (best price first)
+    if new_order.side == '1':  # Buy order
+        # For buy orders, match against sell orders with lowest prices first
+        potential_matches.sort(key=lambda order: order.limitprice)
+    else:  # Sell order
+        # For sell orders, match against buy orders with highest prices first
+        potential_matches.sort(key=lambda order: order.limitprice, reverse=True)
+
     for potential_match in potential_matches:
         # potential fill price is the passive (resting) order's limit price
         potential_lastpx = potential_match.limitprice
