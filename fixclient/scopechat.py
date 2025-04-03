@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import anthropic
 import maricon
+import tiktoken
 
 # Default prompt template for trader simulation
 DEFAULT_PROMPT = """You are an experienced financial trader. You're conversing with another trader or market participant who may ask you questions about market conditions, trading strategies, or specific orders.
@@ -50,16 +51,33 @@ class ScopeChat:
         self.api_key = os.environ.get("ANTHROPIC_API_KEY", "")
         self.client = anthropic.Anthropic(api_key=maricon.anthropic_key)
         self.order_handler = None  # Will be set by external code to handle order submission
+        self.token_costs = {}  # Store token costs by scope_id
+        self.encoding = tiktoken.get_encoding("cl100k_base")  # Claude's tokenizer
     
     def set_order_handler(self, handler_function):
         """Set the function that will handle order submissions"""
         self.order_handler = handler_function
     
+    def _count_tokens(self, text):
+        """Count tokens in a text string"""
+        return len(self.encoding.encode(text))
+    
+    def _calculate_cost(self, input_tokens, output_tokens):
+        """Calculate cost in cents based on token counts"""
+        input_cost = (input_tokens / 1000000) * 300  # $3/MTOK = 300 cents/MTOK
+        output_cost = (output_tokens / 1000000) * 1500  # $15/MTOK = 1500 cents/MTOK
+        return input_cost + output_cost
+    
     def send_message(self, scope_id, message, custom_prompt=None):
         """Send a message to a simulated trader and get a response"""
-        # Initialize chat history for this scope_id if it doesn't exist
+        # Initialize chat history and token costs for this scope_id if they don't exist
         if scope_id not in self.chat_history:
             self.chat_history[scope_id] = []
+            self.token_costs[scope_id] = {
+                "total_input_tokens": 0,
+                "total_output_tokens": 0,
+                "total_cost_cents": 0
+            }
         
         # Add user message to history
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -80,15 +98,29 @@ class ScopeChat:
                 "content": chat["content"]
             })
         
+        # Count input tokens
+        input_tokens = sum(self._count_tokens(msg["content"]) for msg in messages)
+        
         # If API key is not set, return a mock response
         if not self.client:
             response = f"[MOCK TRADER RESPONSE] This is a simulated response as no API key is set. Regarding: {message}"
+            output_tokens = self._count_tokens(response)
         else:
             # Make API request to Claude using the Anthropic client
             try:
                 response = self._call_claude_api(messages)
+                output_tokens = self._count_tokens(response)
             except Exception as e:
                 response = f"Error: Could not get response from trader simulation. {str(e)}"
+                output_tokens = self._count_tokens(response)
+        
+        # Calculate cost
+        cost_cents = self._calculate_cost(input_tokens, output_tokens)
+        
+        # Update token costs
+        self.token_costs[scope_id]["total_input_tokens"] += input_tokens
+        self.token_costs[scope_id]["total_output_tokens"] += output_tokens
+        self.token_costs[scope_id]["total_cost_cents"] += cost_cents
         
         # Check if the response contains an order instruction
         order_result = None
@@ -101,13 +133,28 @@ class ScopeChat:
         self.chat_history[scope_id].append({
             "role": "assistant",
             "content": response,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "tokens": {
+                "input": input_tokens,
+                "output": output_tokens,
+                "cost_cents": cost_cents
+            }
         })
         
         result = {
             "response": response,
             "timestamp": timestamp,
-            "scope_id": scope_id
+            "scope_id": scope_id,
+            "tokens": {
+                "input": input_tokens,
+                "output": output_tokens,
+                "cost_cents": cost_cents,
+                "total": {
+                    "input": self.token_costs[scope_id]["total_input_tokens"],
+                    "output": self.token_costs[scope_id]["total_output_tokens"],
+                    "cost_cents": self.token_costs[scope_id]["total_cost_cents"]
+                }
+            }
         }
         
         # Add order result if an order was processed
@@ -178,6 +225,11 @@ class ScopeChat:
         """Clear the chat history for a specific scope_id"""
         if scope_id in self.chat_history:
             self.chat_history[scope_id] = []
+            self.token_costs[scope_id] = {
+                "total_input_tokens": 0,
+                "total_output_tokens": 0,
+                "total_cost_cents": 0
+            }
         return {"status": "Chat cleared", "scope_id": scope_id}
 
 # Create a singleton instance

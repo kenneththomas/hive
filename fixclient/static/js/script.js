@@ -671,6 +671,13 @@ function sendMessage() {
         chatMessages.appendChild(traderMessageDiv);
         chatMessages.appendChild(responseTimeDiv);
         
+        // Update total stats
+        if (data.tokens) {
+            document.getElementById('total-input-tokens').textContent = data.tokens.total.input;
+            document.getElementById('total-output-tokens').textContent = data.tokens.total.output;
+            document.getElementById('total-cost').textContent = `$${(data.tokens.total.cost_cents / 100).toFixed(2)}`;
+        }
+        
         // If this is a shared trade (symbol was mentioned in chat), show trade details
         if (data.shared_trade && data.trade_details) {
             const tradeDetailsDiv = document.createElement('div');
@@ -735,6 +742,11 @@ function clearChat() {
             systemMessage.className = 'system-message';
             systemMessage.textContent = 'Chat history cleared';
             chatMessages.appendChild(systemMessage);
+            
+            // Reset token stats
+            document.getElementById('total-input-tokens').textContent = '0';
+            document.getElementById('total-output-tokens').textContent = '0';
+            document.getElementById('total-cost').textContent = '$0.00';
         })
         .catch(error => {
             console.error('Error clearing chat:', error);

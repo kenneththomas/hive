@@ -593,6 +593,62 @@ select.form-control {
     clear: both;
 }
 
+.chat-input-container {
+    display: flex;
+    padding: 10px;
+    background-color: #151515;
+    border-top: 1px solid #333;
+}
+
+.chat-input {
+    flex: 1;
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+    border: 1px solid #333333;
+    padding: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+.send-button {
+    background-color: #FF8000;
+    color: black;
+}
+
+.send-button:hover {
+    background-color: #FFA040;
+}
+
+.chat-stats {
+    background-color: #151515;
+    padding: 10px;
+    border-top: 1px solid #333;
+}
+
+.token-stats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #888;
+}
+
+.token-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.stat-value {
+    color: #FF8000;
+    font-weight: bold;
+}
+
 .user-message {
     float: right;
     background-color: #004080;
@@ -622,32 +678,6 @@ select.form-control {
 
 .trader-time {
     float: left;
-}
-
-.chat-input-container {
-    display: flex;
-    padding: 10px;
-    background-color: #151515;
-    border-top: 1px solid #333;
-}
-
-.chat-input {
-    flex: 1;
-    background-color: #0A0A0A;
-    color: #FFFFFF;
-    border: 1px solid #333333;
-    padding: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 10px;
-}
-
-.send-button {
-    background-color: #FF8000;
-    color: black;
-}
-
-.send-button:hover {
-    background-color: #FFA040;
 }
 
 /* Shared Trade Details Styles */
