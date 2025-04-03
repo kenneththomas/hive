@@ -1251,11 +1251,10 @@ function updateProfileDisplay(scopeId) {
                 document.getElementById('profile-name').textContent = profile.name || scopeId;
                 document.getElementById('profile-title').textContent = profile.title || 'No title';
                 document.getElementById('profile-department').textContent = profile.department || 'No department';
-                document.getElementById('profile-bio').textContent = profile.bio || 'No bio available';
                 
                 // Create a comprehensive prompt that includes name, title, department, and bio
-                let customPrompt = '';
-                if (profile.name) customPrompt += `Name: ${profile.name}\n`;
+                let customPrompt = 'You are roleplaying as: ';
+                if (profile.name) customPrompt += `${profile.name}\n`;
                 if (profile.title) customPrompt += `Title: ${profile.title}\n`;
                 if (profile.department) customPrompt += `Department: ${profile.department}\n`;
                 if (profile.bio) customPrompt += `\nBio:\n${profile.bio}`;
@@ -1282,3 +1281,24 @@ document.getElementById('view-profile').addEventListener('click', function() {
         alert('Please enter a SCOPE ID first');
     }
 });
+
+function displayChatMessage(message, isUser = false) {
+    const chatMessages = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${isUser ? 'user' : ''}`;
+    
+    const profilePicture = isUser ? 
+        document.getElementById('profile-picture')?.src || '' : 
+        '{{ url_for("static", filename="images/ai-avatar.png") }}';
+    
+    messageDiv.innerHTML = `
+        <img src="${profilePicture}" alt="Avatar" class="message-avatar">
+        <div class="message-content">
+            <p class="message-text">${message}</p>
+            <div class="message-time">${new Date().toLocaleTimeString()}</div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}

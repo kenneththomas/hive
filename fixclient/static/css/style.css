@@ -588,9 +588,40 @@ select.form-control {
 }
 
 .chat-message {
-    margin-bottom: 10px;
-    max-width: 85%;
-    clear: both;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #2a2a2a;
+}
+
+.chat-message.user {
+    background: #1a1a1a;
+}
+
+.chat-message .message-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.chat-message .message-content {
+    flex: 1;
+}
+
+.chat-message .message-text {
+    color: #fff;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.chat-message .message-time {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
 }
 
 .chat-input-container {
@@ -1136,34 +1167,37 @@ select.form-control {
 
 /* Profile Display Styles */
 .profile-display {
-    background-color: #f5f5f5;
-    border-radius: 4px;
+    background: #2a2a2a;
+    border-radius: 8px;
     padding: 15px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #3a3a3a;
 }
 
 .profile-header {
     display: flex;
     align-items: center;
-    margin-bottom: 15px;
+    gap: 15px;
 }
 
 .profile-picture {
-    width: 80px;
-    height: 80px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     object-fit: cover;
-    margin-right: 15px;
+    border: 2px solid #4a4a4a;
 }
 
 .profile-info h3 {
     margin: 0;
-    font-size: 1.2em;
+    color: #fff;
+    font-size: 16px;
 }
 
 .profile-info p {
-    margin: 5px 0;
-    color: #666;
+    margin: 4px 0 0;
+    color: #aaa;
+    font-size: 14px;
 }
 
 .profile-bio {
