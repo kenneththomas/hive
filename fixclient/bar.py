@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 import sqlite3
 from pathlib import Path
+import random
 sys.path.insert(1, 'pyengine')
 sys.path.insert(1, 'tests')
 import baripool
@@ -34,6 +35,97 @@ def get_profile(scope_id):
         return dict(profile) if profile else None
     finally:
         conn.close()
+
+def get_random_employee():
+    """Get a random employee from the database with a non-empty email"""
+    conn = get_db()
+    try:
+        employee = conn.execute('SELECT email FROM employee WHERE email IS NOT NULL AND email != "" ORDER BY RANDOM() LIMIT 1').fetchone()
+        return employee['email'] if employee else 'TRADER1'
+    finally:
+        conn.close()
+
+def generate_random_trade():
+    """Generate a random trade based on the order book"""
+    # Get a random employee as sender
+    sender = get_random_employee()
+    
+    # Get the order book
+    books_data = {}
+    for symbol, book in baripool.bookshelf.items():
+        if not book:
+            continue
+        buys = [order for order in book if order.side == '1' and not order.is_canceled]
+        sells = [order for order in book if order.side == '2' and not order.is_canceled]
+        
+        if buys or sells:
+            books_data[symbol] = {
+                'buys': buys,
+                'sells': sells
+            }
+    
+    # If no orders in book, use AAPL
+    if not books_data:
+        symbol = 'AAPL'
+        side = '1' if random.random() > 0.5 else '2'
+        price = round(random.uniform(100, 200), 2)
+        unmarketable_price = price + (0.01 if side == '1' else -0.01)  # Slightly off from market price
+    else:
+        # Pick a random symbol with orders
+        symbol = random.choice(list(books_data.keys()))
+        book = books_data[symbol]
+        
+        # Decide whether to buy or sell
+        if book['buys'] and book['sells']:
+            side = '1' if random.random() > 0.5 else '2'
+        elif book['buys']:
+            side = '2'  # Sell against buys
+        else:
+            side = '1'  # Buy against sells
+            
+        # Get price from the book
+        if side == '1' and book['sells']:
+            price = book['sells'][0].limitprice
+            unmarketable_price = price + 0.01  # Slightly higher than best offer
+        elif side == '2' and book['buys']:
+            price = book['buys'][0].limitprice
+            unmarketable_price = price - 0.01  # Slightly lower than best bid
+        else:
+            price = round(random.uniform(100, 200), 2)
+            unmarketable_price = price + (0.01 if side == '1' else -0.01)
+    
+    # Generate the marketable trade
+    marketable_fix_message = f"11={unique_id()};54={side};55={symbol};38=10;44={price};49={sender}"
+    
+    # Generate the unmarketable trade
+    unmarketable_fix_message = f"11={unique_id()};54={side};55={symbol};38=100;44={unmarketable_price};49={sender}"
+    
+    # Simulate some trades to match with
+    baripool_action.bp_directentry_sim()
+    
+    # Submit both trades
+    marketable_output = baripool.on_new_order(marketable_fix_message)
+    unmarketable_output = baripool.on_new_order(unmarketable_fix_message)
+    
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    return {
+        'output': f"[{timestamp}] Marketable: {marketable_output}\n[{timestamp}] Unmarketable: {unmarketable_output}",
+        'status': "ORDERS SENT",
+        'marketable': {
+            'side': side,
+            'symbol': symbol,
+            'quantity': 10,
+            'price': price,
+            'sender': sender
+        },
+        'unmarketable': {
+            'side': side,
+            'symbol': symbol,
+            'quantity': 100,
+            'price': unmarketable_price,
+            'sender': sender
+        }
+    }
 
 # Configure Flask's logging to filter out specific endpoints
 class EndpointFilter(logging.Filter):
@@ -245,6 +337,11 @@ def scope_chat_clear():
 @app.route('/scope_chat/default_prompt', methods=['GET'])
 def get_default_prompt():
     return jsonify({"prompt": DEFAULT_PROMPT})
+
+@app.route('/generate_random_trade', methods=['POST'])
+def generate_random_trade_route():
+    result = generate_random_trade()
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5017)

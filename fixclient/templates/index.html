@@ -26,6 +26,7 @@
                 <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
                 <button class="tab-button" data-tab="recent-trades">RECENT TRADES</button>
                 <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
+                <button class="tab-button" data-tab="management">MANAGEMENT</button>
             </div>
 
             <div class="tab-content">
@@ -67,18 +68,6 @@
                         </div>
                     </div>
 
-                    <!-- Output terminal -->
-                    <div class="output-container">
-                        <div id="output-box" class="output-box">*** BARIPOOL TRADING TERMINAL READY ***</div>
-                    </div>
-
-                    <!-- Function keys -->
-                    <div class="function-keys">
-                        <button class="f-key" onclick="showHelp()">F1:Help</button>
-                        <button class="f-key" onclick="submitForm()">F2:Submit</button>
-                        <button class="f-key" onclick="clearForm()">F3:Clear</button>
-                        <button class="f-key" onclick="window.close()">F4:Exit</button>
-                    </div>
                     
                     <!-- Order Book Display Section -->
                     <div class="order-book-section">
@@ -93,6 +82,21 @@
                             <div class="no-data-message">No active orders</div>
                         </div>
                     </div>
+
+
+                    <!-- Output terminal -->
+                    <div class="output-container">
+                        <div id="output-box" class="output-box">*** BARIPOOL TRADING TERMINAL READY ***</div>
+                    </div>
+
+                    <!-- Function keys -->
+                    <div class="function-keys">
+                        <button class="f-key" onclick="showHelp()">F1:Help</button>
+                        <button class="f-key" onclick="submitForm()">F2:Submit</button>
+                        <button class="f-key" onclick="clearForm()">F3:Clear</button>
+                        <button class="f-key" onclick="window.close()">F4:Exit</button>
+                    </div>
+                    
                 </div>
 
                 <!-- Recent Trades Tab -->
@@ -267,6 +271,25 @@
                                         <span id="total-cost" class="stat-value">$0.00</span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Management Tab -->
+                <div class="tab-pane" id="management-tab">
+                    <h1 class="title">MANAGEMENT CONTROLS</h1>
+                    
+                    <div class="management-controls">
+                        <div class="control-group">
+                            <h2>Random Trade Generator</h2>
+                            <div class="control-item">
+                                <input type="checkbox" id="random-trades-toggle">
+                                <label for="random-trades-toggle">Enable Random Trades</label>
+                            </div>
+                            <div class="control-info">
+                                <p>When enabled, random trades will be generated every 15 seconds using random employees as senders.</p>
+                                <p>If no orders exist in the book, AAPL trades will be generated.</p>
                             </div>
                         </div>
                     </div>

@@ -1302,3 +1302,58 @@ function displayChatMessage(message, isUser = false) {
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+// Random trade generator
+let randomTradeInterval = null;
+
+function startRandomTrades() {
+    if (randomTradeInterval) return;
+    
+    randomTradeInterval = setInterval(() => {
+        fetch('/generate_random_trade', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the output box
+            const outputBox = document.getElementById('output-box');
+            outputBox.innerHTML += `<br>${data.output}`;
+            outputBox.scrollTop = outputBox.scrollHeight;
+            
+            // Update the status display
+            document.getElementById('status-display').textContent = data.status;
+            
+            // Refresh the order book and recent trades
+            updateOrderBook();
+            updateRecentTrades();
+        })
+        .catch(error => {
+            console.error('Error generating random trade:', error);
+            document.getElementById('status-display').textContent = 'ERROR';
+        });
+    }, 15000); // 15 seconds
+}
+
+function stopRandomTrades() {
+    if (randomTradeInterval) {
+        clearInterval(randomTradeInterval);
+        randomTradeInterval = null;
+    }
+}
+
+// Add event listener for the random trades toggle
+document.addEventListener('DOMContentLoaded', () => {
+    const randomTradesToggle = document.getElementById('random-trades-toggle');
+    if (randomTradesToggle) {
+        randomTradesToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                startRandomTrades();
+            } else {
+                stopRandomTrades();
+            }
+        });
+    }
+});
