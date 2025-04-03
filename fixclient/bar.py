@@ -7,7 +7,7 @@ sys.path.insert(1, 'tests')
 import baripool
 import baripool_action
 import dfix
-from scopechat import scope_chat  # Import the ScopeChat module
+from scopechat import scope_chat, DEFAULT_PROMPT  # Import the ScopeChat module and DEFAULT_PROMPT
 
 app = Flask(__name__)
 
@@ -26,11 +26,26 @@ def handle_ai_order(side, symbol, quantity, price, sender):
     timestamp = datetime.now().strftime("%H:%M:%S")
     return {
         'output': f"[{timestamp}] {output}",
-        'status': "ORDER SENT"
+        'status': "ORDER SENT",
+        'side': side,
+        'symbol': symbol,
+        'quantity': quantity,
+        'price': price
     }
 
 # Set the order handler for ScopeChat
 scope_chat.set_order_handler(handle_ai_order)
+
+# Helper function to check if a symbol was mentioned in chat history
+def symbol_mentioned_in_chat(scope_id, symbol):
+    """Check if a symbol was mentioned in the chat history"""
+    history = scope_chat.get_chat_history(scope_id)
+    symbol_upper = symbol.upper()
+    
+    for message in history:
+        if symbol_upper in message["content"].upper():
+            return True
+    return False
 
 @app.route('/')
 def index():
@@ -153,6 +168,14 @@ def scope_chat_send():
         return jsonify({"error": "Scope ID and message are required"}), 400
     
     result = scope_chat.send_message(scope_id, message, custom_prompt)
+    
+    # Check if an order was placed and if the symbol was mentioned in chat
+    if 'order_result' in result and 'symbol' in result['order_result']:
+        symbol = result['order_result']['symbol']
+        if symbol_mentioned_in_chat(scope_id, symbol):
+            result['shared_trade'] = True
+            result['trade_details'] = result['order_result']
+    
     return jsonify(result)
 
 @app.route('/scope_chat/history', methods=['GET'])
@@ -175,5 +198,9 @@ def scope_chat_clear():
     result = scope_chat.clear_chat(scope_id)
     return jsonify(result)
 
+@app.route('/scope_chat/default_prompt', methods=['GET'])
+def get_default_prompt():
+    return jsonify({"prompt": DEFAULT_PROMPT})
+
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(host='0.0.0.0', debug=True, port=5017)

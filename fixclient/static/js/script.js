@@ -495,19 +495,6 @@ function displayTradeTicker(trades, hasNewTrades) {
     tickerContainer.appendChild(table);
 }
 
-// Default prompt for trader simulation
-const DEFAULT_PROMPT = `You are an experienced financial trader. You're conversing with another trader or market participant who may ask you questions about market conditions, trading strategies, or specific orders.
-
-Respond in a realistic way, using trader lingo and being somewhat brief in your responses. You can discuss market trends, trading ideas, and respond to questions about specific symbols.
-
-Current market conditions:
-- SPY is trending higher with strong momentum
-- AAPL had a recent earnings beat
-- TSLA is volatile due to recent news
-- Interest rates are expected to remain stable
-
-Respond as if you're busy and managing multiple positions, but still helpful.`;
-
 // Tab Switching Functionality
 function switchTab(tabId) {
     // Hide all tab panes
@@ -675,6 +662,30 @@ function sendMessage() {
         chatMessages.appendChild(traderMessageDiv);
         chatMessages.appendChild(responseTimeDiv);
         
+        // If this is a shared trade (symbol was mentioned in chat), show trade details
+        if (data.shared_trade && data.trade_details) {
+            const tradeDetailsDiv = document.createElement('div');
+            tradeDetailsDiv.className = 'shared-trade-details';
+            
+            // Format the trade details
+            const side = data.trade_details.side === '1' ? 'BUY' : 'SELL';
+            const symbol = data.trade_details.symbol;
+            const quantity = data.trade_details.quantity;
+            const price = data.trade_details.price;
+            
+            tradeDetailsDiv.innerHTML = `
+                <div class="trade-details-header">SHARED TRADE DETAILS</div>
+                <div class="trade-details-content">
+                    <div class="trade-detail"><span>Side:</span> ${side}</div>
+                    <div class="trade-detail"><span>Symbol:</span> ${symbol}</div>
+                    <div class="trade-detail"><span>Quantity:</span> ${quantity}</div>
+                    <div class="trade-detail"><span>Price:</span> ${price}</div>
+                </div>
+            `;
+            
+            chatMessages.appendChild(tradeDetailsDiv);
+        }
+        
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
     })
@@ -725,13 +736,14 @@ function clearChat() {
 
 // Reset prompt to default
 function resetPrompt() {
-    document.getElementById('custom-prompt').value = DEFAULT_PROMPT;
+    // Instead of using DEFAULT_PROMPT, fetch it from the server
+    fetchDefaultPrompt();
 }
 
 // Initialize ScopeChat when page loads
 function initScopeChat() {
-    // Set default prompt
-    document.getElementById('custom-prompt').value = DEFAULT_PROMPT;
+    // We'll fetch the default prompt from the server instead of setting it directly
+    fetchDefaultPrompt();
     
     // Add event listeners
     document.getElementById('connect-scope').addEventListener('click', connectToScope);
@@ -799,3 +811,18 @@ window.onload = function() {
     // Initialize ScopeChat
     initScopeChat();
 };
+
+// Add a new function to fetch the default prompt from the server
+function fetchDefaultPrompt() {
+    fetch('/scope_chat/default_prompt')
+        .then(response => response.json())
+        .then(data => {
+            if (data.prompt) {
+                document.getElementById('custom-prompt').value = data.prompt;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching default prompt:', error);
+            // If we can't fetch the prompt, we'll leave the textarea empty
+        });
+}

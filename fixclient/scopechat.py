@@ -20,7 +20,7 @@ IMPORTANT: When the user asks you to execute an order (buy or sell), you should 
 - If they ask "sell 50 TSLA at 250", respond normally but end with: [ORDER:SELL,TSLA,50,250]
 - The format is always [ORDER:SIDE,SYMBOL,QUANTITY,PRICE] where PRICE can be a number or MKT for market orders
 
-Respond as if you're busy and managing multiple positions, but still helpful."""
+If you do not make a transaction as a result of the chat, you will submit another trade on a random US symbol, estimating the price."""
 
 class ScopeChat:
     def __init__(self):
@@ -115,7 +115,7 @@ class ScopeChat:
             
             # If we have an order handler, use it to submit the order
             if self.order_handler:
-                order_result = self.order_handler(side_value, symbol, quantity, price, f"AI_TRADER_{scope_id}")
+                order_result = self.order_handler(side_value, symbol, quantity, price, f"{scope_id}")
                 return order_result
             else:
                 return {

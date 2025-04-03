@@ -648,3 +648,42 @@ select.form-control {
 .send-button:hover {
     background-color: #FFA040;
 }
+
+/* Shared Trade Details Styles */
+.shared-trade-details {
+    clear: both;
+    margin: 10px 0;
+    background-color: #1A1A2A;
+    border: 1px solid #3A3A5A;
+    border-radius: 5px;
+    padding: 8px;
+    width: 80%;
+    margin-left: 10%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.trade-details-header {
+    color: #FF8000;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #3A3A5A;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.trade-details-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+
+.trade-detail {
+    font-size: 0.85em;
+    color: #DDD;
+}
+
+.trade-detail span {
+    color: #00BFFF;
+    font-weight: bold;
+}
