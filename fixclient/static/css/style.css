@@ -1300,3 +1300,75 @@ select.form-control {
 .floating-order-entry-button:hover {
     background-color: #0066CC;
 }
+
+.price-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.market-price-button {
+    padding: 6px 12px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.market-price-button:hover {
+    background-color: #357abd;
+}
+
+.market-price-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.control-settings {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.setting-item input {
+    width: 100px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.setting-info {
+    font-size: 12px;
+    color: #666;
+    margin-top: 3px;
+}
+
+.control-button {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.control-button:hover {
+    background-color: #357abd;
+}

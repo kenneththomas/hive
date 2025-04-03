@@ -13,6 +13,8 @@ import baripool_action
 import dfix
 from scopechat import scope_chat, DEFAULT_PROMPT  # Import the ScopeChat module and DEFAULT_PROMPT
 from profile import register_profile_routes  # Import the new profile module
+from market_data import AlphaVantageClient
+import maricon
 
 app = Flask(__name__)
 
@@ -21,6 +23,17 @@ register_profile_routes(app)
 
 # Database setup
 DB_PATH = Path('fixclient/instance/ourteam.db')
+
+# Initialize Alpha Vantage client
+alpha_vantage_client = AlphaVantageClient(maricon.alphavantage_key)
+
+# Global settings for random trade generation
+random_trade_settings = {
+    'enabled': False,
+    'interval_seconds': 15,
+    'orders_per_interval': 1,
+    'max_orders_before_refresh': 20
+}
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -46,11 +59,11 @@ def get_random_employee():
         conn.close()
 
 def generate_random_trade():
-    """Generate a random trade based on the order book"""
+    """Generate a random trade based on the real market price"""
     # Get a random employee as sender
     sender = get_random_employee()
     
-    # Get the order book
+    # Get the order book to determine which symbols are being traded
     books_data = {}
     for symbol, book in baripool.bookshelf.items():
         if not book:
@@ -67,62 +80,91 @@ def generate_random_trade():
     # If no orders in book, use AAPL
     if not books_data:
         symbol = 'AAPL'
-        side = '1' if random.random() > 0.5 else '2'
-        price = round(random.uniform(100, 200), 2)
-        unmarketable_price = price + (0.01 if side == '1' else -0.01)  # Slightly off from market price
     else:
         # Pick a random symbol with orders
         symbol = random.choice(list(books_data.keys()))
-        book = books_data[symbol]
+    
+    try:
+        # Get real-time quote from Alpha Vantage (using cache if available)
+        quote_data = alpha_vantage_client.get_global_quote(symbol)
         
-        # Decide whether to buy or sell
-        if book['buys'] and book['sells']:
-            side = '1' if random.random() > 0.5 else '2'
-        elif book['buys']:
-            side = '2'  # Sell against buys
-        else:
-            side = '1'  # Buy against sells
+        if 'Global Quote' in quote_data and quote_data['Global Quote'].get('05. price'):
+            market_price = float(quote_data['Global Quote']['05. price'])
             
-        # Get price from the book
-        if side == '1' and book['sells']:
-            price = book['sells'][0].limitprice
-            unmarketable_price = price + 0.01  # Slightly higher than best offer
-        elif side == '2' and book['buys']:
-            price = book['buys'][0].limitprice
-            unmarketable_price = price - 0.01  # Slightly lower than best bid
+            # Randomly decide whether to buy or sell
+            side = '1' if random.random() > 0.5 else '2'
+            
+            # Generate a price within 6% of the market price
+            # For buys: between market price and 6% below
+            # For sells: between market price and 6% above
+            if side == '1':  # Buy
+                min_price = market_price * 0.94  # 6% below market
+                max_price = market_price
+            else:  # Sell
+                min_price = market_price
+                max_price = market_price * 1.06  # 6% above market
+            
+            # Generate random price within the range
+            price = round(random.uniform(min_price, max_price), 2)
+            
+            # Random quantity between 10 and 100
+            quantity = random.randint(10, 100)
+            
+            # Generate the FIX message
+            fix_message = f"11={unique_id()};54={side};55={symbol};38={quantity};44={price};49={sender}"
+            
+            # Simulate some trades to match with
+            baripool_action.bp_directentry_sim()
+            
+            # Submit the trade
+            output = baripool.on_new_order(fix_message)
+            
+            # Increment the order count for this symbol
+            alpha_vantage_client.increment_order_count(symbol)
+            
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            return {
+                'output': f"[{timestamp}] {output}",
+                'status': "ORDER SENT",
+                'order': {
+                    'side': side,
+                    'symbol': symbol,
+                    'quantity': quantity,
+                    'price': price,
+                    'market_price': market_price,
+                    'sender': sender
+                }
+            }
         else:
-            price = round(random.uniform(100, 200), 2)
-            unmarketable_price = price + (0.01 if side == '1' else -0.01)
+            # Fallback if we can't get the market price
+            return generate_fallback_trade(symbol, sender)
+            
+    except Exception as e:
+        print(f"Error generating trade with market price: {str(e)}")
+        # Fallback if there's an error
+        return generate_fallback_trade(symbol, sender)
+
+def generate_fallback_trade(symbol, sender):
+    """Generate a fallback trade when market price is unavailable"""
+    side = '1' if random.random() > 0.5 else '2'
+    price = round(random.uniform(100, 200), 2)
+    quantity = random.randint(10, 100)
     
-    # Generate the marketable trade
-    marketable_fix_message = f"11={unique_id()};54={side};55={symbol};38=10;44={price};49={sender}"
-    
-    # Generate the unmarketable trade
-    unmarketable_fix_message = f"11={unique_id()};54={side};55={symbol};38=100;44={unmarketable_price};49={sender}"
+    fix_message = f"11={unique_id()};54={side};55={symbol};38={quantity};44={price};49={sender}"
     
     # Simulate some trades to match with
     baripool_action.bp_directentry_sim()
-    
-    # Submit both trades
-    marketable_output = baripool.on_new_order(marketable_fix_message)
-    unmarketable_output = baripool.on_new_order(unmarketable_fix_message)
+    output = baripool.on_new_order(fix_message)
     
     timestamp = datetime.now().strftime("%H:%M:%S")
     return {
-        'output': f"[{timestamp}] Marketable: {marketable_output}\n[{timestamp}] Unmarketable: {unmarketable_output}",
-        'status': "ORDERS SENT",
-        'marketable': {
+        'output': f"[{timestamp}] {output}",
+        'status': "ORDER SENT (FALLBACK)",
+        'order': {
             'side': side,
             'symbol': symbol,
-            'quantity': 10,
+            'quantity': quantity,
             'price': price,
-            'sender': sender
-        },
-        'unmarketable': {
-            'side': side,
-            'symbol': symbol,
-            'quantity': 100,
-            'price': unmarketable_price,
             'sender': sender
         }
     }
@@ -342,6 +384,61 @@ def get_default_prompt():
 def generate_random_trade_route():
     result = generate_random_trade()
     return jsonify(result)
+
+@app.route('/get_market_price', methods=['POST'])
+def get_market_price():
+    try:
+        data = request.get_json()
+        symbol = data.get('symbol')
+        
+        if not symbol:
+            return jsonify({'error': 'Symbol is required'}), 400
+            
+        # Get real-time quote (using cache if available)
+        quote_data = alpha_vantage_client.get_global_quote(symbol)
+        
+        if 'Global Quote' in quote_data:
+            price = quote_data['Global Quote'].get('05. price')
+            if price:
+                return jsonify({'price': price})
+                
+        return jsonify({'error': 'Unable to fetch market price'}), 404
+        
+    except Exception as e:
+        print(f"Error fetching market price: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/update_random_trade_settings', methods=['POST'])
+def update_random_trade_settings():
+    try:
+        data = request.get_json()
+        
+        if 'enabled' in data:
+            random_trade_settings['enabled'] = data['enabled']
+        
+        if 'interval_seconds' in data:
+            random_trade_settings['interval_seconds'] = int(data['interval_seconds'])
+        
+        if 'orders_per_interval' in data:
+            random_trade_settings['orders_per_interval'] = int(data['orders_per_interval'])
+        
+        if 'max_orders_before_refresh' in data:
+            random_trade_settings['max_orders_before_refresh'] = int(data['max_orders_before_refresh'])
+            # Update the Alpha Vantage client setting
+            alpha_vantage_client.max_orders_before_refresh = random_trade_settings['max_orders_before_refresh']
+        
+        return jsonify({
+            'status': 'success',
+            'settings': random_trade_settings
+        })
+        
+    except Exception as e:
+        print(f"Error updating random trade settings: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/get_random_trade_settings', methods=['GET'])
+def get_random_trade_settings():
+    return jsonify(random_trade_settings)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5017)

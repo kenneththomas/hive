@@ -1280,57 +1280,160 @@ function displayChatMessage(message, isUser = false) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Random trade generator
+// Random trade generator functionality
 let randomTradeInterval = null;
 
-function startRandomTrades() {
-    if (randomTradeInterval) return;
-    
-    randomTradeInterval = setInterval(() => {
-        fetch('/generate_random_trade', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
+// Load random trade settings when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadRandomTradeSettings();
+});
+
+function loadRandomTradeSettings() {
+    fetch('/get_random_trade_settings')
         .then(response => response.json())
         .then(data => {
-            // Update the output box
-            const outputBox = document.getElementById('output-box');
-            outputBox.innerHTML += `<br>${data.output}`;
-            outputBox.scrollTop = outputBox.scrollHeight;
+            document.getElementById('random-trades-toggle').checked = data.enabled;
+            document.getElementById('interval-seconds').value = data.interval_seconds;
+            document.getElementById('orders-per-interval').value = data.orders_per_interval;
+            document.getElementById('max-orders-before-refresh').value = data.max_orders_before_refresh;
             
-            // Update the status display
-            document.getElementById('status-display').textContent = data.status;
-            
-            // Refresh the order book and recent trades
-            updateOrderBook();
-            updateRecentTrades();
+            // If enabled, start the interval
+            if (data.enabled) {
+                startRandomTradeGenerator(data.interval_seconds, data.orders_per_interval);
+            }
         })
-        .catch(error => {
-            console.error('Error generating random trade:', error);
-            document.getElementById('status-display').textContent = 'ERROR';
-        });
-    }, 15000); // 15 seconds
+        .catch(error => console.error('Error loading random trade settings:', error));
 }
 
-function stopRandomTrades() {
+function saveRandomTradeSettings() {
+    const settings = {
+        enabled: document.getElementById('random-trades-toggle').checked,
+        interval_seconds: parseInt(document.getElementById('interval-seconds').value),
+        orders_per_interval: parseInt(document.getElementById('orders-per-interval').value),
+        max_orders_before_refresh: parseInt(document.getElementById('max-orders-before-refresh').value)
+    };
+    
+    fetch('/update_random_trade_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the interval if enabled
+        if (settings.enabled) {
+            startRandomTradeGenerator(settings.interval_seconds, settings.orders_per_interval);
+        } else {
+            stopRandomTradeGenerator();
+        }
+        
+        // Show success message
+        updateStatus('Random trade settings saved');
+    })
+    .catch(error => {
+        console.error('Error saving random trade settings:', error);
+        updateStatus('Error saving settings');
+    });
+}
+
+function startRandomTradeGenerator(intervalSeconds, ordersPerInterval) {
+    // Clear any existing interval
+    stopRandomTradeGenerator();
+    
+    // Start a new interval
+    randomTradeInterval = setInterval(() => {
+        // Generate the specified number of orders
+        for (let i = 0; i < ordersPerInterval; i++) {
+            generateRandomTrade();
+        }
+    }, intervalSeconds * 1000);
+    
+    updateStatus('Random trade generator started');
+}
+
+function stopRandomTradeGenerator() {
     if (randomTradeInterval) {
         clearInterval(randomTradeInterval);
         randomTradeInterval = null;
+        updateStatus('Random trade generator stopped');
     }
 }
 
-// Add event listener for the random trades toggle
-document.addEventListener('DOMContentLoaded', () => {
-    const randomTradesToggle = document.getElementById('random-trades-toggle');
-    if (randomTradesToggle) {
-        randomTradesToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                startRandomTrades();
-            } else {
-                stopRandomTrades();
-            }
+function generateRandomTrade() {
+    fetch('/generate_random_trade', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the output box
+        const outputBox = document.getElementById('output-box');
+        outputBox.innerHTML += '<br>' + data.output;
+        outputBox.scrollTop = outputBox.scrollHeight;
+        
+        // Update the status
+        updateStatus(data.status);
+        
+        // Update the order book and recent trades
+        updateOrderBook();
+        updateRecentTrades();
+    })
+    .catch(error => {
+        console.error('Error generating random trade:', error);
+        updateStatus('Error generating random trade');
+    });
+}
+
+// Add event listeners for the random trade controls
+document.getElementById('random-trades-toggle').addEventListener('change', function() {
+    // This will be handled when settings are saved
+});
+
+document.getElementById('save-random-trade-settings').addEventListener('click', saveRandomTradeSettings);
+
+// Market price functionality
+document.getElementById('get-market-price').addEventListener('click', async function() {
+    const symbolInput = document.getElementById('symbol');
+    const priceInput = document.getElementById('price');
+    const button = this;
+    
+    if (!symbolInput.value) {
+        alert('Please enter a symbol first');
+        return;
+    }
+    
+    // Disable button while fetching
+    button.disabled = true;
+    button.textContent = 'Loading...';
+    
+    try {
+        const response = await fetch('/get_market_price', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                symbol: symbolInput.value
+            })
         });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch market price');
+        }
+        
+        const data = await response.json();
+        if (data.price) {
+            priceInput.value = data.price;
+        } else {
+            alert('Unable to fetch market price for ' + symbolInput.value);
+        }
+    } catch (error) {
+        console.error('Error fetching market price:', error);
+        alert('Error fetching market price. Please try again.');
+    } finally {
+        // Re-enable button
+        button.disabled = false;
+        button.textContent = 'Get Market Price';
     }
 });

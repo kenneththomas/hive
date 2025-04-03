@@ -46,7 +46,7 @@ def send_r_orders(num_orders=10000, sleep_interval=.5):
         time.sleep(sleep_interval)
 
 #for bp_directentry population
-def bp_directentry_sim(num_orders=6, sleep_interval=0):
+def bp_directentry_sim(num_orders=2, sleep_interval=0):
     for _ in range(num_orders):
         r_order = generate_r_order()
         baripool.on_new_order(r_order)

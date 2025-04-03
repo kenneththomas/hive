@@ -143,7 +143,10 @@
 
                                 <div class="form-group">
                                     <label for="price">PRICE: (44)</label>
-                                    <input type="text" id="price" name="price" class="form-control">
+                                    <div class="price-input-group">
+                                        <input type="text" id="price" name="price" class="form-control">
+                                        <button type="button" id="get-market-price" class="market-price-button">Get Market Price</button>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
@@ -291,8 +294,28 @@
                                 <label for="random-trades-toggle">Enable Random Trades</label>
                             </div>
                             <div class="control-info">
-                                <p>When enabled, random trades will be generated every 15 seconds using random employees as senders.</p>
+                                <p>When enabled, random trades will be generated at the specified interval using random employees as senders.</p>
                                 <p>If no orders exist in the book, AAPL trades will be generated.</p>
+                            </div>
+                            
+                            <div class="control-settings">
+                                <div class="setting-item">
+                                    <label for="interval-seconds">Interval (seconds):</label>
+                                    <input type="number" id="interval-seconds" min="1" max="3600" value="15">
+                                </div>
+                                
+                                <div class="setting-item">
+                                    <label for="orders-per-interval">Orders per interval:</label>
+                                    <input type="number" id="orders-per-interval" min="1" max="10" value="1">
+                                </div>
+                                
+                                <div class="setting-item">
+                                    <label for="max-orders-before-refresh">Max orders before price refresh:</label>
+                                    <input type="number" id="max-orders-before-refresh" min="1" max="100" value="20">
+                                    <div class="setting-info">Number of orders before refreshing market price from API</div>
+                                </div>
+                                
+                                <button id="save-random-trade-settings" class="control-button">Save Settings</button>
                             </div>
                         </div>
                     </div>
