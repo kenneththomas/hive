@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import sys
 import uuid
 from datetime import datetime
+import logging
 sys.path.insert(1, 'pyengine')
 sys.path.insert(1, 'tests')
 import baripool
@@ -10,6 +11,24 @@ import dfix
 from scopechat import scope_chat, DEFAULT_PROMPT  # Import the ScopeChat module and DEFAULT_PROMPT
 
 app = Flask(__name__)
+
+# Configure Flask's logging to filter out specific endpoints
+class EndpointFilter(logging.Filter):
+    def __init__(self, excluded_endpoints):
+        self.excluded_endpoints = excluded_endpoints
+        super().__init__()
+        
+    def filter(self, record):
+        message = record.getMessage()
+        for endpoint in self.excluded_endpoints:
+            if f"GET {endpoint}" in message:
+                return False
+        return True
+
+# Apply the filter to the Werkzeug logger
+logging.getLogger('werkzeug').addFilter(
+    EndpointFilter(['/get_order_book', '/get_recent_trades'])
+)
 
 def unique_id():
     return str(uuid.uuid4())[:8]
@@ -123,7 +142,6 @@ def get_order_book():
 
 @app.route('/get_recent_trades')
 def get_recent_trades():
-    print(baripool.fillcontainer)
     trades = []
     
     for order_id, execution_report in baripool.fillcontainer.items():

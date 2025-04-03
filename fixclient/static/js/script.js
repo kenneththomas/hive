@@ -125,6 +125,12 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
         orders.forEach(order => {
             const row = document.createElement('tr');
             
+            // Add data attributes for context menu
+            row.dataset.side = sideLabel;
+            row.dataset.symbol = symbol;
+            row.dataset.price = order.price;
+            row.dataset.qty = order.remaining_qty;
+            
             // Add appropriate animation class based on order status
             if (changes && symbol) {
                 const side = sideLabel === 'BID' ? 'buys' : 'sells';
@@ -826,3 +832,57 @@ function fetchDefaultPrompt() {
             // If we can't fetch the prompt, we'll leave the textarea empty
         });
 }
+
+// Context Menu Functionality
+let contextMenu = document.getElementById('context-menu');
+let tradeAgainstOption = document.getElementById('trade-against');
+
+// Hide context menu when clicking anywhere else
+document.addEventListener('click', () => {
+    contextMenu.style.display = 'none';
+});
+
+// Prevent context menu from closing when clicking on it
+contextMenu.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+// Show context menu on right click
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    
+    // Only show context menu for order book rows
+    if (e.target.closest('.order-table tr') && !e.target.closest('th')) {
+        const row = e.target.closest('tr');
+        if (row.dataset.side && row.dataset.symbol && row.dataset.price && row.dataset.qty) {
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.style.top = `${e.pageY}px`;
+            
+            // Store the order details in the context menu for later use
+            contextMenu.dataset.side = row.dataset.side;
+            contextMenu.dataset.symbol = row.dataset.symbol;
+            contextMenu.dataset.price = row.dataset.price;
+            contextMenu.dataset.qty = row.dataset.qty;
+        }
+    }
+});
+
+// Handle trade against option
+tradeAgainstOption.addEventListener('click', () => {
+    const side = contextMenu.dataset.side;
+    const symbol = contextMenu.dataset.symbol;
+    const price = contextMenu.dataset.price;
+    const qty = contextMenu.dataset.qty;
+    
+    // Set opposite side
+    document.getElementById('side').value = side === 'BID' ? 'Sell' : 'Buy';
+    
+    // Set other fields
+    document.getElementById('symbol').value = symbol;
+    document.getElementById('price').value = price;
+    document.getElementById('quantity').value = qty;
+    
+    // Hide context menu
+    contextMenu.style.display = 'none';
+});

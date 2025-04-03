@@ -687,3 +687,26 @@ select.form-control {
     color: #00BFFF;
     font-weight: bold;
 }
+
+/* Context Menu Styles */
+.context-menu {
+    display: none;
+    position: fixed;
+    background-color: #151515;
+    border: 1px solid #333333;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    color: #FFFFFF;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+.context-menu-item:hover {
+    background-color: #004080;
+}
