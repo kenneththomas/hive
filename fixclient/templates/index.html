@@ -18,11 +18,6 @@
             <div class="header-title">BAR Trading Terminal</div>
             <div class="header-date" id="date-display"></div>
             <div class="header-time" id="time-display"></div>
-            <div class="trader-id-container">
-                <label for="trader-id">Trader ID:</label>
-                <input type="text" id="trader-id" value="TRADER1">
-                <button id="update-trader-id">Update</button>
-            </div>
         </div>
 
         <!-- Main content -->
@@ -35,6 +30,11 @@
 
             <div class="tab-content">
                 <!-- Order Entry Tab -->
+                <div class="trader-id-container">
+                    <label for="trader-id">Trader ID:</label>
+                    <input type="text" id="trader-id" value="TRADER1">
+                    <button id="update-trader-id">Update</button>
+                </div>
                 <div class="tab-pane active" id="order-entry-tab">
                     <h1 class="title">ORDER ENTRY</h1>
 
@@ -170,6 +170,63 @@
                                 <label for="custom-prompt">CUSTOM PROMPT:</label>
                                 <textarea id="custom-prompt" class="form-control" rows="5"></textarea>
                                 <button id="reset-prompt" class="scope-button">Reset to Default</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Minimizable Order Blotters -->
+                        <div class="minimizable-blotter">
+                            <div class="blotter-header">
+                                <h2 class="section-title">TRADER ORDERS</h2>
+                                <button class="minimize-button">−</button>
+                            </div>
+                            <div class="blotter-content">
+                                <div class="blotter-container">
+                                    <table id="trader-blotter" class="blotter-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Order ID</th>
+                                                <th>Symbol</th>
+                                                <th>Side</th>
+                                                <th>Price</th>
+                                                <th>Qty</th>
+                                                <th>Fill Progress</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="trader-blotter-body">
+                                            <!-- Trader orders will be added here dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="minimizable-blotter">
+                            <div class="blotter-header">
+                                <h2 class="section-title">SCOPE ORDERS</h2>
+                                <button class="minimize-button">−</button>
+                            </div>
+                            <div class="blotter-content">
+                                <div class="blotter-container">
+                                    <table id="scope-blotter" class="blotter-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Order ID</th>
+                                                <th>Symbol</th>
+                                                <th>Side</th>
+                                                <th>Price</th>
+                                                <th>Qty</th>
+                                                <th>Fill Progress</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="scope-blotter-body">
+                                            <!-- Scope orders will be added here dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                         

@@ -831,6 +831,13 @@ window.onload = function() {
     
     // Initialize ScopeChat
     initScopeChat();
+    
+    // Initialize minimizable blotters
+    initMinimizableBlotters();
+    
+    // Update scopechat blotters periodically
+    updateScopeChatBlotters();
+    setInterval(updateScopeChatBlotters, 1000);
 };
 
 // Add a new function to fetch the default prompt from the server
@@ -1012,7 +1019,7 @@ function updateOrderBlotter() {
                             filled: order.original_qty - order.remaining_qty,
                             originalQty: order.original_qty
                         });
-                        addOrderToBlotter(order, 'Buy', currentOrderStates);
+                        addOrderToMainBlotter(order, 'Buy', currentOrderStates);
                     }
                 });
                 
@@ -1023,7 +1030,7 @@ function updateOrderBlotter() {
                             filled: order.original_qty - order.remaining_qty,
                             originalQty: order.original_qty
                         });
-                        addOrderToBlotter(order, 'Sell', currentOrderStates);
+                        addOrderToMainBlotter(order, 'Sell', currentOrderStates);
                     }
                 });
             }
@@ -1045,8 +1052,8 @@ function updateOrderBlotter() {
         .catch(error => console.error('Error updating order blotter:', error));
 }
 
-// Add order to blotter
-function addOrderToBlotter(order, side, currentOrderStates) {
+// Add order to main blotter
+function addOrderToMainBlotter(order, side, currentOrderStates) {
     const blotterBody = document.getElementById('blotter-body');
     const row = document.createElement('tr');
     
@@ -1126,4 +1133,105 @@ function updateRecentTrades() {
             });
         })
         .catch(error => console.error('Error updating recent trades:', error));
+}
+
+// Initialize minimizable blotters
+function initMinimizableBlotters() {
+    const minimizeButtons = document.querySelectorAll('.minimize-button');
+    const blotterContents = document.querySelectorAll('.blotter-content');
+    
+    minimizeButtons.forEach((button, index) => {
+        button.addEventListener('click', () => {
+            blotterContents[index].classList.toggle('minimized');
+            button.textContent = blotterContents[index].classList.contains('minimized') ? '+' : '−';
+        });
+    });
+}
+
+// Update both scopechat blotters
+function updateScopeChatBlotters() {
+    fetch('/get_order_book')
+        .then(response => response.json())
+        .then(data => {
+            const traderBlotterBody = document.getElementById('trader-blotter-body');
+            const scopeBlotterBody = document.getElementById('scope-blotter-body');
+            
+            // Clear both blotters
+            traderBlotterBody.innerHTML = '';
+            scopeBlotterBody.innerHTML = '';
+            
+            // Get current trader ID and scope ID
+            const currentTraderId = document.getElementById('trader-id').value;
+            const currentScopeId = document.getElementById('scope-id').value;
+            
+            // Process all orders
+            for (const symbol in data) {
+                const book = data[symbol];
+                
+                // Process buy orders
+                book.buys.forEach(order => {
+                    if (order.sender === currentTraderId) {
+                        addOrderToScopeBlotter(order, 'Buy', traderBlotterBody);
+                    } else if (order.sender === currentScopeId) {
+                        addOrderToScopeBlotter(order, 'Buy', scopeBlotterBody);
+                    }
+                });
+                
+                // Process sell orders
+                book.sells.forEach(order => {
+                    if (order.sender === currentTraderId) {
+                        addOrderToScopeBlotter(order, 'Sell', traderBlotterBody);
+                    } else if (order.sender === currentScopeId) {
+                        addOrderToScopeBlotter(order, 'Sell', scopeBlotterBody);
+                    }
+                });
+            }
+            
+            // Show "No orders" message if blotters are empty
+            if (traderBlotterBody.children.length === 0) {
+                traderBlotterBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="no-orders-message">No active orders for ${currentTraderId}</td>
+                    </tr>
+                `;
+            }
+            
+            if (scopeBlotterBody.children.length === 0) {
+                scopeBlotterBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="no-orders-message">No active orders for ${currentScopeId || 'connected scope'}</td>
+                    </tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error updating scopechat blotters:', error);
+        });
+}
+
+// Helper function to add an order to a scopechat blotter
+function addOrderToScopeBlotter(order, side, blotterBody) {
+    const row = document.createElement('tr');
+    
+    // Calculate fill progress
+    const fillProgress = ((order.original_qty - order.remaining_qty) / order.original_qty) * 100;
+    const status = getOrderStatus(fillProgress, order.original_qty);
+    
+    row.innerHTML = `
+        <td>${order.time}</td>
+        <td>${order.order_id}</td>
+        <td>${order.symbol}</td>
+        <td>${side}</td>
+        <td>${formatPrice(order.price)}</td>
+        <td>${formatQuantity(order.remaining_qty)}</td>
+        <td>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: ${fillProgress}%"></div>
+                <div class="progress-text">${fillProgress.toFixed(0)}%</div>
+            </div>
+        </td>
+        <td class="status-${status.toLowerCase()}">${status}</td>
+    `;
+    
+    blotterBody.appendChild(row);
 }
