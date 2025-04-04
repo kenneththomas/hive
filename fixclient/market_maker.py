@@ -41,7 +41,7 @@ class MarketMaker:
     - Tracks performance
     """
     
-    def __init__(self, trader_id: str = "MARKET_MAKER"):
+    def __init__(self, trader_id: str = "SUPERMKT"):
         """
         Initialize the market maker
         
@@ -295,6 +295,9 @@ class MarketMaker:
         logger.info(f"Getting active orders. Count: {len(self.active_orders)}")
         logger.info(f"Active orders: {self.active_orders}")
         
+        # First, sync our active_orders with the actual orders in the order book
+        self._sync_active_orders()
+        
         active_orders = []
         for order_id, order in self.active_orders.items():
             order_info = {
@@ -310,6 +313,45 @@ class MarketMaker:
         
         logger.info(f"Returning {len(active_orders)} active orders")
         return active_orders
+    
+    def _sync_active_orders(self) -> None:
+        """
+        Synchronize the active_orders dictionary with the actual orders in the order book
+        """
+        logger.info("Syncing active orders with order book")
+        
+        # Create a set of order IDs that are still active in the order book
+        active_order_ids = set()
+        
+        # Check each symbol in the order book
+        for symbol, book in baripool.bookshelf.items():
+            if not book:  # Skip empty books
+                continue
+                
+            # Find all orders placed by this market maker
+            for order in book:
+                if order.sendercompid == self.trader_id and not order.is_canceled:
+                    active_order_ids.add(order.orderid)
+                    
+                    # If this order is not in our active_orders, add it
+                    if order.orderid not in self.active_orders:
+                        logger.info(f"Found order in order book that wasn't in active_orders: {order.orderid}")
+                        self.active_orders[order.orderid] = {
+                            'symbol': symbol,
+                            'side': order.side,
+                            'price': order.limitprice,
+                            'quantity': order.qty,
+                            'time': baripool.fillcontainer.get(order.orderid, {}).get('60', '') or 
+                                   baripool.fillcontainer.get(order.orderid, {}).get('52', '')
+                        }
+        
+        # Remove orders from active_orders that are no longer in the order book
+        for order_id in list(self.active_orders.keys()):
+            if order_id not in active_order_ids:
+                logger.info(f"Removing order from active_orders that's no longer in order book: {order_id}")
+                del self.active_orders[order_id]
+        
+        logger.info(f"Active orders after sync: {len(self.active_orders)}")
     
     def get_order_book(self, symbol: str) -> Dict[str, Any]:
         """
@@ -490,6 +532,23 @@ class MarketMaker:
         Returns:
             Dict[str, Any]: Order information
         """
+        # First, sync our active orders with the order book
+        self._sync_active_orders()
+        
+        # Check if we already have a similar order in the order book
+        if symbol in baripool.bookshelf and baripool.bookshelf[symbol]:
+            for order in baripool.bookshelf[symbol]:
+                if (order.sendercompid == self.trader_id and 
+                    order.side == side and 
+                    order.limitprice == price and 
+                    not order.is_canceled):
+                    logger.info(f"Similar order already exists in order book: {order.orderid}")
+                    return {
+                        'status': 'success',
+                        'order_id': order.orderid,
+                        'message': f"Order already exists: {order.orderid}"
+                    }
+        
         # Generate a unique order ID
         order_id = str(uuid.uuid4())[:8]
         
@@ -646,6 +705,9 @@ class MarketMaker:
         """
         logger.info(f"Updating position. Current active orders: {len(self.active_orders)}")
         
+        # Sync active orders with the order book
+        self._sync_active_orders()
+        
         # Use the portfolio module to get the latest positions
         try:
             # Get portfolio data for this trader
@@ -776,19 +838,52 @@ class MarketMaker:
             
             logger.info(f"Calculated quotes for {symbol}: bid={bid_price}, ask={ask_price}")
             
-            # Cancel existing orders for this symbol
-            symbol_orders = [order_id for order_id, order in self.active_orders.items() if order['symbol'] == symbol]
-            if symbol_orders:
-                logger.info(f"Canceling {len(symbol_orders)} existing orders for {symbol}")
-                for order_id in symbol_orders:
-                    self.cancel_order(order_id)
-            else:
-                logger.info(f"No existing orders to cancel for {symbol}")
+            # Check if we already have orders at these prices
+            existing_bid_order_id = None
+            existing_ask_order_id = None
             
-            # Place new orders
-            logger.info(f"Placing new orders for {symbol}: bid={bid_price}, ask={ask_price}, size={self.config['default_order_size']}")
-            bid_result = self.place_order(symbol, '1', bid_price, self.config['default_order_size'])
-            ask_result = self.place_order(symbol, '2', ask_price, self.config['default_order_size'])
+            if symbol in baripool.bookshelf and baripool.bookshelf[symbol]:
+                for order in baripool.bookshelf[symbol]:
+                    if order.sendercompid == self.trader_id and not order.is_canceled:
+                        if order.side == '1' and abs(order.limitprice - bid_price) < 0.01:
+                            existing_bid_order_id = order.orderid
+                            logger.info(f"Found existing bid order: {existing_bid_order_id}")
+                        elif order.side == '2' and abs(order.limitprice - ask_price) < 0.01:
+                            existing_ask_order_id = order.orderid
+                            logger.info(f"Found existing ask order: {existing_ask_order_id}")
+            
+            # Cancel existing orders for this symbol that don't match our new quotes
+            symbol_orders = [order_id for order_id, order in self.active_orders.items() if order['symbol'] == symbol]
+            for order_id in symbol_orders:
+                if order_id != existing_bid_order_id and order_id != existing_ask_order_id:
+                    logger.info(f"Canceling order: {order_id}")
+                    self.cancel_order(order_id)
+            
+            # Place new orders if needed
+            bid_result = None
+            ask_result = None
+            
+            if existing_bid_order_id:
+                logger.info(f"Using existing bid order: {existing_bid_order_id}")
+                bid_result = {
+                    'status': 'success',
+                    'order_id': existing_bid_order_id,
+                    'message': f"Using existing order: {existing_bid_order_id}"
+                }
+            else:
+                logger.info(f"Placing new bid order: {symbol} {bid_price} {self.config['default_order_size']}")
+                bid_result = self.place_order(symbol, '1', bid_price, self.config['default_order_size'])
+            
+            if existing_ask_order_id:
+                logger.info(f"Using existing ask order: {existing_ask_order_id}")
+                ask_result = {
+                    'status': 'success',
+                    'order_id': existing_ask_order_id,
+                    'message': f"Using existing order: {existing_ask_order_id}"
+                }
+            else:
+                logger.info(f"Placing new ask order: {symbol} {ask_price} {self.config['default_order_size']}")
+                ask_result = self.place_order(symbol, '2', ask_price, self.config['default_order_size'])
             
             results[symbol] = {
                 'bid': bid_result,
