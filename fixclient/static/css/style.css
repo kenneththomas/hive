@@ -239,6 +239,7 @@ select.form-control {
     max-height: 100%;
     overflow: hidden;
     position: relative;
+    width: 50%; /* Ensure equal width */
 }
 
 .order-table thead {
@@ -277,21 +278,24 @@ select.form-control {
 
 .order-table tr {
     position: relative;
+    display: table;
+    width: 100%;
+    table-layout: fixed;
 }
 
 .order-table td {
-    padding: 6px;
-    font-size: 0.9em;
+    padding: 4px 8px;
+    font-size: 12px;
     border-bottom: 1px solid #222;
-    position: relative;
-    z-index: 1;
+    white-space: nowrap;
 }
 
-/* Align cells based on side */
+/* Right align bid side */
 .buy-table td {
     text-align: right;
 }
 
+/* Left align ask side */
 .sell-table td {
     text-align: left;
 }
