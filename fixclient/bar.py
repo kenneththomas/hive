@@ -6,6 +6,7 @@ import logging
 import sqlite3
 from pathlib import Path
 import random
+import threading
 sys.path.insert(1, 'pyengine')
 sys.path.insert(1, 'tests')
 import baripool
@@ -16,6 +17,7 @@ from profile import register_profile_routes  # Import the new profile module
 from market_data import FinnhubClient
 import maricon
 import portfolio  # Import the portfolio module
+from market_maker import MarketMaker
 
 app = Flask(__name__)
 
@@ -41,6 +43,12 @@ random_trade_settings = {
 
 # List of symbols for random trade generation
 SYMBOLS = ['AAPL', 'SPY', 'TSLA']
+
+# Initialize market maker
+market_maker = MarketMaker()
+
+# Global variable to track the market maker thread
+market_maker_thread = None
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -170,7 +178,7 @@ class EndpointFilter(logging.Filter):
 
 # Apply the filter to the Werkzeug logger
 logging.getLogger('werkzeug').addFilter(
-    EndpointFilter(['/get_order_book', '/get_recent_trades'])
+    EndpointFilter(['/get_order_book', '/get_recent_trades', '/get_portfolio', '/test_baripool', '/market-maker'])
 )
 
 def unique_id():
@@ -302,7 +310,7 @@ def generate_random_trade_route():
     return jsonify(result), status_code
 
 @app.route('/get_market_price', methods=['POST'])
-def get_market_price():
+def get_market_price_api():
     try:
         data = request.get_json()
         symbol = data.get('symbol')
@@ -480,6 +488,158 @@ def cancel_order_route():
             'status': 'error',
             'message': f'Error canceling order: {str(e)}'
         }), 500
+
+@app.route('/market-maker')
+def market_maker_page():
+    return render_template('market_maker.html')
+
+@app.route('/api/market-data/price/<symbol>')
+def get_market_maker_price(symbol):
+    try:
+        price = market_maker.get_current_price(symbol)
+        if price is None:
+            return jsonify({
+                'price': None,
+                'message': f'No price data available for {symbol}'
+            })
+        return jsonify({'price': price})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/market-data/orderbook/<symbol>')
+def get_symbol_order_book(symbol):
+    try:
+        order_book = market_maker.get_order_book(symbol)
+        return jsonify(order_book)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/positions')
+def get_positions():
+    try:
+        positions = market_maker.get_positions()
+        return jsonify(positions)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/orders/active')
+def get_active_orders():
+    try:
+        orders = market_maker.get_active_orders()
+        return jsonify(orders)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/orders/<order_id>/cancel', methods=['POST'])
+def cancel_order(order_id):
+    try:
+        market_maker.cancel_order(order_id)
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/orders/cancel-all', methods=['POST'])
+def cancel_all_orders():
+    try:
+        market_maker.cancel_all_orders()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+def start_market_maker_thread():
+    """Start the market maker in a separate thread"""
+    global market_maker_thread
+    
+    # Check if thread is already running
+    if market_maker_thread and market_maker_thread.is_alive():
+        return {'status': 'error', 'message': 'Market maker thread is already running'}
+    
+    # Create and start a new thread
+    market_maker_thread = threading.Thread(target=market_maker.run, daemon=True)
+    market_maker_thread.start()
+    
+    return {'status': 'success', 'message': 'Market maker thread started'}
+
+@app.route('/api/market-maker/start', methods=['POST'])
+def start_market_maker():
+    try:
+        config = request.json
+        # Start the market maker
+        result = market_maker.start(config)
+        
+        # If market maker started successfully, start the thread
+        if result['status'] == 'success':
+            thread_result = start_market_maker_thread()
+            if thread_result['status'] == 'error':
+                # If thread failed to start, stop the market maker
+                market_maker.stop()
+                return jsonify(thread_result), 400
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/market-maker/stop', methods=['POST'])
+def stop_market_maker():
+    try:
+        # Stop the market maker
+        result = market_maker.stop()
+        
+        # The thread will exit naturally when market_maker.is_running becomes False
+        # We don't need to explicitly stop the thread
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/market-maker/pause', methods=['POST'])
+def pause_market_maker():
+    try:
+        market_maker.pause()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/market-maker/resume', methods=['POST'])
+def resume_market_maker():
+    try:
+        market_maker.resume()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/market-maker/toggle-price-source', methods=['POST'])
+def toggle_price_source():
+    try:
+        result = market_maker.toggle_price_source()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/market-maker/rebalance', methods=['POST'])
+def rebalance_market_maker():
+    try:
+        result = market_maker.rebalance_orders()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/market-maker/lift-quote', methods=['POST'])
+def lift_quote():
+    try:
+        data = request.json
+        symbol = data.get('symbol')
+        price = float(data.get('price'))
+        quantity = int(data.get('quantity'))
+        side = data.get('side')
+        
+        if not all([symbol, price, quantity, side]):
+            return jsonify({'status': 'error', 'message': 'Missing required parameters'}), 400
+        
+        result = market_maker.lift_quote(symbol, price, quantity, side)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 400
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5017)

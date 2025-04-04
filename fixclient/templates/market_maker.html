@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Maker - BAR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/market_maker.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header bar -->
+        <div class="header-bar">
+            <div class="header-title">BAR Market Maker</div>
+            <div class="header-date" id="date-display"></div>
+            <div class="header-time" id="time-display"></div>
+        </div>
+
+        <!-- Main content -->
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2 class="section-title">CONTROL PANEL</h2>
+                <div class="control-buttons">
+                    <button id="start-market-maker" class="control-button start">Start</button>
+                    <button id="stop-market-maker" class="control-button stop" disabled>Stop</button>
+                    <button id="pause-market-maker" class="control-button pause" disabled>Pause</button>
+                    <button id="resume-market-maker" class="control-button resume" disabled>Resume</button>
+                    <button id="emergency-stop" class="control-button emergency">Emergency Stop</button>
+                    <button id="toggle-price-source" class="control-button toggle">Toggle Price Source</button>
+                    <button id="rebalance-orders" class="control-button rebalance">Rebalance Orders</button>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-label">Status:</div>
+                    <div id="market-maker-status" class="status-value">Stopped</div>
+                    <div class="status-label">Price Source:</div>
+                    <div id="price-source-status" class="status-value">Real Market Data</div>
+                </div>
+            </div>
+
+            <!-- Configuration Panel -->
+            <div class="config-panel">
+                <h2 class="section-title">CONFIGURATION</h2>
+                <div class="config-sections">
+                    <!-- Symbol Selection -->
+                    <div class="config-section">
+                        <h3 class="subsection-title">Symbol Selection</h3>
+                        <div class="form-group">
+                            <label for="symbols">Symbols (comma-separated):</label>
+                            <input type="text" id="symbols" class="form-control" value="AAPL">
+                        </div>
+                    </div>
+
+                    <!-- Risk Limits -->
+                    <div class="config-section">
+                        <h3 class="subsection-title">Risk Limits</h3>
+                        <div class="form-group">
+                            <label for="max-position">Maximum Position Size:</label>
+                            <input type="number" id="max-position" class="form-control" value="1000">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-notional">Maximum Notional Exposure ($):</label>
+                            <input type="number" id="max-notional" class="form-control" value="100000">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-drawdown">Maximum Drawdown ($):</label>
+                            <input type="number" id="max-drawdown" class="form-control" value="1000">
+                        </div>
+                    </div>
+
+                    <!-- Spread Parameters -->
+                    <div class="config-section">
+                        <h3 class="subsection-title">Spread Parameters</h3>
+                        <div class="form-group">
+                            <label for="target-spread-pct">Target Spread (%):</label>
+                            <input type="number" id="target-spread-pct" class="form-control" value="0.1" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="min-spread-pct">Minimum Spread (%):</label>
+                            <input type="number" id="min-spread-pct" class="form-control" value="0.05" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-spread-pct">Maximum Spread (%):</label>
+                            <input type="number" id="max-spread-pct" class="form-control" value="0.5" step="0.01">
+                        </div>
+                    </div>
+
+                    <!-- Order Size Parameters -->
+                    <div class="config-section">
+                        <h3 class="subsection-title">Order Size Parameters</h3>
+                        <div class="form-group">
+                            <label for="default-order-size">Default Order Size:</label>
+                            <input type="number" id="default-order-size" class="form-control" value="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="min-order-size">Minimum Order Size:</label>
+                            <input type="number" id="min-order-size" class="form-control" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-order-size">Maximum Order Size:</label>
+                            <input type="number" id="max-order-size" class="form-control" value="500">
+                        </div>
+                    </div>
+
+                    <!-- Algorithm Parameters -->
+                    <div class="config-section">
+                        <h3 class="subsection-title">Algorithm Parameters</h3>
+                        <div class="form-group">
+                            <label for="price-adjustment-step">Price Adjustment Step (%):</label>
+                            <input type="number" id="price-adjustment-step" class="form-control" value="0.01" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label for="rebalance-interval">Rebalance Interval (seconds):</label>
+                            <input type="number" id="rebalance-interval" class="form-control" value="5">
+                        </div>
+                        <div class="form-group">
+                            <label for="price-away-threshold">Price Away Threshold (%):</label>
+                            <input type="number" id="price-away-threshold" class="form-control" value="1" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="inventory-skew-factor">Inventory Skew Factor:</label>
+                            <input type="number" id="inventory-skew-factor" class="form-control" value="0.02" step="0.001">
+                        </div>
+                        <div class="form-group">
+                            <label for="max-inventory-skew">Maximum Inventory Skew:</label>
+                            <input type="number" id="max-inventory-skew" class="form-control" value="0.2" step="0.001">
+                        </div>
+                    </div>
+                </div>
+                <div class="config-actions">
+                    <button id="save-config" class="action-button">Save Configuration</button>
+                    <button id="load-config" class="action-button">Load Configuration</button>
+                </div>
+            </div>
+
+            <!-- Market Data Panel -->
+            <div class="market-data-panel">
+                <h2 class="section-title">MARKET DATA</h2>
+                <div class="market-data-sections">
+                    <!-- Symbol Selection -->
+                    <div class="symbol-selection">
+                        <div class="form-group">
+                            <label for="selected-symbol">Select Symbol:</label>
+                            <select id="selected-symbol" class="form-control">
+                                <option value="AAPL">AAPL</option>
+                                <option value="MSFT">MSFT</option>
+                                <option value="GOOGL">GOOGL</option>
+                                <option value="AMZN">AMZN</option>
+                                <option value="META">META</option>
+                            </select>
+                        </div>
+                        <button id="refresh-market-data" class="action-button">Refresh</button>
+                    </div>
+
+                    <!-- Current Price -->
+                    <div class="current-price">
+                        <div class="price-label">Current Price:</div>
+                        <div id="current-price-value" class="price-value">$0.00</div>
+                    </div>
+
+                    <!-- Order Book -->
+                    <div class="order-book">
+                        <h3 class="subsection-title">Order Book</h3>
+                        <div class="order-book-container">
+                            <div class="order-book-side">
+                                <div class="order-book-header">Bids</div>
+                                <div id="bids-container" class="order-book-entries">
+                                    <!-- Bids will be added here dynamically -->
+                                </div>
+                            </div>
+                            <div class="order-book-side">
+                                <div class="order-book-header">Asks</div>
+                                <div id="asks-container" class="order-book-entries">
+                                    <!-- Asks will be added here dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Panel -->
+            <div class="performance-panel">
+                <h2 class="section-title">PERFORMANCE</h2>
+                <div class="performance-sections">
+                    <!-- Position Summary -->
+                    <div class="performance-section">
+                        <h3 class="subsection-title">Position Summary</h3>
+                        <div class="position-summary">
+                            <div class="position-item">
+                                <div class="position-label">Total Trades:</div>
+                                <div id="total-trades" class="position-value">0</div>
+                            </div>
+                            <div class="position-item">
+                                <div class="position-label">Active Orders:</div>
+                                <div id="active-orders-count" class="position-value">0</div>
+                            </div>
+                            <div class="position-item">
+                                <div class="position-label">Realized P&L:</div>
+                                <div id="realized-pnl" class="position-value">$0.00</div>
+                            </div>
+                            <div class="position-item">
+                                <div class="position-label">Unrealized P&L:</div>
+                                <div id="unrealized-pnl" class="position-value">$0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Positions -->
+                    <div class="performance-section">
+                        <h3 class="subsection-title">Current Positions</h3>
+                        <div class="positions-table-container">
+                            <table id="positions-table" class="positions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Position</th>
+                                        <th>Quantity</th>
+                                        <th>Avg Price</th>
+                                        <th>Current Price</th>
+                                        <th>Market Value</th>
+                                        <th>P&L</th>
+                                        <th>P&L %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="positions-table-body">
+                                    <!-- Positions will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Active Orders -->
+                    <div class="performance-section">
+                        <h3 class="subsection-title">Active Orders</h3>
+                        <div class="orders-table-container">
+                            <table id="active-orders-table" class="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Order ID</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="active-orders-table-body">
+                                    <!-- Active orders will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="order-actions">
+                            <button id="cancel-all-orders" class="action-button">Cancel All Orders</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Panel -->
+            <div class="log-panel">
+                <h2 class="section-title">LOG</h2>
+                <div class="log-container">
+                    <div id="log-content" class="log-content">
+                        <!-- Log messages will be added here dynamically -->
+                    </div>
+                </div>
+                <div class="log-actions">
+                    <button id="clear-log" class="action-button">Clear Log</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="status-bar">
+            <div id="status-display">READY</div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/market_maker.js') }}"></script>
+</body>
+</html> 
