@@ -1139,6 +1139,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listeners
     document.getElementById('update-trader-id').addEventListener('click', updateTraderId);
+    document.getElementById('reset-filter').addEventListener('click', function() {
+        document.getElementById('symbol-filter').value = '';
+        updateOrderBlotter();
+    });
+    
+    // Add event listener for symbol filter input
+    document.getElementById('symbol-filter').addEventListener('input', function() {
+        updateOrderBlotter();
+    });
     
     // Start polling for updates
     setInterval(updateOrderBlotter, 1000);
