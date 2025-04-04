@@ -232,32 +232,12 @@ def on_new_order(new_order):
             unfilled_ioc_exec_report = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
             print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
     else:
-        display_book(bookshelf[new_order.symbol])
+        #display_book(bookshelf[new_order.symbol])
         evaluate_book(new_order, bookshelf[new_order.symbol])
 
     # return exported new order execution report
     return dfix.exportfix(new_order_execution_report)
 
-
-def display_book_legacy(book):
-    # prints buys and sells separately instead of together
-    try:
-        print('Order Book: ', book[0].symbol, 'at', datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3])
-    except IndexError:
-        print('Order Book is empty.')
-
-    buys = [order for order in book if order.side == '1']
-    sells = [order for order in book if order.side == '2']
-
-    buys_data = [[order.orderid, order.original_qty, order.qty, order.limitprice, order.sendercompid] for order in buys]
-    sells_data = [[order.orderid, order.original_qty, order.qty, order.limitprice, order.sendercompid] for order in sells]
-
-    headers = ['Order ID', 'Original Quantity', 'Remaining Quantity', 'Price', 'SenderCompID']
-
-    print('Buys:')
-    print(tabulate(buys_data, headers=headers, tablefmt='grid'))
-    print('Sells:')
-    print(tabulate(sells_data, headers=headers, tablefmt='grid'))
 
 def display_book(book):
     try:

@@ -14,7 +14,7 @@ sendercompids = list(devresources.clients.keys())
 def neworderid():
     return 'katana-' + str(uuid.uuid4())[0:8]
 
-symbols = ['AAPL', 'GOOG', 'AMZN', 'MSFT', 'TSLA', 'MS', 'BAC', 'ZVZZT', 'SPY', 'QQQ','IWM','META','GME','AMC','BB','NOK','V','EL','LULU']
+symbols = ['AAPL', 'GOOG', 'AMZN', 'MSFT', 'TSLA', 'MS', 'ZVZZT', 'SPY', 'QQQ','META','GME','AMC','V','LULU']
 
 #generate random price, use cents
 prices = [str(r.randint(1, 1000)) + '.' + str(r.randint(10, 99)) for _ in range(100)]
