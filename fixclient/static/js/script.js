@@ -94,36 +94,57 @@ setInterval(updateTime, 1000);
 // Helper function to create an order table
 function createOrderTable(orders, sideLabel, symbol, changes) {
     const table = document.createElement('table');
+    table.className = 'order-table';
     
-    // Create header row
+    // Create table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
     
-    // Remove 'Orig Qty' from headers
-    const headers = [sideLabel, 'Order ID', 'Sender', 'Price', 'Qty'];
-    headers.forEach(text => {
+    // Define headers based on side (mirrored for ask)
+    let headers;
+    if (sideLabel === 'BID') {
+        headers = [
+            'Order ID',
+            'Sender',
+            'Quantity',
+            'Price'
+        ];
+    } else {
+        headers = [
+            'Price',
+            'Quantity',
+            'Sender',
+            'Order ID'
+        ];
+    }
+    
+    headers.forEach(header => {
         const th = document.createElement('th');
-        th.textContent = text;
+        th.textContent = header;
         headerRow.appendChild(th);
     });
     
     thead.appendChild(headerRow);
     table.appendChild(thead);
     
-    // Create body rows
+    // Create table body
     const tbody = document.createElement('tbody');
     
-    if (orders.length === 0) {
+    if (!orders || orders.length === 0) {
         const emptyRow = document.createElement('tr');
         const emptyCell = document.createElement('td');
         emptyCell.colSpan = headers.length;
-        emptyCell.textContent = 'No orders';
         emptyCell.className = 'empty-message';
+        emptyCell.textContent = `No ${sideLabel.toLowerCase()} orders`;
         emptyRow.appendChild(emptyCell);
         tbody.appendChild(emptyRow);
     } else {
+        // Find the maximum quantity for scaling the size indicators
+        const maxQty = Math.max(...orders.map(order => parseInt(order.remaining_qty)));
+        
         orders.forEach(order => {
             const row = document.createElement('tr');
+            row.className = 'order-row';
             
             // Add data attributes for context menu
             row.dataset.side = sideLabel;
@@ -144,36 +165,59 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
                 }
             }
             
-            // Side indicator cell (just for visual distinction)
-            const sideCell = document.createElement('td');
-            sideCell.className = sideLabel === 'BID' ? 'bid-indicator' : 'ask-indicator';
-            sideCell.textContent = sideLabel;
-            row.appendChild(sideCell);
+            // Create size indicator
+            const sizeIndicator = document.createElement('div');
+            sizeIndicator.className = 'size-indicator';
+            const qtyPercent = (parseInt(order.remaining_qty) / maxQty) * 100;
+            sizeIndicator.style.width = `${qtyPercent}%`;
             
-            // Order details
-            const orderIdCell = document.createElement('td');
-            orderIdCell.textContent = order.order_id;
-            row.appendChild(orderIdCell);
+            // Position the size indicator based on side
+            if (sideLabel === 'BID') {
+                sizeIndicator.style.right = '0';
+            } else {
+                sizeIndicator.style.left = '0';
+            }
             
-            const senderCell = document.createElement('td');
-            senderCell.textContent = order.sender;
-            row.appendChild(senderCell);
+            row.appendChild(sizeIndicator);
             
-            const priceCell = document.createElement('td');
-            priceCell.textContent = formatPrice(order.price);
-            row.appendChild(priceCell);
-            
-            const qtyCell = document.createElement('td');
-            qtyCell.textContent = formatQuantity(order.remaining_qty);
-            row.appendChild(qtyCell);
+            // Create cells in the correct order based on side
+            if (sideLabel === 'BID') {
+                // BID order: Order ID, Sender, Quantity, Price
+                const orderIdCell = document.createElement('td');
+                orderIdCell.textContent = order.order_id;
+                row.appendChild(orderIdCell);
+                
+                const senderCell = document.createElement('td');
+                senderCell.textContent = order.sender;
+                row.appendChild(senderCell);
+                
+                const qtyCell = document.createElement('td');
+                qtyCell.textContent = formatQuantity(order.remaining_qty);
+                row.appendChild(qtyCell);
+                
+                const priceCell = document.createElement('td');
+                priceCell.textContent = formatPrice(order.price);
+                row.appendChild(priceCell);
+            } else {
+                // ASK order: Price, Quantity, Sender, Order ID
+                const priceCell = document.createElement('td');
+                priceCell.textContent = formatPrice(order.price);
+                row.appendChild(priceCell);
+                
+                const qtyCell = document.createElement('td');
+                qtyCell.textContent = formatQuantity(order.remaining_qty);
+                row.appendChild(qtyCell);
+                
+                const senderCell = document.createElement('td');
+                senderCell.textContent = order.sender;
+                row.appendChild(senderCell);
+                
+                const orderIdCell = document.createElement('td');
+                orderIdCell.textContent = order.order_id;
+                row.appendChild(orderIdCell);
+            }
             
             tbody.appendChild(row);
-            
-            // Add a temporary highlight effect for new rows
-            row.classList.add('highlight');
-            setTimeout(() => {
-                row.classList.remove('highlight');
-            }, 1000);
         });
     }
     
@@ -194,6 +238,7 @@ function formatQuantity(qty) {
 // Global variable to store the complete order book data
 let fullOrderBookData = {};
 let currentSymbolFilter = '';
+let selectedSymbol = null;
 
 // Global variable to store previous state of the order book for comparison
 let previousOrderBookData = {};
@@ -212,14 +257,63 @@ function updateOrderBook() {
             // Store the full data
             fullOrderBookData = data;
             
-            // Display filtered data with animations
-            displayOrderBook(data, changes);
+            // Update the symbol list
+            updateSymbolList(data);
+            
+            // If a symbol is selected, update its order book
+            if (selectedSymbol && data[selectedSymbol]) {
+                displaySelectedOrderBook(selectedSymbol, data[selectedSymbol], changes);
+            }
         })
         .catch(error => {
             console.error('Error fetching order book:', error);
-            document.getElementById('order-book-container').innerHTML = 
+            document.getElementById('selected-book-container').innerHTML = 
                 '<div class="error-message">Error loading order book data</div>';
         });
+}
+
+// Function to update the symbol list
+function updateSymbolList(data) {
+    const symbolList = document.getElementById('symbol-list');
+    
+    // Clear the current list
+    symbolList.innerHTML = '';
+    
+    // Get the search term
+    const searchTerm = document.getElementById('symbol-search').value.toLowerCase();
+    
+    // Filter symbols based on search term
+    const filteredSymbols = Object.keys(data).filter(symbol => 
+        symbol.toLowerCase().includes(searchTerm)
+    );
+    
+    // Sort symbols alphabetically
+    filteredSymbols.sort();
+    
+    // Check if there are any symbols
+    if (filteredSymbols.length === 0) {
+        symbolList.innerHTML = '<div class="no-data-message">No matching symbols</div>';
+        return;
+    }
+    
+    // Create symbol items
+    filteredSymbols.forEach(symbol => {
+        const symbolItem = document.createElement('div');
+        symbolItem.className = 'symbol-item';
+        if (symbol === selectedSymbol) {
+            symbolItem.classList.add('active');
+        }
+        
+        symbolItem.textContent = symbol;
+        symbolItem.dataset.symbol = symbol;
+        
+        // Add click event to select the symbol
+        symbolItem.addEventListener('click', () => {
+            selectSymbol(symbol);
+        });
+        
+        symbolList.appendChild(symbolItem);
+    });
 }
 
 // Function to analyze changes between previous and current order book
@@ -327,69 +421,102 @@ function analyzeOrderSide(prevOrders, currOrders, newOrders, partialFills, fullF
     });
 }
 
-// Update the display function to use the changes information
-function displayOrderBook(data, changes) {
-    const container = document.getElementById('order-book-container');
+// Function to select a symbol and display its order book
+function selectSymbol(symbol) {
+    // Update the selected symbol
+    selectedSymbol = symbol;
     
-    // Clear previous content
+    // Update the active class on symbol items
+    document.querySelectorAll('.symbol-item').forEach(item => {
+        if (item.dataset.symbol === symbol) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    // Display the order book for the selected symbol
+    if (fullOrderBookData[symbol]) {
+        displaySelectedOrderBook(symbol, fullOrderBookData[symbol]);
+    }
+}
+
+// Function to display the order book for a selected symbol
+function displaySelectedOrderBook(symbol, bookData, changes) {
+    const container = document.getElementById('selected-book-container');
     container.innerHTML = '';
     
-    // Filter data if a filter is applied
-    let filteredData = {};
-    if (currentSymbolFilter) {
-        // Case-insensitive filter
-        const filterLower = currentSymbolFilter.toLowerCase();
+    // Create symbol section
+    const symbolSection = document.createElement('div');
+    symbolSection.className = 'symbol-section';
+    
+    // Create symbol header
+    const symbolHeader = document.createElement('h3');
+    symbolHeader.textContent = symbol;
+    symbolSection.appendChild(symbolHeader);
+    
+    // Create book display
+    const bookDisplay = document.createElement('div');
+    bookDisplay.className = 'book-display';
+    
+    // Calculate mid price and spread
+    let priceDisplay = document.createElement('div');
+    priceDisplay.className = 'price-display';
+    
+    if (bookData.buys.length > 0 && bookData.sells.length > 0) {
+        const highestBid = parseFloat(bookData.buys[0].price);
+        const lowestAsk = parseFloat(bookData.sells[0].price);
+        const midPrice = ((highestBid + lowestAsk) / 2).toFixed(2);
+        const spread = (lowestAsk - highestBid).toFixed(2);
+        const spreadPct = ((spread / midPrice) * 100).toFixed(2);
         
-        for (const symbol in data) {
-            if (symbol.toLowerCase().includes(filterLower)) {
-                filteredData[symbol] = data[symbol];
-            }
-        }
+        priceDisplay.innerHTML = `
+            <div>Mid Price: $${midPrice}</div>
+            <div>Spread: $${spread} (${spreadPct}%)</div>
+        `;
     } else {
-        filteredData = data;
+        priceDisplay.textContent = 'Insufficient orders to calculate prices';
     }
     
-    // Check if there are any books after filtering
-    if (Object.keys(filteredData).length === 0) {
-        if (currentSymbolFilter) {
-            container.innerHTML = `<div class="no-data-message">No matching symbols for "${currentSymbolFilter}"</div>`;
-        } else {
-            container.innerHTML = '<div class="no-data-message">No active orders in the book</div>';
-        }
-        return;
-    }
+    bookDisplay.appendChild(priceDisplay);
     
-    // Create a section for each symbol
-    for (const symbol in filteredData) {
-        const bookData = filteredData[symbol];
-        const symbolSection = document.createElement('div');
-        symbolSection.className = 'symbol-section';
-        
-        // Create symbol header
-        const symbolHeader = document.createElement('h3');
-        symbolHeader.textContent = symbol;
-        symbolSection.appendChild(symbolHeader);
-        
-        // Create book display with buy and sell sides
-        const bookDisplay = document.createElement('div');
-        bookDisplay.className = 'book-display';
-        
-        // Buy side (bids) - now with changes parameter
-        const buyTable = createOrderTable(bookData.buys, 'BID', symbol, changes);
-        buyTable.className = 'order-table buy-table';
-        
-        // Sell side (asks) - now with changes parameter
-        const sellTable = createOrderTable(bookData.sells, 'ASK', symbol, changes);
-        sellTable.className = 'order-table sell-table';
-        
-        // Add tables to book display
-        bookDisplay.appendChild(buyTable);
-        bookDisplay.appendChild(sellTable);
-        symbolSection.appendChild(bookDisplay);
-        
-        // Add the symbol section to the container
-        container.appendChild(symbolSection);
-    }
+    // Create order book layout
+    const orderBookLayout = document.createElement('div');
+    orderBookLayout.className = 'order-book-layout';
+    
+    // Create tables container
+    const orderBookTables = document.createElement('div');
+    orderBookTables.className = 'order-book-tables';
+    
+    // Buy side (bids) - on the left
+    const buyTable = createOrderTable(bookData.buys, 'BID', symbol, changes);
+    buyTable.className = 'order-table buy-table';
+    
+    // Sell side (asks) - on the right
+    const sellTable = createOrderTable(bookData.sells, 'ASK', symbol, changes);
+    sellTable.className = 'order-table sell-table ask-table';
+    
+    // Add tables to container in the correct order (bids on left, asks on right)
+    orderBookTables.appendChild(buyTable);
+    orderBookTables.appendChild(sellTable);
+    
+    // Add the tables container to the layout
+    orderBookLayout.appendChild(orderBookTables);
+    
+    // Add the layout to the book display
+    bookDisplay.appendChild(orderBookLayout);
+    
+    // Add the book display to the symbol section
+    symbolSection.appendChild(bookDisplay);
+    
+    // Add the symbol section to the container
+    container.appendChild(symbolSection);
+}
+
+// Function to display the order book (legacy function, kept for compatibility)
+function displayOrderBook(data, changes) {
+    // This function is kept for compatibility but is no longer used
+    // The new order book display is handled by updateSymbolList and displaySelectedOrderBook
 }
 
 // Global variable to store recent trades
@@ -808,24 +935,16 @@ window.onload = function() {
     setInterval(updateOrderBook, 1000);
     setInterval(updateTradeTicker, 1000);
     
-    // Set up symbol filter functionality
-    document.getElementById('apply-filter').addEventListener('click', function() {
-        currentSymbolFilter = document.getElementById('symbol-filter').value.trim();
-        displayOrderBook(fullOrderBookData);
+    // Set up symbol search functionality
+    document.getElementById('search-symbol').addEventListener('click', function() {
+        updateSymbolList(fullOrderBookData);
     });
     
-    document.getElementById('reset-filter').addEventListener('click', function() {
-        document.getElementById('symbol-filter').value = '';
-        currentSymbolFilter = '';
-        displayOrderBook(fullOrderBookData);
-    });
-    
-    // Allow pressing Enter in the filter input to apply the filter
-    document.getElementById('symbol-filter').addEventListener('keypress', function(e) {
+    // Allow pressing Enter in the search input to search
+    document.getElementById('symbol-search').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            currentSymbolFilter = this.value.trim();
-            displayOrderBook(fullOrderBookData);
+            updateSymbolList(fullOrderBookData);
         }
     });
     

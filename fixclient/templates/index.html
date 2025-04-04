@@ -28,6 +28,7 @@
         <div class="main-content">
             <div class="tabs">
                 <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
+                <button class="tab-button" data-tab="order-book">ORDER BOOK</button>
                 <button class="tab-button" data-tab="recent-trades">RECENT TRADES</button>
                 <button class="tab-button" data-tab="portfolio">PORTFOLIO</button>
                 <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
@@ -73,22 +74,6 @@
                         </div>
                     </div>
 
-                    
-                    <!-- Order Book Display Section -->
-                    <div class="order-book-section">
-                        <h2 class="section-title">MARKET DEPTH - ORDER BOOK</h2>
-                        <div class="symbol-filter">
-                            <label for="symbol-filter">Filter Symbol:</label>
-                            <input type="text" id="symbol-filter" placeholder="Enter symbol...">
-                            <button id="apply-filter">Apply</button>
-                            <button id="reset-filter" class="reset">Reset</button>
-                        </div>
-                        <div id="order-book-container" class="order-book-container">
-                            <div class="no-data-message">No active orders</div>
-                        </div>
-                    </div>
-
-
                     <!-- Output terminal -->
                     <div class="output-container">
                         <div id="output-box" class="output-box">*** BARIPOOL TRADING TERMINAL READY ***</div>
@@ -102,6 +87,27 @@
                         <button class="f-key" onclick="window.close()">F4:Exit</button>
                     </div>
                     
+                </div>
+
+                <!-- Order Book Tab -->
+                <div class="tab-pane" id="order-book-tab">
+                    <h1 class="title">ORDER BOOK</h1>
+                    
+                    <div class="order-book-container">
+                        <div class="symbol-selection">
+                            <div class="symbol-search">
+                                <input type="text" id="symbol-search" placeholder="Search symbol...">
+                                <button id="search-symbol">Search</button>
+                            </div>
+                            <div id="symbol-list" class="symbol-list">
+                                <!-- Symbol list will be populated dynamically -->
+                                <div class="no-data-message">Loading symbols...</div>
+                            </div>
+                        </div>
+                        <div id="selected-book-container" class="selected-book-container">
+                            <div class="no-data-message">Select a symbol to view its order book</div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Recent Trades Tab -->
