@@ -858,6 +858,7 @@ function fetchDefaultPrompt() {
 // Context Menu Functionality
 let contextMenu = document.getElementById('context-menu');
 let tradeAgainstOption = document.getElementById('trade-against');
+let closePositionOption = document.getElementById('close-position');
 
 // Hide context menu when clicking anywhere else
 document.addEventListener('click', () => {
@@ -873,7 +874,7 @@ contextMenu.addEventListener('click', (e) => {
 document.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     
-    // Only show context menu for order book rows
+    // Check if right-clicked on an order book row
     if (e.target.closest('.order-table tr') && !e.target.closest('th')) {
         const row = e.target.closest('tr');
         if (row.dataset.side && row.dataset.symbol && row.dataset.price && row.dataset.qty) {
@@ -886,6 +887,31 @@ document.addEventListener('contextmenu', (e) => {
             contextMenu.dataset.symbol = row.dataset.symbol;
             contextMenu.dataset.price = row.dataset.price;
             contextMenu.dataset.qty = row.dataset.qty;
+            
+            // Show trade against option
+            tradeAgainstOption.style.display = 'block';
+            // Hide close position option
+            closePositionOption.style.display = 'none';
+        }
+    }
+    
+    // Check if right-clicked on a position row
+    if (e.target.closest('#open-positions-table tr') && !e.target.closest('th')) {
+        const row = e.target.closest('tr');
+        if (row.dataset.symbol && row.dataset.quantity) {
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.style.top = `${e.pageY}px`;
+            
+            // Store the position details in the context menu for later use
+            contextMenu.dataset.symbol = row.dataset.symbol;
+            contextMenu.dataset.quantity = row.dataset.quantity;
+            contextMenu.dataset.positionType = row.dataset.positionType;
+            
+            // Hide trade against option
+            tradeAgainstOption.style.display = 'none';
+            // Show close position option
+            closePositionOption.style.display = 'block';
         }
     }
 });
@@ -908,6 +934,45 @@ tradeAgainstOption.addEventListener('click', () => {
     // Hide context menu and show modal
     contextMenu.style.display = 'none';
     modal.style.display = 'block';
+});
+
+// Handle close position option
+closePositionOption.addEventListener('click', () => {
+    const symbol = contextMenu.dataset.symbol;
+    const quantity = contextMenu.dataset.quantity;
+    const positionType = contextMenu.dataset.positionType;
+    
+    // Set opposite side of the position
+    document.getElementById('side').value = positionType === 'Long' ? 'Sell' : 'Buy';
+    
+    // Set other fields
+    document.getElementById('symbol').value = symbol;
+    document.getElementById('quantity').value = quantity;
+    
+    // Get current market price for the symbol
+    fetch('/get_market_price', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ symbol: symbol })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.price) {
+            document.getElementById('price').value = data.price;
+        }
+        
+        // Hide context menu and show modal
+        contextMenu.style.display = 'none';
+        modal.style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Error getting market price:', error);
+        // Still show the modal even if we couldn't get the price
+        contextMenu.style.display = 'none';
+        modal.style.display = 'block';
+    });
 });
 
 // Modal Functionality
@@ -1533,6 +1598,11 @@ function updatePortfolioUI(data) {
             
             // Determine PnL styling
             const pnlClass = position.unrealized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            
+            // Add data attributes for context menu
+            row.dataset.symbol = position.symbol;
+            row.dataset.quantity = Math.abs(position.quantity);
+            row.dataset.positionType = positionType;
             
             row.innerHTML = `
                 <td>${position.symbol}</td>

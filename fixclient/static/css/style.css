@@ -1462,3 +1462,12 @@ select.form-control {
 .pnl-negative {
     color: #f44336;
 }
+
+/* Position rows in portfolio table */
+#open-positions-table tr {
+    cursor: pointer;
+}
+
+#open-positions-table tr:hover {
+    background-color: rgba(0, 64, 128, 0.2);
+}
