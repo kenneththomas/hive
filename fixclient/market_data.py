@@ -1,5 +1,5 @@
 """
-Market data retrieval module using Alpha Vantage API.
+Market data retrieval module using Finnhub API.
 Requires requests package: pip install requests
 """
 
@@ -9,107 +9,87 @@ from datetime import datetime
 import maricon
 import time
 
-class AlphaVantageClient:
-    """Client for interacting with Alpha Vantage API."""
+class FinnhubClient:
+    """Client for interacting with Finnhub API."""
     
-    BASE_URL = "https://www.alphavantage.co/query"
+    BASE_URL = "https://finnhub.io/api/v1"
     
     def __init__(self, api_key: str, max_orders_before_refresh: int = 20):
         """
-        Initialize the Alpha Vantage client.
+        Initialize the Finnhub client.
         
         Args:
-            api_key (str): Your Alpha Vantage API key
+            api_key (str): Your Finnhub API key
             max_orders_before_refresh (int): Maximum number of orders before refreshing price
         """
         self.api_key = api_key
         self.max_orders_before_refresh = max_orders_before_refresh
         self.price_cache = {}  # {symbol: {'price': price, 'last_updated': timestamp, 'order_count': count}}
         
-    def get_intraday(self, 
-                     symbol: str, 
-                     interval: str = "5min",
-                     outputsize: str = "compact") -> Dict:
+    def get_candles(self, 
+                    symbol: str, 
+                    resolution: str = "D",
+                    from_time: Optional[int] = None,
+                    to_time: Optional[int] = None) -> Dict:
         """
-        Get intraday time series data.
+        Get candlestick data.
         
         Args:
             symbol (str): The stock symbol (e.g., "AAPL")
-            interval (str): Time interval between data points ("1min", "5min", "15min", "30min", "60min")
-            outputsize (str): "compact" (latest 100 points) or "full" (up to 20 years of data)
+            resolution (str): Time resolution ("1", "5", "15", "30", "60", "D", "W", "M")
+            from_time (int, optional): Start time in Unix timestamp
+            to_time (int, optional): End time in Unix timestamp
             
         Returns:
-            Dict: The intraday time series data
+            Dict: The candlestick data
         """
         params = {
-            "function": "TIME_SERIES_INTRADAY",
             "symbol": symbol,
-            "interval": interval,
-            "outputsize": outputsize,
-            "apikey": self.api_key
+            "resolution": resolution,
+            "token": self.api_key
         }
         
-        response = requests.get(self.BASE_URL, params=params)
+        if from_time:
+            params["from"] = from_time
+        if to_time:
+            params["to"] = to_time
+            
+        response = requests.get(f"{self.BASE_URL}/stock/candle", params=params)
         response.raise_for_status()
         return response.json()
     
-    def get_daily(self, 
-                  symbol: str, 
-                  outputsize: str = "compact") -> Dict:
+    def get_quote(self, symbol: str, force_refresh: bool = False) -> Dict:
         """
-        Get daily time series data.
-        
-        Args:
-            symbol (str): The stock symbol (e.g., "AAPL")
-            outputsize (str): "compact" (latest 100 points) or "full" (up to 20 years of data)
-            
-        Returns:
-            Dict: The daily time series data
-        """
-        params = {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": symbol,
-            "outputsize": outputsize,
-            "apikey": self.api_key
-        }
-        
-        response = requests.get(self.BASE_URL, params=params)
-        response.raise_for_status()
-        return response.json()
-    
-    def get_global_quote(self, symbol: str, force_refresh: bool = False) -> Dict:
-        """
-        Get real-time and daily historical data.
+        Get real-time quote data.
         
         Args:
             symbol (str): The stock symbol (e.g., "AAPL")
             force_refresh (bool): Force a refresh of the cached price
             
         Returns:
-            Dict: The global quote data
+            Dict: The quote data
         """
         # Check if we have a cached price and if it's still valid
         if not force_refresh and symbol in self.price_cache:
             cache_entry = self.price_cache[symbol]
             # If we haven't exceeded the order count limit, return cached price
             if cache_entry['order_count'] < self.max_orders_before_refresh:
-                return {'Global Quote': {'05. price': str(cache_entry['price'])}}
+                return {'c': cache_entry['price']}  # 'c' is current price in Finnhub API
         
         # If we need to refresh, make the API call
         params = {
-            "function": "GLOBAL_QUOTE",
             "symbol": symbol,
-            "apikey": self.api_key
+            "token": self.api_key
         }
         
-        response = requests.get(self.BASE_URL, params=params)
+        response = requests.get(f"{self.BASE_URL}/quote", params=params)
         response.raise_for_status()
         data = response.json()
         
         # Update the cache
-        if 'Global Quote' in data and data['Global Quote'].get('05. price'):
+        if 'c' in data and data['c']:
             self.price_cache[symbol] = {
-                'price': float(data['Global Quote']['05. price']),
+                'price': float(data['c']),
                 'last_updated': time.time(),
                 'order_count': 0  # Reset order count
             }
@@ -152,24 +132,23 @@ class AlphaVantageClient:
             Dict: Search results
         """
         params = {
-            "function": "SYMBOL_SEARCH",
-            "keywords": keywords,
-            "apikey": self.api_key
+            "q": keywords,
+            "token": self.api_key
         }
         
-        response = requests.get(self.BASE_URL, params=params)
+        response = requests.get(f"{self.BASE_URL}/search", params=params)
         response.raise_for_status()
         return response.json()
 
 # Example usage:
 if __name__ == "__main__":
     # Replace with your actual API key
-    API_KEY = maricon.alphavantage_key
-    client = AlphaVantageClient(API_KEY)
+    API_KEY = maricon.finnhub_key
+    client = FinnhubClient(API_KEY)
     
-    # Example: Get daily data for Apple
+    # Example: Get quote data for Apple
     try:
-        daily_data = client.get_daily("AAPL")
-        print("Daily data for AAPL:", daily_data)
+        quote_data = client.get_quote("AAPL")
+        print("Quote data for AAPL:", quote_data)
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}") 

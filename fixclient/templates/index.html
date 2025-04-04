@@ -28,6 +28,7 @@
             <div class="tabs">
                 <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
                 <button class="tab-button" data-tab="recent-trades">RECENT TRADES</button>
+                <button class="tab-button" data-tab="portfolio">PORTFOLIO</button>
                 <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
                 <button class="tab-button" data-tab="management">MANAGEMENT</button>
             </div>
@@ -111,6 +112,83 @@
                                 <div class="no-trades-message">No recent trades</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Tab -->
+                <div class="tab-pane" id="portfolio-tab">
+                    <h1 class="title">PORTFOLIO</h1>
+                    
+                    <!-- Portfolio Summary -->
+                    <div class="portfolio-summary">
+                        <div class="summary-card">
+                            <h3>Total P&L</h3>
+                            <div id="total-pnl" class="summary-value">$0.00</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Realized P&L</h3>
+                            <div id="realized-pnl" class="summary-value">$0.00</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Unrealized P&L</h3>
+                            <div id="unrealized-pnl" class="summary-value">$0.00</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Open Positions</h3>
+                            <div id="open-positions-count" class="summary-value">0</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Open Positions -->
+                    <div class="portfolio-section">
+                        <h2 class="section-title">OPEN POSITIONS</h2>
+                        <div class="portfolio-container">
+                            <table id="open-positions-table" class="portfolio-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Position</th>
+                                        <th>Quantity</th>
+                                        <th>Avg Price</th>
+                                        <th>Current Price</th>
+                                        <th>Market Value</th>
+                                        <th>P&L</th>
+                                        <th>P&L %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="open-positions-body">
+                                    <!-- Open positions will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Filled Trades -->
+                    <div class="portfolio-section">
+                        <h2 class="section-title">FILLED TRADES</h2>
+                        <div class="portfolio-container">
+                            <table id="filled-trades-table" class="portfolio-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Order ID</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filled-trades-body">
+                                    <!-- Filled trades will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Refresh Button -->
+                    <div class="portfolio-controls">
+                        <button id="refresh-portfolio" class="control-button">Refresh Portfolio</button>
                     </div>
                 </div>
 

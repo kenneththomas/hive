@@ -1437,3 +1437,170 @@ document.getElementById('get-market-price').addEventListener('click', async func
         button.textContent = 'Get Market Price';
     }
 });
+
+// Portfolio Functions
+function loadPortfolio() {
+    const traderId = document.getElementById('trader-id').value;
+    if (!traderId) {
+        updateStatus('Error: Trader ID is required');
+        return;
+    }
+    
+    updateStatus('Loading portfolio...');
+    
+    // First check if baripool is accessible
+    fetch('/test_baripool')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('baripool module not accessible');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'error') {
+                throw new Error(data.message);
+            }
+            console.log('baripool test successful:', data);
+            
+            // Now try to load the portfolio
+            return fetch(`/get_portfolio?trader_id=${traderId}`);
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            updatePortfolioUI(data);
+            updateStatus('Portfolio loaded successfully');
+        })
+        .catch(error => {
+            console.error('Error loading portfolio:', error);
+            updateStatus('Error loading portfolio: ' + error.message);
+            
+            // Display empty portfolio UI
+            updatePortfolioUI({
+                open_positions: [],
+                filled_trades: [],
+                total_realized_pnl: 0,
+                total_unrealized_pnl: 0,
+                total_pnl: 0
+            });
+        });
+}
+
+// Add the missing updateStatus function
+function updateStatus(message) {
+    const statusDisplay = document.getElementById('status-display');
+    if (statusDisplay) {
+        statusDisplay.textContent = message;
+    } else {
+        console.log('Status:', message);
+    }
+}
+
+function updatePortfolioUI(data) {
+    // Update summary values
+    document.getElementById('total-pnl').textContent = formatCurrency(data.total_pnl);
+    document.getElementById('realized-pnl').textContent = formatCurrency(data.total_realized_pnl);
+    document.getElementById('unrealized-pnl').textContent = formatCurrency(data.total_unrealized_pnl);
+    document.getElementById('open-positions-count').textContent = data.open_positions.length;
+    
+    // Update open positions table
+    const openPositionsBody = document.getElementById('open-positions-body');
+    openPositionsBody.innerHTML = '';
+    
+    if (data.open_positions.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="8" class="no-data-message">No open positions</td>';
+        openPositionsBody.appendChild(emptyRow);
+    } else {
+        data.open_positions.forEach(position => {
+            const row = document.createElement('tr');
+            
+            // Determine position type and styling
+            const positionType = position.quantity > 0 ? 'Long' : 'Short';
+            const positionClass = position.quantity > 0 ? 'position-long' : 'position-short';
+            
+            // Calculate market value
+            const marketValue = Math.abs(position.quantity) * position.current_price;
+            
+            // Calculate PnL percentage
+            const pnlPercentage = position.quantity > 0 
+                ? ((position.current_price - position.avg_price) / position.avg_price) * 100
+                : ((position.avg_price - position.current_price) / position.avg_price) * 100;
+            
+            // Determine PnL styling
+            const pnlClass = position.unrealized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            
+            row.innerHTML = `
+                <td>${position.symbol}</td>
+                <td class="${positionClass}">${positionType}</td>
+                <td>${Math.abs(position.quantity)}</td>
+                <td>${formatCurrency(position.avg_price)}</td>
+                <td>${formatCurrency(position.current_price)}</td>
+                <td>${formatCurrency(marketValue)}</td>
+                <td class="${pnlClass}">${formatCurrency(position.unrealized_pnl)}</td>
+                <td class="${pnlClass}">${formatNumber(pnlPercentage)}%</td>
+            `;
+            
+            openPositionsBody.appendChild(row);
+        });
+    }
+    
+    // Update filled trades table
+    const filledTradesBody = document.getElementById('filled-trades-body');
+    filledTradesBody.innerHTML = '';
+    
+    if (data.filled_trades.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="7" class="no-data-message">No filled trades</td>';
+        filledTradesBody.appendChild(emptyRow);
+    } else {
+        data.filled_trades.forEach(trade => {
+            const row = document.createElement('tr');
+            
+            // Determine side styling
+            const sideClass = trade.side === '1' ? 'position-long' : 'position-short';
+            const sideText = trade.side === '1' ? 'Buy' : 'Sell';
+            
+            row.innerHTML = `
+                <td>${trade.time}</td>
+                <td>${trade.order_id}</td>
+                <td>${trade.symbol}</td>
+                <td class="${sideClass}">${sideText}</td>
+                <td>${trade.quantity}</td>
+                <td>${formatCurrency(trade.price)}</td>
+                <td>${trade.status}</td>
+            `;
+            
+            filledTradesBody.appendChild(row);
+        });
+    }
+}
+
+function formatCurrency(value) {
+    return '$' + parseFloat(value).toFixed(2);
+}
+
+function formatNumber(value) {
+    return parseFloat(value).toFixed(2);
+}
+
+// Add event listener for portfolio refresh button
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshPortfolioBtn = document.getElementById('refresh-portfolio');
+    if (refreshPortfolioBtn) {
+        refreshPortfolioBtn.addEventListener('click', loadPortfolio);
+    }
+    
+    // Add portfolio tab click handler
+    const portfolioTab = document.querySelector('[data-tab="portfolio"]');
+    if (portfolioTab) {
+        portfolioTab.addEventListener('click', function() {
+            // Load portfolio data when tab is clicked
+            setTimeout(loadPortfolio, 100); // Small delay to ensure tab is active
+        });
+    }
+});

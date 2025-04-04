@@ -1372,3 +1372,93 @@ select.form-control {
 .control-button:hover {
     background-color: #357abd;
 }
+
+/* Portfolio Tab Styles */
+.portfolio-summary {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #1e2a3a;
+    border-radius: 5px;
+}
+
+.summary-card {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    margin: 0 5px;
+    background-color: #2a3a4a;
+    border-radius: 4px;
+    border-left: 3px solid #4a90e2;
+}
+
+.summary-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #a0a0a0;
+}
+
+.summary-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.portfolio-section {
+    margin-bottom: 20px;
+}
+
+.portfolio-container {
+    overflow-x: auto;
+    background-color: #1e2a3a;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.portfolio-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #ffffff;
+}
+
+.portfolio-table th {
+    background-color: #2a3a4a;
+    padding: 10px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid #4a90e2;
+}
+
+.portfolio-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #3a4a5a;
+}
+
+.portfolio-table tr:hover {
+    background-color: #2a3a4a;
+}
+
+.portfolio-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+/* Position type styling */
+.position-long {
+    color: #4caf50;
+}
+
+.position-short {
+    color: #f44336;
+}
+
+/* PnL styling */
+.pnl-positive {
+    color: #4caf50;
+}
+
+.pnl-negative {
+    color: #f44336;
+}

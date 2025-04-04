@@ -13,8 +13,9 @@ import baripool_action
 import dfix
 from scopechat import scope_chat, DEFAULT_PROMPT  # Import the ScopeChat module and DEFAULT_PROMPT
 from profile import register_profile_routes  # Import the new profile module
-from market_data import AlphaVantageClient
+from market_data import FinnhubClient
 import maricon
+import portfolio  # Import the portfolio module
 
 app = Flask(__name__)
 
@@ -24,8 +25,8 @@ register_profile_routes(app)
 # Database setup
 DB_PATH = Path('fixclient/instance/ourteam.db')
 
-# Initialize Alpha Vantage client
-alpha_vantage_client = AlphaVantageClient(maricon.alphavantage_key)
+# Initialize market data client
+finnhub_client = FinnhubClient(maricon.finnhub_key)
 
 # Global settings for random trade generation
 random_trade_settings = {
@@ -34,6 +35,9 @@ random_trade_settings = {
     'orders_per_interval': 1,
     'max_orders_before_refresh': 20
 }
+
+# List of symbols for random trade generation
+SYMBOLS = ['AAPL', 'SPY', 'TSLA']
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -58,91 +62,70 @@ def get_random_employee():
     finally:
         conn.close()
 
+def process_order(side_value, symbol, quantity, price, sender):
+    """Process an order and return the result"""
+    fix_message = f"11={unique_id()};54={side_value};55={symbol};38={quantity};44={price};49={sender}"
+    
+    # Simulate some trades to match with
+    baripool_action.bp_directentry_sim()
+    output = baripool.on_new_order(fix_message)
+    
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    return {
+        'output': f"[{timestamp}] {output}",
+        'status': "ORDER SENT"
+    }
+
 def generate_random_trade():
-    """Generate a random trade based on the real market price"""
-    # Get a random employee as sender
-    sender = get_random_employee()
-    
-    # Get the order book to determine which symbols are being traded
-    books_data = {}
-    for symbol, book in baripool.bookshelf.items():
-        if not book:
-            continue
-        buys = [order for order in book if order.side == '1' and not order.is_canceled]
-        sells = [order for order in book if order.side == '2' and not order.is_canceled]
-        
-        if buys or sells:
-            books_data[symbol] = {
-                'buys': buys,
-                'sells': sells
-            }
-    
-    # If no orders in book, use AAPL
-    if not books_data:
-        symbol = 'AAPL'
-    else:
-        # Pick a random symbol with orders
-        symbol = random.choice(list(books_data.keys()))
-    
+    """Generate a random trade with realistic market data."""
     try:
-        # Get real-time quote from Alpha Vantage (using cache if available)
-        quote_data = alpha_vantage_client.get_global_quote(symbol)
+        # Get a random employee as sender
+        sender = get_random_employee()
         
-        if 'Global Quote' in quote_data and quote_data['Global Quote'].get('05. price'):
-            market_price = float(quote_data['Global Quote']['05. price'])
+        # Get all available symbols (from our list and from the order book)
+        available_symbols = list(SYMBOLS)  # Start with our predefined list
+        
+        # Add symbols from the order book that aren't already in our list
+        for symbol, book in baripool.bookshelf.items():
+            if book and symbol not in available_symbols:
+                available_symbols.append(symbol)
+        
+        # Get a random symbol from our expanded list
+        symbol = random.choice(available_symbols)
+        
+        # Get current market price
+        quote_data = finnhub_client.get_quote(symbol)
+        
+        if 'c' not in quote_data or not quote_data['c']:
+            return {'error': 'Unable to fetch market price'}, 404
             
-            # Randomly decide whether to buy or sell
-            side = '1' if random.random() > 0.5 else '2'
-            
-            # Generate a price within 6% of the market price
-            # For buys: between market price and 6% below
-            # For sells: between market price and 6% above
-            if side == '1':  # Buy
-                min_price = market_price * 0.94  # 6% below market
-                max_price = market_price
-            else:  # Sell
-                min_price = market_price
-                max_price = market_price * 1.06  # 6% above market
-            
-            # Generate random price within the range
-            price = round(random.uniform(min_price, max_price), 2)
-            
-            # Random quantity between 10 and 100
-            quantity = random.randint(10, 100)
-            
-            # Generate the FIX message
-            fix_message = f"11={unique_id()};54={side};55={symbol};38={quantity};44={price};49={sender}"
-            
-            # Simulate some trades to match with
-            baripool_action.bp_directentry_sim()
-            
-            # Submit the trade
-            output = baripool.on_new_order(fix_message)
-            
-            # Increment the order count for this symbol
-            alpha_vantage_client.increment_order_count(symbol)
-            
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            return {
-                'output': f"[{timestamp}] {output}",
-                'status': "ORDER SENT",
-                'order': {
-                    'side': side,
-                    'symbol': symbol,
-                    'quantity': quantity,
-                    'price': price,
-                    'market_price': market_price,
-                    'sender': sender
-                }
-            }
-        else:
-            # Fallback if we can't get the market price
-            return generate_fallback_trade(symbol, sender)
-            
+        current_price = float(quote_data['c'])
+        
+        # Increment the order count for this symbol
+        finnhub_client.increment_order_count(symbol)
+        
+        # Generate a random price within 5% of the current price
+        price_variation = random.uniform(-0.05, 0.05)
+        price = round(current_price * (1 + price_variation), 2)
+        
+        # Generate a random quantity between 10 and 1000
+        quantity = random.randint(10, 1000)
+        
+        # Randomly choose buy or sell
+        side = random.choice(['Buy', 'Sell'])
+        side_value = "1" if side == "Buy" else "2"
+        
+        # Process the order
+        result = process_order(side_value, symbol, quantity, price, sender)
+        
+        return {
+            'status': 'success',
+            'output': f"Generated random {side} order for {quantity} {symbol} at ${price}"
+        }
+        
     except Exception as e:
-        print(f"Error generating trade with market price: {str(e)}")
-        # Fallback if there's an error
-        return generate_fallback_trade(symbol, sender)
+        print(f"Error generating random trade: {str(e)}")
+        return {'error': 'Internal server error'}, 500
 
 def generate_fallback_trade(symbol, sender):
     """Generate a fallback trade when market price is unavailable"""
@@ -229,28 +212,35 @@ def index():
 
 @app.route('/submit_order', methods=['POST'])
 def submit_order():
-    side_value = request.form.get('side')
-    if side_value == "Buy":
-        side_value = "1"
-    elif side_value == "Sell":
-        side_value = "2"
+    # Check if the request is JSON or form data
+    if request.is_json:
+        # Handle JSON request (from generate_random_trade)
+        data = request.get_json()
+        side_value = data.get('side')
+        if side_value == "Buy":
+            side_value = "1"
+        elif side_value == "Sell":
+            side_value = "2"
+        
+        symbol = data.get('symbol')
+        quantity = data.get('quantity')
+        price = data.get('price')
+        sender = data.get('sender')
+    else:
+        # Handle form data (from the UI)
+        side_value = request.form.get('side')
+        if side_value == "Buy":
+            side_value = "1"
+        elif side_value == "Sell":
+            side_value = "2"
+        
+        symbol = request.form.get('symbol')
+        quantity = request.form.get('quantity')
+        price = request.form.get('price')
+        sender = request.form.get('sender')
     
-    symbol = request.form.get('symbol')
-    quantity = request.form.get('quantity')
-    price = request.form.get('price')
-    sender = request.form.get('sender')
-    
-    fix_message = f"11={unique_id()};54={side_value};55={symbol};38={quantity};44={price};49={sender}"
-    
-    # Simulate some trades to match with
-    baripool_action.bp_directentry_sim()
-    output = baripool.on_new_order(fix_message)
-    
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    return jsonify({
-        'output': f"[{timestamp}] {output}",
-        'status': "ORDER SENT"
-    })
+    result = process_order(side_value, symbol, quantity, price, sender)
+    return jsonify(result)
 
 @app.route('/get_time')
 def get_time():
@@ -382,8 +372,8 @@ def get_default_prompt():
 
 @app.route('/generate_random_trade', methods=['POST'])
 def generate_random_trade_route():
-    result = generate_random_trade()
-    return jsonify(result)
+    result, status_code = generate_random_trade()
+    return jsonify(result), status_code
 
 @app.route('/get_market_price', methods=['POST'])
 def get_market_price():
@@ -395,10 +385,10 @@ def get_market_price():
             return jsonify({'error': 'Symbol is required'}), 400
             
         # Get real-time quote (using cache if available)
-        quote_data = alpha_vantage_client.get_global_quote(symbol)
+        quote_data = finnhub_client.get_quote(symbol)
         
-        if 'Global Quote' in quote_data:
-            price = quote_data['Global Quote'].get('05. price')
+        if 'c' in quote_data:
+            price = quote_data['c']
             if price:
                 return jsonify({'price': price})
                 
@@ -425,7 +415,7 @@ def update_random_trade_settings():
         if 'max_orders_before_refresh' in data:
             random_trade_settings['max_orders_before_refresh'] = int(data['max_orders_before_refresh'])
             # Update the Alpha Vantage client setting
-            alpha_vantage_client.max_orders_before_refresh = random_trade_settings['max_orders_before_refresh']
+            finnhub_client.max_orders_before_refresh = random_trade_settings['max_orders_before_refresh']
         
         return jsonify({
             'status': 'success',
@@ -439,6 +429,100 @@ def update_random_trade_settings():
 @app.route('/get_random_trade_settings', methods=['GET'])
 def get_random_trade_settings():
     return jsonify(random_trade_settings)
+
+@app.route('/get_portfolio', methods=['GET'])
+def get_portfolio_route():
+    """Get portfolio information for the logged-in trader"""
+    trader_id = request.args.get('trader_id')
+    
+    if not trader_id:
+        return jsonify({'error': 'Trader ID is required'}), 400
+    
+    try:
+        # Get portfolio data
+        logging.info(f"Getting portfolio for trader: {trader_id}")
+        portfolio_data = portfolio.get_portfolio(trader_id)
+        
+        # Get current market prices for all symbols in open positions
+        market_prices = {}
+        for position in portfolio_data['open_positions']:
+            symbol = position['symbol']
+            logging.info(f"Getting market price for symbol: {symbol}")
+            try:
+                quote_data = finnhub_client.get_quote(symbol)
+                if 'c' in quote_data and quote_data['c']:
+                    market_prices[symbol] = float(quote_data['c'])
+                else:
+                    logging.warning(f"No current price data for symbol: {symbol}")
+            except Exception as e:
+                logging.error(f"Error getting market price for {symbol}: {str(e)}")
+                # Continue with other symbols
+        
+        # Update position prices and unrealized PnL
+        if market_prices:
+            portfolio_data['open_positions'] = portfolio.update_position_prices(
+                portfolio_data['open_positions'], 
+                market_prices
+            )
+            
+            # Recalculate total unrealized PnL
+            portfolio_data['total_unrealized_pnl'] = sum(
+                position['unrealized_pnl'] for position in portfolio_data['open_positions']
+            )
+            
+            # Recalculate total PnL
+            portfolio_data['total_pnl'] = (
+                portfolio_data['total_realized_pnl'] + 
+                portfolio_data['total_unrealized_pnl']
+            )
+        
+        return jsonify(portfolio_data)
+        
+    except Exception as e:
+        import traceback
+        logging.error(f"Error getting portfolio: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+
+@app.route('/test_portfolio', methods=['GET'])
+def test_portfolio_route():
+    """Test if portfolio module is working correctly"""
+    try:
+        trader_id = request.args.get('trader_id', 'TRADER1')
+        portfolio_data = portfolio.get_portfolio(trader_id)
+        return jsonify({
+            'status': 'success',
+            'message': 'Portfolio module is working correctly',
+            'portfolio_data': portfolio_data
+        })
+    except Exception as e:
+        import traceback
+        logging.error(f"Error testing portfolio: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({
+            'status': 'error',
+            'message': f'Error in portfolio module: {str(e)}'
+        }), 500
+
+@app.route('/test_baripool', methods=['GET'])
+def test_baripool_route():
+    """Test if baripool module is accessible"""
+    try:
+        import baripool
+        fillcontainer_size = len(baripool.fillcontainer) if hasattr(baripool, 'fillcontainer') else 0
+        return jsonify({
+            'status': 'success',
+            'message': 'baripool module is accessible',
+            'fillcontainer_size': fillcontainer_size
+        })
+    except Exception as e:
+        import traceback
+        logging.error(f"Error testing baripool: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({
+            'status': 'error',
+            'message': f'Error accessing baripool: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True, port=5017)
