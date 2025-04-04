@@ -59,12 +59,15 @@ def get_portfolio(trader_id):
                 'total_pnl': 0
             }
         
-        for order_id, execution_report in baripool.fillcontainer.items():
+        for key, execution_report in baripool.fillcontainer.items():
             try:
                 # Only include actual executions (ExecType=F for Fill or Partial Fill)
                 if '150' in execution_report and execution_report['150'] in ['1', '2']:  # 1=Partial Fill, 2=Fill
                     # Check if this trade belongs to our trader
                     if execution_report.get('49') == trader_id or execution_report.get('56') == trader_id:
+                        # Extract the order ID from the composite key (format: orderid_timestamp)
+                        order_id = key.split('_')[0]
+                        
                         trade = {
                             'order_id': order_id,
                             'symbol': execution_report.get('55', 'Unknown'),
@@ -76,7 +79,7 @@ def get_portfolio(trader_id):
                         }
                         trades.append(trade)
             except Exception as e:
-                logging.error(f"Error processing trade {order_id}: {str(e)}")
+                logging.error(f"Error processing trade {key}: {str(e)}")
                 continue
         
         logging.info(f"Found {len(trades)} trades for trader: {trader_id}")

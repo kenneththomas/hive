@@ -83,8 +83,11 @@ def matcher(buyer, seller, potential_lastpx):
         # Send execution reports to buyer and seller
         print("Buyer Execution Report:", buyer_execution_report)
         print("Seller Execution Report:", seller_execution_report)
-        fillcontainer[buyer.orderid] = buyer_execution_report
-        fillcontainer[seller.orderid] = seller_execution_report
+        
+        # Use a composite key that includes both order ID and a timestamp to ensure uniqueness
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+        fillcontainer[f"{buyer.orderid}_{timestamp}"] = buyer_execution_report
+        fillcontainer[f"{seller.orderid}_{timestamp}"] = seller_execution_report
 
         return matched_qty
 
@@ -217,7 +220,9 @@ def on_new_order(new_order):
     new_order_execution_report = dfix.execreport_gen.generate_new_order_execution_report(new_order)
     print("New Order Execution Report:", new_order_execution_report)
 
-
+    # Add the new order execution report to the fillcontainer with a composite key
+    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+    fillcontainer[f"{new_order.orderid}_{timestamp}_new"] = new_order_execution_report
 
     if new_order.symbol not in bookshelf.keys():
         bookshelf[new_order.symbol] = [new_order]
@@ -298,6 +303,11 @@ def on_cancel_order(order_id):
                 print(f"Order {order_id} has been canceled.")
                 cancel_exec_report = dfix.execreport_gen.create_cancel_execution_report(order)
                 print(f"Cancellation Execution Report: {cancel_exec_report}")
+                
+                # Add the cancellation to the fillcontainer with a composite key
+                timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+                fillcontainer[f"{order_id}_{timestamp}_cancel"] = cancel_exec_report
+                
                 return
     print(f"Order {order_id} not found in the order book.")
 
@@ -309,31 +319,16 @@ def remove_canceled_orders():
 def reject_order(order, reject_reason):
     reject_execution_report = dfix.execreport_gen.generate_reject_execution_report(order, reject_reason)
     print("Reject Execution Report:", reject_execution_report)
+    
+    # Add the rejection to the fillcontainer with a composite key
+    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+    fillcontainer[f"{order.orderid}_{timestamp}_reject"] = reject_execution_report
+    
     return reject_execution_report
 
 
 #currency rejection reasons
 slurs = {
-        'GBP': 'no tea no shade',
-        'EUR': 'MURRRRRKAH!!',
-        'CAD': 'canadian money is literally just monopoly money',
-        'JPY': 'lets eat this raw fish even though we have the means to cook it',
-        'AUD' : 'im in australia. oh naurr.',
-        'NZD' : 'get out of here with your lord of the rings money',
-        'FRF' : 'hon hon hon, that is not a thing anymore',
-        'HKD' : 'what is this, a chinese currency for ants?',
-        'CHF' : 'this is probably fraud and we dont have a legal department',
-        'SGD' : 'can is can lah, cannot cannot.',
-        'RUB' : 'i dont want to go to jail so i cannot accept this',
-        'MXN' : 'taco bell is not a currency',
-        'SEK' : 'i dont know what this is but it sounds like a disease',
-        'CNY' : 'china #1 but',
-        'TWD' : 'taiwan is part of china',
-        'KRW' : 'what, did you win squid game?',
-        'BRL' : 'huehuehue come to brazil!',
-        'INR' : 'slow down ganondorf',
-        'ZAR' : 'why don\'t you just go and invest in a vuvuzela factory instead?',
-        'SAR' : 'just send me some oil instead',
-        'ITL' : 'italian boomer money',
+
         'BTC' : 'buy the dip, short the VIX, FUCK BITCOIN'
 }
