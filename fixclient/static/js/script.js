@@ -1276,6 +1276,9 @@ function updateOrderBlotter() {
             
             // Update previous states for next comparison
             previousOrderStates = currentOrderStates;
+            
+            // Also refresh open positions in the order entry tab
+            loadOrderEntryOpenPositions();
         })
         .catch(error => console.error('Error updating order blotter:', error));
 }
