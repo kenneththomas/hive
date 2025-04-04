@@ -154,6 +154,9 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
             row.dataset.orderId = order.order_id;
             row.dataset.sender = order.sender;
             
+            // Add data-order-id attribute for animation
+            row.setAttribute('data-order-id', order.order_id);
+            
             // Add appropriate animation class based on order status
             if (changes && symbol) {
                 const side = sideLabel === 'BID' ? 'buys' : 'sells';
@@ -162,8 +165,15 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
                     row.classList.add('new-order');
                 } else if (changes.partialFills[symbol] && changes.partialFills[symbol][side].includes(order.order_id)) {
                     row.classList.add('partial-fill');
+                    
+                    // Check if this is a full fill (remaining_qty is 0)
+                    if (parseInt(order.remaining_qty) === 0) {
+                        // We'll handle this in the analyzeOrderChanges function
+                        row.dataset.wasFullyFilled = 'true';
+                    }
                 } else if (changes.fullFills[symbol] && changes.fullFills[symbol][side].includes(order.order_id)) {
                     row.classList.add('full-fill');
+                    row.dataset.wasFullyFilled = 'true';
                 }
             }
             
@@ -172,6 +182,9 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
             sizeIndicator.className = 'size-indicator';
             const qtyPercent = (parseInt(order.remaining_qty) / maxQty) * 100;
             sizeIndicator.style.width = `${qtyPercent}%`;
+            
+            // Set the initial width as a CSS variable for animation
+            sizeIndicator.style.setProperty('--initial-width', `${qtyPercent}%`);
             
             // Position the size indicator based on side
             if (sideLabel === 'BID') {
@@ -293,8 +306,6 @@ function updateOrderBook() {
         })
         .catch(error => {
             console.error('Error fetching order book:', error);
-            document.getElementById('selected-book-container').innerHTML = 
-                '<div class="error-message">Error loading order book data</div>';
         });
 }
 
@@ -438,11 +449,20 @@ function analyzeOrderSide(prevOrders, currOrders, newOrders, partialFills, fullF
     // Check each current order
     currOrders.forEach(order => {
         if (!prevOrderMap[order.order_id]) {
-            // This is a new order
+            // New order
             newOrders.push(order.order_id);
-        } else if (parseFloat(order.remaining_qty) < parseFloat(prevOrderMap[order.order_id].remaining_qty)) {
-            // This order has been partially filled
-            partialFills.push(order.order_id);
+        } else {
+            // Existing order - check if quantity changed
+            const prevOrder = prevOrderMap[order.order_id];
+            if (parseInt(order.remaining_qty) < parseInt(prevOrder.remaining_qty)) {
+                // Partial fill
+                partialFills.push(order.order_id);
+                
+                // Check if this is now fully filled (remaining_qty is 0)
+                if (parseInt(order.remaining_qty) === 0) {
+                    fullFills.push(order.order_id);
+                }
+            }
         }
     });
 }
@@ -463,7 +483,7 @@ function selectSymbol(symbol) {
     
     // Display the order book for the selected symbol
     if (fullOrderBookData[symbol]) {
-        displaySelectedOrderBook(symbol, fullOrderBookData[symbol]);
+        displaySelectedOrderBook(symbol, fullOrderBookData[symbol], {});
     }
 }
 
@@ -522,14 +542,12 @@ function displaySelectedOrderBook(symbol, bookData, changes) {
     const sellTable = createOrderTable(bookData.sells, 'ASK', symbol, changes);
     sellTable.className = 'order-table sell-table ask-table';
     
-    // Add tables to container in the correct order (bids on left, asks on right)
+    // Add tables to the container
     orderBookTables.appendChild(buyTable);
     orderBookTables.appendChild(sellTable);
     
-    // Add the tables container to the layout
+    // Add the order book layout to the book display
     orderBookLayout.appendChild(orderBookTables);
-    
-    // Add the layout to the book display
     bookDisplay.appendChild(orderBookLayout);
     
     // Add the book display to the symbol section
@@ -537,6 +555,11 @@ function displaySelectedOrderBook(symbol, bookData, changes) {
     
     // Add the symbol section to the container
     container.appendChild(symbolSection);
+    
+    // Handle volume animations if there are changes
+    if (changes) {
+        handleVolumeAnimation(changes);
+    }
 }
 
 // Function to display the order book (legacy function, kept for compatibility)
@@ -2084,3 +2107,88 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Function to handle volume bar animation and row removal
+function handleVolumeAnimation(changes) {
+    // Process each symbol
+    for (const symbol in changes.partialFills) {
+        const sides = ['buys', 'sells'];
+        
+        sides.forEach(side => {
+            changes.partialFills[symbol][side].forEach(orderId => {
+                // Find the row with this order ID
+                const rows = document.querySelectorAll(`.order-table tr[data-order-id="${orderId}"]`);
+                
+                rows.forEach(row => {
+                    // Find the size indicator
+                    const sizeIndicator = row.querySelector('.size-indicator');
+                    if (sizeIndicator) {
+                        // Get the current width
+                        const currentWidth = sizeIndicator.style.width;
+                        
+                        // Add the volume decreasing animation class
+                        sizeIndicator.classList.add('volume-decreasing');
+                        
+                        // Check if this is a fully filled order
+                        if (changes.fullFills[symbol] && 
+                            changes.fullFills[symbol][side] && 
+                            changes.fullFills[symbol][side].includes(orderId)) {
+                            
+                            // After the volume animation completes, add the row removal animation
+                            setTimeout(() => {
+                                row.classList.add('row-removing');
+                                
+                                // After the row removal animation completes, remove the row
+                                setTimeout(() => {
+                                    if (row.parentNode) {
+                                        row.parentNode.removeChild(row);
+                                    }
+                                }, 1000); // Match the duration of the rowRemove animation
+                            }, 4000); // Match the duration of the volumeDecrease animation
+                        }
+                    }
+                });
+            });
+        });
+    }
+    
+    // Also handle fully filled orders that weren't in the partial fills
+    for (const symbol in changes.fullFills) {
+        const sides = ['buys', 'sells'];
+        
+        sides.forEach(side => {
+            changes.fullFills[symbol][side].forEach(orderId => {
+                // Skip if this order was already handled in the partial fills section
+                if (changes.partialFills[symbol] && 
+                    changes.partialFills[symbol][side] && 
+                    changes.partialFills[symbol][side].includes(orderId)) {
+                    return;
+                }
+                
+                // Find the row with this order ID
+                const rows = document.querySelectorAll(`.order-table tr[data-order-id="${orderId}"]`);
+                
+                rows.forEach(row => {
+                    // Find the size indicator
+                    const sizeIndicator = row.querySelector('.size-indicator');
+                    if (sizeIndicator) {
+                        // Add the volume decreasing animation class
+                        sizeIndicator.classList.add('volume-decreasing');
+                        
+                        // After the volume animation completes, add the row removal animation
+                        setTimeout(() => {
+                            row.classList.add('row-removing');
+                            
+                            // After the row removal animation completes, remove the row
+                            setTimeout(() => {
+                                if (row.parentNode) {
+                                    row.parentNode.removeChild(row);
+                                }
+                            }, 1000); // Match the duration of the rowRemove animation
+                        }, 4000); // Match the duration of the volumeDecrease animation
+                    }
+                });
+            });
+        });
+    }
+}

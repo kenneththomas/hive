@@ -374,6 +374,28 @@ select.form-control {
     100% { background-color: transparent; }
 }
 
+/* Volume bar animation */
+@keyframes volumeDecrease {
+    0% { width: var(--initial-width); }
+    100% { width: 0%; }
+}
+
+/* Row removal animation */
+@keyframes rowRemove {
+    0% { 
+        opacity: 1;
+        transform: translateX(0);
+        max-height: 100px;
+    }
+    100% { 
+        opacity: 0;
+        transform: translateX(-100%);
+        max-height: 0;
+        padding: 0;
+        margin: 0;
+    }
+}
+
 .order-table tr.new-order {
     animation: newOrderFlash 1.5s ease-out;
 }
@@ -384,6 +406,17 @@ select.form-control {
 
 .order-table tr.full-fill {
     animation: fullFillFlash 1.5s ease-out;
+}
+
+/* Volume bar animation class */
+.volume-decreasing {
+    animation: volumeDecrease 4s ease-out forwards;
+}
+
+/* Row removal animation class */
+.row-removing {
+    animation: rowRemove 1s ease-out forwards;
+    pointer-events: none;
 }
 
 .order-table tr:hover {
