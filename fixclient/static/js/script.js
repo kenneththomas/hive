@@ -957,6 +957,35 @@ window.onload = function() {
     // Update scopechat blotters periodically
     updateScopeChatBlotters();
     setInterval(updateScopeChatBlotters, 1000);
+    
+    // Add event listener for portfolio refresh button
+    const refreshPortfolioBtn = document.getElementById('refresh-portfolio');
+    if (refreshPortfolioBtn) {
+        refreshPortfolioBtn.addEventListener('click', loadPortfolio);
+    }
+    
+    // Add portfolio tab click handler
+    const portfolioTab = document.querySelector('[data-tab="portfolio"]');
+    if (portfolioTab) {
+        portfolioTab.addEventListener('click', function() {
+            // Load portfolio data when tab is clicked
+            setTimeout(loadPortfolio, 100); // Small delay to ensure tab is active
+        });
+    }
+    
+    // Add order entry tab click handler
+    const orderEntryTab = document.querySelector('[data-tab="order-entry"]');
+    if (orderEntryTab) {
+        orderEntryTab.addEventListener('click', function() {
+            // Load open positions when order entry tab is clicked
+            setTimeout(loadOrderEntryOpenPositions, 100); // Small delay to ensure tab is active
+        });
+    }
+    
+    // Load open positions when page loads if order entry tab is active
+    if (document.querySelector('[data-tab="order-entry"].active')) {
+        setTimeout(loadOrderEntryOpenPositions, 100);
+    }
 };
 
 // Add a new function to fetch the default prompt from the server
@@ -1743,6 +1772,26 @@ function updatePortfolioUI(data) {
                 <td class="${pnlClass}">${formatNumber(pnlPercentage)}%</td>
             `;
             
+            // Add right-click event listener for context menu
+            row.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                
+                // Show context menu
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.top = `${e.pageY}px`;
+                
+                // Store position details in context menu for later use
+                contextMenu.dataset.symbol = position.symbol;
+                contextMenu.dataset.quantity = Math.abs(position.quantity);
+                contextMenu.dataset.positionType = positionType;
+                
+                // Show close position option and hide trade against option
+                document.getElementById('close-position').style.display = 'block';
+                document.getElementById('trade-against').style.display = 'none';
+            });
+            
             openPositionsBody.appendChild(row);
         });
     }
@@ -1786,19 +1835,177 @@ function formatNumber(value) {
     return parseFloat(value).toFixed(2);
 }
 
-// Add event listener for portfolio refresh button
-document.addEventListener('DOMContentLoaded', function() {
-    const refreshPortfolioBtn = document.getElementById('refresh-portfolio');
-    if (refreshPortfolioBtn) {
-        refreshPortfolioBtn.addEventListener('click', loadPortfolio);
+// Function to load open positions for the order entry tab
+function loadOrderEntryOpenPositions() {
+    const traderId = document.getElementById('trader-id').value;
+    if (!traderId) {
+        updateStatus('Error: Trader ID is required');
+        return;
     }
     
-    // Add portfolio tab click handler
-    const portfolioTab = document.querySelector('[data-tab="portfolio"]');
-    if (portfolioTab) {
-        portfolioTab.addEventListener('click', function() {
-            // Load portfolio data when tab is clicked
-            setTimeout(loadPortfolio, 100); // Small delay to ensure tab is active
+    updateStatus('Loading open positions...');
+    
+    // First check if baripool is accessible
+    fetch('/test_baripool')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('baripool module not accessible');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'error') {
+                throw new Error(data.message);
+            }
+            
+            // Now try to load the portfolio
+            return fetch(`/get_portfolio?trader_id=${traderId}`);
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            updateOrderEntryOpenPositionsUI(data);
+            updateStatus('Open positions loaded successfully');
+        })
+        .catch(error => {
+            console.error('Error loading open positions:', error);
+            updateStatus('Error loading open positions: ' + error.message);
+            
+            // Display empty open positions UI
+            updateOrderEntryOpenPositionsUI({
+                open_positions: [],
+                total_unrealized_pnl: 0
+            });
+        });
+}
+
+// Function to update the open positions UI in the order entry tab
+function updateOrderEntryOpenPositionsUI(data) {
+    // Update open positions count
+    document.getElementById('open-positions-count').textContent = data.open_positions.length;
+    
+    // Update open positions table
+    const openPositionsBody = document.getElementById('order-entry-open-positions-body');
+    openPositionsBody.innerHTML = '';
+    
+    if (data.open_positions.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="8" class="no-data-message">No open positions</td>';
+        openPositionsBody.appendChild(emptyRow);
+    } else {
+        data.open_positions.forEach(position => {
+            const row = document.createElement('tr');
+            
+            // Determine position type and styling
+            const positionType = position.quantity > 0 ? 'Long' : 'Short';
+            const positionClass = position.quantity > 0 ? 'position-long' : 'position-short';
+            
+            // Calculate market value
+            const marketValue = Math.abs(position.quantity) * position.current_price;
+            
+            // Calculate PnL percentage
+            const pnlPercentage = position.quantity > 0 
+                ? ((position.current_price - position.avg_price) / position.avg_price) * 100
+                : ((position.avg_price - position.current_price) / position.avg_price) * 100;
+            
+            // Determine PnL styling
+            const pnlClass = position.unrealized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            
+            // Add data attributes for context menu
+            row.dataset.symbol = position.symbol;
+            row.dataset.quantity = Math.abs(position.quantity);
+            row.dataset.positionType = positionType;
+            
+            row.innerHTML = `
+                <td>${position.symbol}</td>
+                <td class="${positionClass}">${positionType}</td>
+                <td>${Math.abs(position.quantity)}</td>
+                <td>${formatCurrency(position.avg_price)}</td>
+                <td>${formatCurrency(position.current_price)}</td>
+                <td>${formatCurrency(marketValue)}</td>
+                <td class="${pnlClass}">${formatCurrency(position.unrealized_pnl)}</td>
+                <td class="${pnlClass}">${formatNumber(pnlPercentage)}%</td>
+            `;
+            
+            // Add right-click event listener for context menu
+            row.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                
+                // Show context menu
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.top = `${e.pageY}px`;
+                
+                // Store position details in context menu for later use
+                contextMenu.dataset.symbol = position.symbol;
+                contextMenu.dataset.quantity = Math.abs(position.quantity);
+                contextMenu.dataset.positionType = positionType;
+                
+                // Show close position option and hide trade against option
+                document.getElementById('close-position').style.display = 'block';
+                document.getElementById('trade-against').style.display = 'none';
+            });
+            
+            openPositionsBody.appendChild(row);
         });
     }
+}
+
+// Add event listener for close position option in context menu
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing code ...
+    
+    // Add event listener for close position option
+    const closePositionOption = document.getElementById('close-position');
+    if (closePositionOption) {
+        closePositionOption.addEventListener('click', function() {
+            const contextMenu = document.getElementById('context-menu');
+            const symbol = contextMenu.dataset.symbol;
+            const quantity = contextMenu.dataset.quantity;
+            const positionType = contextMenu.dataset.positionType;
+            
+            // Hide context menu
+            contextMenu.style.display = 'none';
+            
+            // Open order entry modal
+            const modal = document.getElementById('order-entry-modal');
+            modal.style.display = 'block';
+            
+            // Set form values for closing position
+            document.getElementById('side').value = positionType === 'Long' ? 'Sell' : 'Buy';
+            document.getElementById('symbol').value = symbol;
+            document.getElementById('quantity').value = quantity;
+            
+            // Get current market price for the symbol
+            fetch('/get_market_price', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ symbol: symbol })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.price) {
+                    document.getElementById('price').value = data.price;
+                }
+            })
+            .catch(error => {
+                console.error('Error getting market price:', error);
+            });
+        });
+    }
+    
+    // Hide context menu when clicking elsewhere
+    document.addEventListener('click', function() {
+        const contextMenu = document.getElementById('context-menu');
+        if (contextMenu) {
+            contextMenu.style.display = 'none';
+        }
+    });
 });
