@@ -11,7 +11,7 @@ sys.path.insert(1, 'tests')
 import baripool
 import baripool_action
 import dfix
-from scopechat import scope_chat, DEFAULT_PROMPT  # Import the ScopeChat module and DEFAULT_PROMPT
+from scopechat import scope_chat, DEFAULT_PROMPT, register_scope_chat_routes  # Import the ScopeChat module and register_scope_chat_routes
 from profile import register_profile_routes  # Import the new profile module
 from market_data import FinnhubClient
 import maricon
@@ -21,6 +21,9 @@ app = Flask(__name__)
 
 # Register profile routes
 register_profile_routes(app)
+
+# Register ScopeChat routes
+register_scope_chat_routes(app)
 
 # Database setup
 DB_PATH = Path('fixclient/instance/ourteam.db')
@@ -173,39 +176,6 @@ logging.getLogger('werkzeug').addFilter(
 def unique_id():
     return str(uuid.uuid4())[:8]
 
-# Define the order handler function that will be used by ScopeChat
-def handle_ai_order(side, symbol, quantity, price, sender):
-    """Handle order submission from AI trader"""
-    fix_message = f"11={unique_id()};54={side};55={symbol};38={quantity};44={price};49={sender}"
-    
-    # Simulate some trades to match with
-    baripool_action.bp_directentry_sim()
-    output = baripool.on_new_order(fix_message)
-    
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    return {
-        'output': f"[{timestamp}] {output}",
-        'status': "ORDER SENT",
-        'side': side,
-        'symbol': symbol,
-        'quantity': quantity,
-        'price': price
-    }
-
-# Set the order handler for ScopeChat
-scope_chat.set_order_handler(handle_ai_order)
-
-# Helper function to check if a symbol was mentioned in chat history
-def symbol_mentioned_in_chat(scope_id, symbol):
-    """Check if a symbol was mentioned in the chat history"""
-    history = scope_chat.get_chat_history(scope_id)
-    symbol_upper = symbol.upper()
-    
-    for message in history:
-        if symbol_upper in message["content"].upper():
-            return True
-    return False
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -325,50 +295,6 @@ def get_recent_trades():
     
     # Limit to most recent 20 trades
     return jsonify(trades[:20])
-
-@app.route('/scope_chat/send', methods=['POST'])
-def scope_chat_send():
-    scope_id = request.form.get('scope_id')
-    message = request.form.get('message')
-    custom_prompt = request.form.get('custom_prompt')
-    
-    if not scope_id or not message:
-        return jsonify({"error": "Scope ID and message are required"}), 400
-    
-    result = scope_chat.send_message(scope_id, message, custom_prompt)
-    
-    # Check if an order was placed and if the symbol was mentioned in chat
-    if 'order_result' in result and 'symbol' in result['order_result']:
-        symbol = result['order_result']['symbol']
-        if symbol_mentioned_in_chat(scope_id, symbol):
-            result['shared_trade'] = True
-            result['trade_details'] = result['order_result']
-    
-    return jsonify(result)
-
-@app.route('/scope_chat/history', methods=['GET'])
-def scope_chat_history():
-    scope_id = request.args.get('scope_id')
-    
-    if not scope_id:
-        return jsonify({"error": "Scope ID is required"}), 400
-    
-    history = scope_chat.get_chat_history(scope_id)
-    return jsonify({"history": history, "scope_id": scope_id})
-
-@app.route('/scope_chat/clear', methods=['POST'])
-def scope_chat_clear():
-    scope_id = request.form.get('scope_id')
-    
-    if not scope_id:
-        return jsonify({"error": "Scope ID is required"}), 400
-    
-    result = scope_chat.clear_chat(scope_id)
-    return jsonify(result)
-
-@app.route('/scope_chat/default_prompt', methods=['GET'])
-def get_default_prompt():
-    return jsonify({"prompt": DEFAULT_PROMPT})
 
 @app.route('/generate_random_trade', methods=['POST'])
 def generate_random_trade_route():

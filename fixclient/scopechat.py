@@ -4,6 +4,10 @@ from datetime import datetime
 import anthropic
 import maricon
 import tiktoken
+import uuid
+from flask import Blueprint, request, jsonify
+import baripool
+import baripool_action
 
 # Default prompt template for trader simulation
 DEFAULT_PROMPT = """You are an experienced financial trader. You're conversing with another trader or market participant who may ask you questions about market conditions, trading strategies, or specific orders.
@@ -44,6 +48,9 @@ IMPORTANT: When the user asks you to execute an order (buy or sell), you should 
 
 If you do not make a transaction as a result of the chat, you will submit another trade on a random US symbol, estimating the price.
 """
+
+# Create a Blueprint for ScopeChat routes
+scope_chat_bp = Blueprint('scope_chat', __name__)
 
 class ScopeChat:
     def __init__(self):
@@ -231,6 +238,92 @@ class ScopeChat:
                 "total_cost_cents": 0
             }
         return {"status": "Chat cleared", "scope_id": scope_id}
+    
+    def symbol_mentioned_in_chat(self, scope_id, symbol):
+        """Check if a symbol was mentioned in the chat history"""
+        history = self.get_chat_history(scope_id)
+        symbol_upper = symbol.upper()
+        
+        for message in history:
+            if symbol_upper in message["content"].upper():
+                return True
+        return False
 
 # Create a singleton instance
-scope_chat = ScopeChat() 
+scope_chat = ScopeChat()
+
+# Define the order handler function that will be used by ScopeChat
+def handle_ai_order(side, symbol, quantity, price, sender):
+    """Handle order submission from AI trader"""
+    fix_message = f"11={unique_id()};54={side};55={symbol};38={quantity};44={price};49={sender}"
+    
+    # Simulate some trades to match with
+    baripool_action.bp_directentry_sim()
+    output = baripool.on_new_order(fix_message)
+    
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    return {
+        'output': f"[{timestamp}] {output}",
+        'status': "ORDER SENT",
+        'side': side,
+        'symbol': symbol,
+        'quantity': quantity,
+        'price': price
+    }
+
+# Set the order handler for ScopeChat
+scope_chat.set_order_handler(handle_ai_order)
+
+# Helper function to generate unique IDs
+def unique_id():
+    return str(uuid.uuid4())[:8]
+
+# Register routes for ScopeChat
+@scope_chat_bp.route('/send', methods=['POST'])
+def scope_chat_send():
+    scope_id = request.form.get('scope_id')
+    message = request.form.get('message')
+    custom_prompt = request.form.get('custom_prompt')
+    
+    if not scope_id or not message:
+        return jsonify({"error": "Scope ID and message are required"}), 400
+    
+    result = scope_chat.send_message(scope_id, message, custom_prompt)
+    
+    # Check if an order was placed and if the symbol was mentioned in chat
+    if 'order_result' in result and 'symbol' in result['order_result']:
+        symbol = result['order_result']['symbol']
+        if scope_chat.symbol_mentioned_in_chat(scope_id, symbol):
+            result['shared_trade'] = True
+            result['trade_details'] = result['order_result']
+    
+    return jsonify(result)
+
+@scope_chat_bp.route('/history', methods=['GET'])
+def scope_chat_history():
+    scope_id = request.args.get('scope_id')
+    
+    if not scope_id:
+        return jsonify({"error": "Scope ID is required"}), 400
+    
+    history = scope_chat.get_chat_history(scope_id)
+    return jsonify({"history": history, "scope_id": scope_id})
+
+@scope_chat_bp.route('/clear', methods=['POST'])
+def scope_chat_clear():
+    scope_id = request.form.get('scope_id')
+    
+    if not scope_id:
+        return jsonify({"error": "Scope ID is required"}), 400
+    
+    result = scope_chat.clear_chat(scope_id)
+    return jsonify(result)
+
+@scope_chat_bp.route('/default_prompt', methods=['GET'])
+def get_default_prompt():
+    return jsonify({"prompt": DEFAULT_PROMPT})
+
+# Function to register the ScopeChat blueprint with a Flask app
+def register_scope_chat_routes(app):
+    """Register the ScopeChat blueprint with a Flask app"""
+    app.register_blueprint(scope_chat_bp, url_prefix='/scope_chat') 
