@@ -151,6 +151,8 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
             row.dataset.symbol = symbol;
             row.dataset.price = order.price;
             row.dataset.qty = order.remaining_qty;
+            row.dataset.orderId = order.order_id;
+            row.dataset.sender = order.sender;
             
             // Add appropriate animation class based on order status
             if (changes && symbol) {
@@ -216,6 +218,30 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
                 orderIdCell.textContent = order.order_id;
                 row.appendChild(orderIdCell);
             }
+            
+            // Add right-click event listener for context menu
+            row.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                
+                // Show context menu
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.top = `${e.pageY}px`;
+                
+                // Store order details in context menu for later use
+                contextMenu.dataset.orderId = order.order_id;
+                contextMenu.dataset.symbol = symbol;
+                contextMenu.dataset.side = sideLabel;
+                contextMenu.dataset.price = order.price;
+                contextMenu.dataset.qty = order.remaining_qty;
+                contextMenu.dataset.sender = order.sender;
+                
+                // Show cancel order option and hide other options
+                document.getElementById('cancel-order').style.display = 'block';
+                document.getElementById('trade-against').style.display = 'none';
+                document.getElementById('close-position').style.display = 'none';
+            });
             
             tbody.appendChild(row);
         });
@@ -1998,6 +2024,52 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error getting market price:', error);
             });
+        });
+    }
+    
+    // Add event listener for cancel order option
+    const cancelOrderOption = document.getElementById('cancel-order');
+    if (cancelOrderOption) {
+        cancelOrderOption.addEventListener('click', function() {
+            const contextMenu = document.getElementById('context-menu');
+            const orderId = contextMenu.dataset.orderId;
+            const symbol = contextMenu.dataset.symbol;
+            
+            // Hide context menu
+            contextMenu.style.display = 'none';
+            
+            // Confirm cancellation
+            if (confirm(`Are you sure you want to cancel order ${orderId} for ${symbol}?`)) {
+                // Send cancel order request
+                fetch('/cancel_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ order_id: orderId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update output box with cancellation message
+                    const outputBox = document.getElementById('output-box');
+                    outputBox.innerHTML += '\n' + data.output;
+                    // Auto-scroll to the bottom
+                    outputBox.scrollTop = outputBox.scrollHeight;
+                    
+                    // Update status and reset after delay
+                    document.getElementById('status-display').textContent = data.status;
+                    setTimeout(() => {
+                        document.getElementById('status-display').textContent = 'READY';
+                    }, 2000);
+                    
+                    // Refresh the order book to show the cancellation
+                    updateOrderBook();
+                })
+                .catch(error => {
+                    console.error('Error canceling order:', error);
+                    updateStatus('Error canceling order: ' + error.message);
+                });
+            }
         });
     }
     

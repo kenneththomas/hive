@@ -33,7 +33,7 @@ random_trade_settings = {
     'enabled': False,
     'interval_seconds': 15,
     'orders_per_interval': 1,
-    'max_orders_before_refresh': 20
+    'max_orders_before_refresh': 5000
 }
 
 # List of symbols for random trade generation
@@ -522,6 +522,37 @@ def test_baripool_route():
         return jsonify({
             'status': 'error',
             'message': f'Error accessing baripool: {str(e)}'
+        }), 500
+
+@app.route('/cancel_order', methods=['POST'])
+def cancel_order_route():
+    """Cancel an order by order ID"""
+    try:
+        data = request.get_json()
+        order_id = data.get('order_id')
+        
+        if not order_id:
+            return jsonify({'error': 'Order ID is required'}), 400
+            
+        # Call the baripool cancel order function
+        baripool.on_cancel_order(order_id)
+        
+        # Get the current time for the response
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Order {order_id} has been canceled',
+            'output': f"[{timestamp}] Order {order_id} has been canceled"
+        })
+        
+    except Exception as e:
+        import traceback
+        logging.error(f"Error canceling order: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({
+            'status': 'error',
+            'message': f'Error canceling order: {str(e)}'
         }), 500
 
 if __name__ == '__main__':
