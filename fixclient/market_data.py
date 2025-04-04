@@ -4,7 +4,7 @@ Requires requests package: pip install requests
 """
 
 import requests
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Tuple
 from datetime import datetime
 import maricon
 import time
@@ -14,16 +14,18 @@ class FinnhubClient:
     
     BASE_URL = "https://finnhub.io/api/v1"
     
-    def __init__(self, api_key: str, max_orders_before_refresh: int = 20):
+    def __init__(self, api_key: str, max_orders_before_refresh: int = 1000, price_away_threshold: float = 0.15):
         """
         Initialize the Finnhub client.
         
         Args:
             api_key (str): Your Finnhub API key
             max_orders_before_refresh (int): Maximum number of orders before refreshing price
+            price_away_threshold (float): Maximum allowed percentage difference between limit price and market price (default: 15%)
         """
         self.api_key = api_key
         self.max_orders_before_refresh = max_orders_before_refresh
+        self.price_away_threshold = price_away_threshold
         self.price_cache = {}  # {symbol: {'price': price, 'last_updated': timestamp, 'order_count': count}}
         
     def get_candles(self, 
@@ -121,6 +123,46 @@ class FinnhubClient:
             return self.price_cache[symbol]['price']
         return None
     
+    def check_price_away(self, symbol: str, limit_price: float) -> Tuple[bool, Optional[str]]:
+        """
+        Check if the limit price is within the allowed threshold of the current market price.
+        
+        Args:
+            symbol (str): The stock symbol
+            limit_price (float): The limit price to check
+            
+        Returns:
+            Tuple[bool, Optional[str]]: (is_valid, rejection_reason)
+            - is_valid: True if the price is within the threshold, False otherwise
+            - rejection_reason: Reason for rejection if is_valid is False, None otherwise
+        """
+        try:
+            # Try to get the cached price first
+            market_price = self.get_cached_price(symbol)
+            
+            # If no cached price, try to get a fresh quote
+            if market_price is None:
+                quote_data = self.get_quote(symbol)
+                if 'c' in quote_data and quote_data['c']:
+                    market_price = float(quote_data['c'])
+                else:
+                    # If we can't get a price, accept the order as per requirements
+                    return True, None
+            
+            # Calculate the percentage difference
+            if market_price > 0:
+                price_diff_percent = abs(limit_price - market_price) / market_price
+                
+                if price_diff_percent > self.price_away_threshold:
+                    return False, f"Limit price {limit_price} is more than {self.price_away_threshold*100}% away from market price {market_price}"
+            
+            return True, None
+            
+        except Exception as e:
+            # If there's any error in retrieving market data, accept the order as per requirements
+            print(f"Error checking price away: {e}")
+            return True, None
+    
     def search_symbol(self, keywords: str) -> Dict:
         """
         Search for symbols and company names.
@@ -150,5 +192,11 @@ if __name__ == "__main__":
     try:
         quote_data = client.get_quote("AAPL")
         print("Quote data for AAPL:", quote_data)
+        
+        # Example: Check if a limit price is within the threshold
+        is_valid, reason = client.check_price_away("AAPL", 150.0)
+        print(f"Price check result: {'Valid' if is_valid else 'Invalid'}")
+        if not is_valid:
+            print(f"Reason: {reason}")
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}") 

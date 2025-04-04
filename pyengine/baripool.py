@@ -3,11 +3,17 @@ from collections import OrderedDict
 import uuid
 import datetime
 from tabulate import tabulate
+import sys
+sys.path.insert(1, 'fixclient')
+import market_data
+import maricon
 
 bookshelf = {}  # contains books of all symbols
 fillcontainer = {}  # contains all fills
 orderid_container = {} # contains orderids to prevent duplicate orderids
 
+# Initialize the Finnhub client with a 15% price-away threshold
+finnhub_client = market_data.FinnhubClient(maricon.finnhub_key, price_away_threshold=0.15)
 
 class BariOrder:
     def __init__(self, fix):
@@ -216,6 +222,13 @@ def on_new_order(new_order):
             return dfix.exportfix(rejectreport)  # Added missing return
         rejectreport = reject_order(new_order, f'MURRRRRKAH - we dont take {new_order.currency} round here')
         return dfix.exportfix(rejectreport)
+    
+    # Check if limit price is within the allowed threshold of the market price
+    if new_order.ordertype == '2':  # Only check limit orders
+        is_valid, rejection_reason = finnhub_client.check_price_away(new_order.symbol, new_order.limitprice)
+        if not is_valid:
+            rejectreport = reject_order(new_order, rejection_reason)
+            return dfix.exportfix(rejectreport)
     
     new_order_execution_report = dfix.execreport_gen.generate_new_order_execution_report(new_order)
     print("New Order Execution Report:", new_order_execution_report)
