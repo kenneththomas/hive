@@ -14,6 +14,8 @@
         <!-- Context Menu -->
         <div id="context-menu" class="context-menu">
             <div class="context-menu-item" id="trade-against">Trade Against</div>
+            <div class="context-menu-item" id="close-position">Close Position</div>
+            <div class="context-menu-item" id="cancel-order">Cancel Order</div>
         </div>
         
         <!-- Header bar -->
@@ -28,6 +30,7 @@
             <div class="tabs">
                 <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
                 <button class="tab-button" data-tab="recent-trades">RECENT TRADES</button>
+                <button class="tab-button" data-tab="portfolio">PORTFOLIO</button>
                 <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
                 <button class="tab-button" data-tab="management">MANAGEMENT</button>
             </div>
@@ -38,6 +41,11 @@
                     <label for="trader-id">Trader ID:</label>
                     <input type="text" id="trader-id" value="TRADER1">
                     <button id="update-trader-id">Update</button>
+                </div>
+                <div class="symbol-filter">
+                    <label for="symbol-filter">Filter by Symbol:</label>
+                    <input type="text" id="symbol-filter" placeholder="Enter symbol...">
+                    <button id="reset-filter" class="reset">Reset</button>
                 </div>
                 <div class="tab-pane active" id="order-entry-tab">
                     <h1 class="title">ORDER ENTRY</h1>
@@ -70,22 +78,49 @@
                             </table>
                         </div>
                     </div>
-
-                    
-                    <!-- Order Book Display Section -->
-                    <div class="order-book-section">
-                        <h2 class="section-title">MARKET DEPTH - ORDER BOOK</h2>
-                        <div class="symbol-filter">
-                            <label for="symbol-filter">Filter Symbol:</label>
-                            <input type="text" id="symbol-filter" placeholder="Enter symbol...">
-                            <button id="apply-filter">Apply</button>
-                            <button id="reset-filter" class="reset">Reset</button>
-                        </div>
-                        <div id="order-book-container" class="order-book-container">
-                            <div class="no-data-message">No active orders</div>
+                    <!-- Open Positions in Order Entry Tab -->
+                    <div class="portfolio-section">
+                        <h2 class="section-title">OPEN POSITIONS</h2>
+                        <div class="portfolio-container">
+                            <table id="order-entry-open-positions-table" class="portfolio-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Position</th>
+                                        <th>Quantity</th>
+                                        <th>Avg Price</th>
+                                        <th>Current Price</th>
+                                        <th>Market Value</th>
+                                        <th>P&L</th>
+                                        <th>P&L %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="order-entry-open-positions-body">
+                                    <!-- Open positions will be added here dynamically -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
+                    <!-- Order Book Section -->
+                    <div class="order-book-section">
+                        <h2 class="section-title">ORDER BOOK</h2>
+                        <div class="order-book-container">
+                            <div class="symbol-selection">
+                                <div class="symbol-search">
+                                    <input type="text" id="symbol-search" placeholder="Search symbol...">
+                                    <button id="search-symbol">Search</button>
+                                </div>
+                                <div id="symbol-list" class="symbol-list">
+                                    <!-- Symbol list will be populated dynamically -->
+                                    <div class="no-data-message">Loading symbols...</div>
+                                </div>
+                            </div>
+                            <div id="selected-book-container" class="selected-book-container">
+                                <div class="no-data-message">Select a symbol to view its order book</div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Output terminal -->
                     <div class="output-container">
@@ -111,6 +146,83 @@
                                 <div class="no-trades-message">No recent trades</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Tab -->
+                <div class="tab-pane" id="portfolio-tab">
+                    <h1 class="title">PORTFOLIO</h1>
+                    
+                    <!-- Portfolio Summary -->
+                    <div class="portfolio-summary">
+                        <div class="summary-card">
+                            <h3>Total P&L</h3>
+                            <div id="total-pnl" class="summary-value">$0.00</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Realized P&L</h3>
+                            <div id="realized-pnl" class="summary-value">$0.00</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Unrealized P&L</h3>
+                            <div id="unrealized-pnl" class="summary-value">$0.00</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Open Positions</h3>
+                            <div id="open-positions-count" class="summary-value">0</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Open Positions -->
+                    <div class="portfolio-section">
+                        <h2 class="section-title">OPEN POSITIONS</h2>
+                        <div class="portfolio-container">
+                            <table id="open-positions-table" class="portfolio-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Position</th>
+                                        <th>Quantity</th>
+                                        <th>Avg Price</th>
+                                        <th>Current Price</th>
+                                        <th>Market Value</th>
+                                        <th>P&L</th>
+                                        <th>P&L %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="open-positions-body">
+                                    <!-- Open positions will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Filled Trades -->
+                    <div class="portfolio-section">
+                        <h2 class="section-title">FILLED TRADES</h2>
+                        <div class="portfolio-container">
+                            <table id="filled-trades-table" class="portfolio-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Order ID</th>
+                                        <th>Symbol</th>
+                                        <th>Side</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filled-trades-body">
+                                    <!-- Filled trades will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Refresh Button -->
+                    <div class="portfolio-controls">
+                        <button id="refresh-portfolio" class="control-button">Refresh Portfolio</button>
                     </div>
                 </div>
 
@@ -143,7 +255,10 @@
 
                                 <div class="form-group">
                                     <label for="price">PRICE: (44)</label>
-                                    <input type="text" id="price" name="price" class="form-control">
+                                    <div class="price-input-group">
+                                        <input type="text" id="price" name="price" class="form-control">
+                                        <button type="button" id="get-market-price" class="market-price-button">Get Market Price</button>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
@@ -291,8 +406,28 @@
                                 <label for="random-trades-toggle">Enable Random Trades</label>
                             </div>
                             <div class="control-info">
-                                <p>When enabled, random trades will be generated every 15 seconds using random employees as senders.</p>
+                                <p>When enabled, random trades will be generated at the specified interval using random employees as senders.</p>
                                 <p>If no orders exist in the book, AAPL trades will be generated.</p>
+                            </div>
+                            
+                            <div class="control-settings">
+                                <div class="setting-item">
+                                    <label for="interval-seconds">Interval (seconds):</label>
+                                    <input type="number" id="interval-seconds" min="1" max="3600" value="15">
+                                </div>
+                                
+                                <div class="setting-item">
+                                    <label for="orders-per-interval">Orders per interval:</label>
+                                    <input type="number" id="orders-per-interval" min="1" max="10" value="1">
+                                </div>
+                                
+                                <div class="setting-item">
+                                    <label for="max-orders-before-refresh">Max orders before price refresh:</label>
+                                    <input type="number" id="max-orders-before-refresh" min="1" max="100" value="20">
+                                    <div class="setting-info">Number of orders before refreshing market price from API</div>
+                                </div>
+                                
+                                <button id="save-random-trade-settings" class="control-button">Save Settings</button>
                             </div>
                         </div>
                     </div>

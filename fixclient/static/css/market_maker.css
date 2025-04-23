@@ -1,0 +1,453 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    line-height: 1.6;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 10px;
+    gap: 10px;
+}
+
+/* Header Bar */
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2d2d2d;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4ec9b0;
+}
+
+.header-date, .header-time {
+    font-size: 1rem;
+    color: #9cdcfe;
+}
+
+/* Main Content */
+.main-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 10px;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Common Panel Styles */
+.control-panel, .config-panel, .market-data-panel, .performance-panel, .log-panel {
+    background-color: #2d2d2d;
+    border-radius: 5px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    overflow: auto;
+}
+
+.section-title {
+    color: #4ec9b0;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+.subsection-title {
+    color: #9cdcfe;
+    font-size: 1rem;
+    margin: 10px 0;
+}
+
+/* Control Panel */
+.control-panel {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+}
+
+.control-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.control-button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.control-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.control-button.start {
+    background-color: #4caf50;
+    color: white;
+}
+
+.control-button.stop {
+    background-color: #f44336;
+    color: white;
+}
+
+.control-button.pause {
+    background-color: #ff9800;
+    color: white;
+}
+
+.control-button.resume {
+    background-color: #2196f3;
+    color: white;
+}
+
+.control-button.emergency {
+    background-color: #d32f2f;
+}
+
+.control-button.toggle {
+    background-color: #7b1fa2;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    gap: 10px;
+}
+
+.status-label {
+    color: #9cdcfe;
+}
+
+.status-value {
+    font-weight: bold;
+    color: #4ec9b0;
+}
+
+/* Configuration Panel */
+.config-panel {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+}
+
+.config-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.config-section {
+    background-color: #3d3d3d;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.form-group {
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #9cdcfe;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px;
+    background-color: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    color: #d4d4d4;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4ec9b0;
+}
+
+.config-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Market Data Panel */
+.market-data-panel {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+}
+
+.market-data-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.symbol-selection {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.current-price {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #3d3d3d;
+    border-radius: 4px;
+}
+
+.price-label {
+    color: #9cdcfe;
+}
+
+.price-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4ec9b0;
+}
+
+.order-book {
+    background-color: #3d3d3d;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.order-book-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.order-book-side {
+    display: flex;
+    flex-direction: column;
+}
+
+.order-book-header {
+    color: #9cdcfe;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.order-book-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Performance Panel */
+.performance-panel {
+    grid-column: 1 / 3;
+    grid-row: 3 / 4;
+}
+
+.performance-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.position-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.position-item {
+    background-color: #3d3d3d;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.position-label {
+    color: #9cdcfe;
+    margin-bottom: 5px;
+}
+
+.position-value {
+    font-weight: bold;
+    color: #4ec9b0;
+}
+
+.positions-table-container, .orders-table-container {
+    overflow-x: auto;
+}
+
+.positions-table, .orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.positions-table th, .orders-table th {
+    background-color: #3d3d3d;
+    color: #9cdcfe;
+    padding: 10px;
+    text-align: left;
+}
+
+.positions-table td, .orders-table td {
+    padding: 8px;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+.order-actions {
+    margin-top: 15px;
+    text-align: right;
+}
+
+/* Log Panel */
+.log-panel {
+    grid-column: 1 / 3;
+    grid-row: 4 / 5;
+}
+
+.log-container {
+    background-color: #3d3d3d;
+    border-radius: 4px;
+    padding: 10px;
+    height: 200px;
+    overflow-y: auto;
+}
+
+.log-content {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.log-actions {
+    margin-top: 10px;
+    text-align: right;
+}
+
+/* Status Bar */
+.status-bar {
+    background-color: #2d2d2d;
+    padding: 5px 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#status-display {
+    color: #4ec9b0;
+    font-weight: bold;
+}
+
+/* Action Buttons */
+.action-button {
+    padding: 8px 15px;
+    background-color: #4ec9b0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-button:hover {
+    background-color: #3db39a;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .config-panel {
+        grid-column: 1 / 2;
+        grid-row: 2 / 3;
+    }
+
+    .market-data-panel {
+        grid-column: 1 / 2;
+        grid-row: 3 / 4;
+    }
+
+    .performance-panel {
+        grid-column: 1 / 2;
+        grid-row: 4 / 5;
+    }
+
+    .log-panel {
+        grid-column: 1 / 2;
+        grid-row: 5 / 6;
+    }
+}
+
+@media (max-width: 768px) {
+    .position-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .control-buttons {
+        flex-wrap: wrap;
+    }
+
+    .control-button {
+        flex: 1 1 calc(50% - 5px);
+    }
+}
+
+/* Quote container and lift button styles */
+.quote-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.lift-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s;
+}
+
+.lift-button:hover {
+    background-color: #45a049;
+}
+
+.order-book-entry.bid .lift-button {
+    background-color: #4CAF50;
+}
+
+.order-book-entry.ask .lift-button {
+    background-color: #f44336;
+}
+
+.order-book-entry.ask .lift-button:hover {
+    background-color: #d32f2f;
+} 

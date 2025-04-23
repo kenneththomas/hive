@@ -94,42 +94,68 @@ setInterval(updateTime, 1000);
 // Helper function to create an order table
 function createOrderTable(orders, sideLabel, symbol, changes) {
     const table = document.createElement('table');
+    table.className = 'order-table';
     
-    // Create header row
+    // Create table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
     
-    // Remove 'Orig Qty' from headers
-    const headers = [sideLabel, 'Order ID', 'Sender', 'Price', 'Qty'];
-    headers.forEach(text => {
+    // Define headers based on side (mirrored for ask)
+    let headers;
+    if (sideLabel === 'BID') {
+        headers = [
+            'Order ID',
+            'Sender',
+            'Quantity',
+            'Price'
+        ];
+    } else {
+        headers = [
+            'Price',
+            'Quantity',
+            'Sender',
+            'Order ID'
+        ];
+    }
+    
+    headers.forEach(header => {
         const th = document.createElement('th');
-        th.textContent = text;
+        th.textContent = header;
         headerRow.appendChild(th);
     });
     
     thead.appendChild(headerRow);
     table.appendChild(thead);
     
-    // Create body rows
+    // Create table body
     const tbody = document.createElement('tbody');
     
-    if (orders.length === 0) {
+    if (!orders || orders.length === 0) {
         const emptyRow = document.createElement('tr');
         const emptyCell = document.createElement('td');
         emptyCell.colSpan = headers.length;
-        emptyCell.textContent = 'No orders';
         emptyCell.className = 'empty-message';
+        emptyCell.textContent = `No ${sideLabel.toLowerCase()} orders`;
         emptyRow.appendChild(emptyCell);
         tbody.appendChild(emptyRow);
     } else {
+        // Find the maximum quantity for scaling the size indicators
+        const maxQty = Math.max(...orders.map(order => parseInt(order.remaining_qty)));
+        
         orders.forEach(order => {
             const row = document.createElement('tr');
+            row.className = 'order-row';
             
             // Add data attributes for context menu
             row.dataset.side = sideLabel;
             row.dataset.symbol = symbol;
             row.dataset.price = order.price;
             row.dataset.qty = order.remaining_qty;
+            row.dataset.orderId = order.order_id;
+            row.dataset.sender = order.sender;
+            
+            // Add data-order-id attribute for animation
+            row.setAttribute('data-order-id', order.order_id);
             
             // Add appropriate animation class based on order status
             if (changes && symbol) {
@@ -139,41 +165,98 @@ function createOrderTable(orders, sideLabel, symbol, changes) {
                     row.classList.add('new-order');
                 } else if (changes.partialFills[symbol] && changes.partialFills[symbol][side].includes(order.order_id)) {
                     row.classList.add('partial-fill');
+                    
+                    // Check if this is a full fill (remaining_qty is 0)
+                    if (parseInt(order.remaining_qty) === 0) {
+                        // We'll handle this in the analyzeOrderChanges function
+                        row.dataset.wasFullyFilled = 'true';
+                    }
                 } else if (changes.fullFills[symbol] && changes.fullFills[symbol][side].includes(order.order_id)) {
                     row.classList.add('full-fill');
+                    row.dataset.wasFullyFilled = 'true';
                 }
             }
             
-            // Side indicator cell (just for visual distinction)
-            const sideCell = document.createElement('td');
-            sideCell.className = sideLabel === 'BID' ? 'bid-indicator' : 'ask-indicator';
-            sideCell.textContent = sideLabel;
-            row.appendChild(sideCell);
+            // Create size indicator
+            const sizeIndicator = document.createElement('div');
+            sizeIndicator.className = 'size-indicator';
+            const qtyPercent = (parseInt(order.remaining_qty) / maxQty) * 100;
+            sizeIndicator.style.width = `${qtyPercent}%`;
             
-            // Order details
-            const orderIdCell = document.createElement('td');
-            orderIdCell.textContent = order.order_id;
-            row.appendChild(orderIdCell);
+            // Set the initial width as a CSS variable for animation
+            sizeIndicator.style.setProperty('--initial-width', `${qtyPercent}%`);
             
-            const senderCell = document.createElement('td');
-            senderCell.textContent = order.sender;
-            row.appendChild(senderCell);
+            // Position the size indicator based on side
+            if (sideLabel === 'BID') {
+                sizeIndicator.style.right = '0';
+            } else {
+                sizeIndicator.style.left = '0';
+            }
             
-            const priceCell = document.createElement('td');
-            priceCell.textContent = formatPrice(order.price);
-            row.appendChild(priceCell);
+            row.appendChild(sizeIndicator);
             
-            const qtyCell = document.createElement('td');
-            qtyCell.textContent = formatQuantity(order.remaining_qty);
-            row.appendChild(qtyCell);
+            // Create cells in the correct order based on side
+            if (sideLabel === 'BID') {
+                // BID order: Order ID, Sender, Quantity, Price
+                const orderIdCell = document.createElement('td');
+                orderIdCell.textContent = order.order_id;
+                row.appendChild(orderIdCell);
+                
+                const senderCell = document.createElement('td');
+                senderCell.textContent = order.sender;
+                row.appendChild(senderCell);
+                
+                const qtyCell = document.createElement('td');
+                qtyCell.textContent = formatQuantity(order.remaining_qty);
+                row.appendChild(qtyCell);
+                
+                const priceCell = document.createElement('td');
+                priceCell.textContent = formatPrice(order.price);
+                row.appendChild(priceCell);
+            } else {
+                // ASK order: Price, Quantity, Sender, Order ID
+                const priceCell = document.createElement('td');
+                priceCell.textContent = formatPrice(order.price);
+                row.appendChild(priceCell);
+                
+                const qtyCell = document.createElement('td');
+                qtyCell.textContent = formatQuantity(order.remaining_qty);
+                row.appendChild(qtyCell);
+                
+                const senderCell = document.createElement('td');
+                senderCell.textContent = order.sender;
+                row.appendChild(senderCell);
+                
+                const orderIdCell = document.createElement('td');
+                orderIdCell.textContent = order.order_id;
+                row.appendChild(orderIdCell);
+            }
+            
+            // Add right-click event listener for context menu
+            row.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                
+                // Show context menu
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.top = `${e.pageY}px`;
+                
+                // Store order details in context menu for later use
+                contextMenu.dataset.orderId = order.order_id;
+                contextMenu.dataset.symbol = symbol;
+                contextMenu.dataset.side = sideLabel;
+                contextMenu.dataset.price = order.price;
+                contextMenu.dataset.qty = order.remaining_qty;
+                contextMenu.dataset.sender = order.sender;
+                
+                // Show cancel order option and hide other options
+                document.getElementById('cancel-order').style.display = 'block';
+                document.getElementById('trade-against').style.display = 'none';
+                document.getElementById('close-position').style.display = 'none';
+            });
             
             tbody.appendChild(row);
-            
-            // Add a temporary highlight effect for new rows
-            row.classList.add('highlight');
-            setTimeout(() => {
-                row.classList.remove('highlight');
-            }, 1000);
         });
     }
     
@@ -194,6 +277,7 @@ function formatQuantity(qty) {
 // Global variable to store the complete order book data
 let fullOrderBookData = {};
 let currentSymbolFilter = '';
+let selectedSymbol = null;
 
 // Global variable to store previous state of the order book for comparison
 let previousOrderBookData = {};
@@ -212,14 +296,61 @@ function updateOrderBook() {
             // Store the full data
             fullOrderBookData = data;
             
-            // Display filtered data with animations
-            displayOrderBook(data, changes);
+            // Update the symbol list
+            updateSymbolList(data);
+            
+            // If a symbol is selected, update its order book
+            if (selectedSymbol && data[selectedSymbol]) {
+                displaySelectedOrderBook(selectedSymbol, data[selectedSymbol], changes);
+            }
         })
         .catch(error => {
             console.error('Error fetching order book:', error);
-            document.getElementById('order-book-container').innerHTML = 
-                '<div class="error-message">Error loading order book data</div>';
         });
+}
+
+// Function to update the symbol list
+function updateSymbolList(data) {
+    const symbolList = document.getElementById('symbol-list');
+    
+    // Clear the current list
+    symbolList.innerHTML = '';
+    
+    // Get the search term
+    const searchTerm = document.getElementById('symbol-search').value.toLowerCase();
+    
+    // Filter symbols based on search term
+    const filteredSymbols = Object.keys(data).filter(symbol => 
+        symbol.toLowerCase().includes(searchTerm)
+    );
+    
+    // Sort symbols alphabetically
+    filteredSymbols.sort();
+    
+    // Check if there are any symbols
+    if (filteredSymbols.length === 0) {
+        symbolList.innerHTML = '<div class="no-data-message">No matching symbols</div>';
+        return;
+    }
+    
+    // Create symbol items
+    filteredSymbols.forEach(symbol => {
+        const symbolItem = document.createElement('div');
+        symbolItem.className = 'symbol-item';
+        if (symbol === selectedSymbol) {
+            symbolItem.classList.add('active');
+        }
+        
+        symbolItem.textContent = symbol;
+        symbolItem.dataset.symbol = symbol;
+        
+        // Add click event to select the symbol
+        symbolItem.addEventListener('click', () => {
+            selectSymbol(symbol);
+        });
+        
+        symbolList.appendChild(symbolItem);
+    });
 }
 
 // Function to analyze changes between previous and current order book
@@ -318,78 +449,123 @@ function analyzeOrderSide(prevOrders, currOrders, newOrders, partialFills, fullF
     // Check each current order
     currOrders.forEach(order => {
         if (!prevOrderMap[order.order_id]) {
-            // This is a new order
+            // New order
             newOrders.push(order.order_id);
-        } else if (parseFloat(order.remaining_qty) < parseFloat(prevOrderMap[order.order_id].remaining_qty)) {
-            // This order has been partially filled
-            partialFills.push(order.order_id);
+        } else {
+            // Existing order - check if quantity changed
+            const prevOrder = prevOrderMap[order.order_id];
+            if (parseInt(order.remaining_qty) < parseInt(prevOrder.remaining_qty)) {
+                // Partial fill
+                partialFills.push(order.order_id);
+                
+                // Check if this is now fully filled (remaining_qty is 0)
+                if (parseInt(order.remaining_qty) === 0) {
+                    fullFills.push(order.order_id);
+                }
+            }
         }
     });
 }
 
-// Update the display function to use the changes information
-function displayOrderBook(data, changes) {
-    const container = document.getElementById('order-book-container');
+// Function to select a symbol and display its order book
+function selectSymbol(symbol) {
+    // Update the selected symbol
+    selectedSymbol = symbol;
     
-    // Clear previous content
+    // Update the active class on symbol items
+    document.querySelectorAll('.symbol-item').forEach(item => {
+        if (item.dataset.symbol === symbol) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    // Display the order book for the selected symbol
+    if (fullOrderBookData[symbol]) {
+        displaySelectedOrderBook(symbol, fullOrderBookData[symbol], {});
+    }
+}
+
+// Function to display the order book for a selected symbol
+function displaySelectedOrderBook(symbol, bookData, changes) {
+    const container = document.getElementById('selected-book-container');
     container.innerHTML = '';
     
-    // Filter data if a filter is applied
-    let filteredData = {};
-    if (currentSymbolFilter) {
-        // Case-insensitive filter
-        const filterLower = currentSymbolFilter.toLowerCase();
+    // Create symbol section
+    const symbolSection = document.createElement('div');
+    symbolSection.className = 'symbol-section';
+    
+    // Create symbol header
+    const symbolHeader = document.createElement('h3');
+    symbolHeader.textContent = symbol;
+    symbolSection.appendChild(symbolHeader);
+    
+    // Create book display
+    const bookDisplay = document.createElement('div');
+    bookDisplay.className = 'book-display';
+    
+    // Calculate mid price and spread
+    let priceDisplay = document.createElement('div');
+    priceDisplay.className = 'price-display';
+    
+    if (bookData.buys.length > 0 && bookData.sells.length > 0) {
+        const highestBid = parseFloat(bookData.buys[0].price);
+        const lowestAsk = parseFloat(bookData.sells[0].price);
+        const midPrice = ((highestBid + lowestAsk) / 2).toFixed(2);
+        const spread = (lowestAsk - highestBid).toFixed(2);
+        const spreadPct = ((spread / midPrice) * 100).toFixed(2);
         
-        for (const symbol in data) {
-            if (symbol.toLowerCase().includes(filterLower)) {
-                filteredData[symbol] = data[symbol];
-            }
-        }
+        priceDisplay.innerHTML = `
+            <div>Mid Price: $${midPrice}</div>
+            <div>Spread: $${spread} (${spreadPct}%)</div>
+        `;
     } else {
-        filteredData = data;
+        priceDisplay.textContent = 'Insufficient orders to calculate prices';
     }
     
-    // Check if there are any books after filtering
-    if (Object.keys(filteredData).length === 0) {
-        if (currentSymbolFilter) {
-            container.innerHTML = `<div class="no-data-message">No matching symbols for "${currentSymbolFilter}"</div>`;
-        } else {
-            container.innerHTML = '<div class="no-data-message">No active orders in the book</div>';
-        }
-        return;
-    }
+    bookDisplay.appendChild(priceDisplay);
     
-    // Create a section for each symbol
-    for (const symbol in filteredData) {
-        const bookData = filteredData[symbol];
-        const symbolSection = document.createElement('div');
-        symbolSection.className = 'symbol-section';
-        
-        // Create symbol header
-        const symbolHeader = document.createElement('h3');
-        symbolHeader.textContent = symbol;
-        symbolSection.appendChild(symbolHeader);
-        
-        // Create book display with buy and sell sides
-        const bookDisplay = document.createElement('div');
-        bookDisplay.className = 'book-display';
-        
-        // Buy side (bids) - now with changes parameter
-        const buyTable = createOrderTable(bookData.buys, 'BID', symbol, changes);
-        buyTable.className = 'order-table buy-table';
-        
-        // Sell side (asks) - now with changes parameter
-        const sellTable = createOrderTable(bookData.sells, 'ASK', symbol, changes);
-        sellTable.className = 'order-table sell-table';
-        
-        // Add tables to book display
-        bookDisplay.appendChild(buyTable);
-        bookDisplay.appendChild(sellTable);
-        symbolSection.appendChild(bookDisplay);
-        
-        // Add the symbol section to the container
-        container.appendChild(symbolSection);
+    // Create order book layout
+    const orderBookLayout = document.createElement('div');
+    orderBookLayout.className = 'order-book-layout';
+    
+    // Create tables container
+    const orderBookTables = document.createElement('div');
+    orderBookTables.className = 'order-book-tables';
+    
+    // Buy side (bids) - on the left
+    const buyTable = createOrderTable(bookData.buys, 'BID', symbol, changes);
+    buyTable.className = 'order-table buy-table';
+    
+    // Sell side (asks) - on the right
+    const sellTable = createOrderTable(bookData.sells, 'ASK', symbol, changes);
+    sellTable.className = 'order-table sell-table ask-table';
+    
+    // Add tables to the container
+    orderBookTables.appendChild(buyTable);
+    orderBookTables.appendChild(sellTable);
+    
+    // Add the order book layout to the book display
+    orderBookLayout.appendChild(orderBookTables);
+    bookDisplay.appendChild(orderBookLayout);
+    
+    // Add the book display to the symbol section
+    symbolSection.appendChild(bookDisplay);
+    
+    // Add the symbol section to the container
+    container.appendChild(symbolSection);
+    
+    // Handle volume animations if there are changes
+    if (changes) {
+        handleVolumeAnimation(changes);
     }
+}
+
+// Function to display the order book (legacy function, kept for compatibility)
+function displayOrderBook(data, changes) {
+    // This function is kept for compatibility but is no longer used
+    // The new order book display is handled by updateSymbolList and displaySelectedOrderBook
 }
 
 // Global variable to store recent trades
@@ -808,24 +984,16 @@ window.onload = function() {
     setInterval(updateOrderBook, 1000);
     setInterval(updateTradeTicker, 1000);
     
-    // Set up symbol filter functionality
-    document.getElementById('apply-filter').addEventListener('click', function() {
-        currentSymbolFilter = document.getElementById('symbol-filter').value.trim();
-        displayOrderBook(fullOrderBookData);
+    // Set up symbol search functionality
+    document.getElementById('search-symbol').addEventListener('click', function() {
+        updateSymbolList(fullOrderBookData);
     });
     
-    document.getElementById('reset-filter').addEventListener('click', function() {
-        document.getElementById('symbol-filter').value = '';
-        currentSymbolFilter = '';
-        displayOrderBook(fullOrderBookData);
-    });
-    
-    // Allow pressing Enter in the filter input to apply the filter
-    document.getElementById('symbol-filter').addEventListener('keypress', function(e) {
+    // Allow pressing Enter in the search input to search
+    document.getElementById('symbol-search').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            currentSymbolFilter = this.value.trim();
-            displayOrderBook(fullOrderBookData);
+            updateSymbolList(fullOrderBookData);
         }
     });
     
@@ -838,6 +1006,35 @@ window.onload = function() {
     // Update scopechat blotters periodically
     updateScopeChatBlotters();
     setInterval(updateScopeChatBlotters, 1000);
+    
+    // Add event listener for portfolio refresh button
+    const refreshPortfolioBtn = document.getElementById('refresh-portfolio');
+    if (refreshPortfolioBtn) {
+        refreshPortfolioBtn.addEventListener('click', loadPortfolio);
+    }
+    
+    // Add portfolio tab click handler
+    const portfolioTab = document.querySelector('[data-tab="portfolio"]');
+    if (portfolioTab) {
+        portfolioTab.addEventListener('click', function() {
+            // Load portfolio data when tab is clicked
+            setTimeout(loadPortfolio, 100); // Small delay to ensure tab is active
+        });
+    }
+    
+    // Add order entry tab click handler
+    const orderEntryTab = document.querySelector('[data-tab="order-entry"]');
+    if (orderEntryTab) {
+        orderEntryTab.addEventListener('click', function() {
+            // Load open positions when order entry tab is clicked
+            setTimeout(loadOrderEntryOpenPositions, 100); // Small delay to ensure tab is active
+        });
+    }
+    
+    // Load open positions when page loads if order entry tab is active
+    if (document.querySelector('[data-tab="order-entry"].active')) {
+        setTimeout(loadOrderEntryOpenPositions, 100);
+    }
 };
 
 // Add a new function to fetch the default prompt from the server
@@ -858,6 +1055,7 @@ function fetchDefaultPrompt() {
 // Context Menu Functionality
 let contextMenu = document.getElementById('context-menu');
 let tradeAgainstOption = document.getElementById('trade-against');
+let closePositionOption = document.getElementById('close-position');
 
 // Hide context menu when clicking anywhere else
 document.addEventListener('click', () => {
@@ -873,7 +1071,7 @@ contextMenu.addEventListener('click', (e) => {
 document.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     
-    // Only show context menu for order book rows
+    // Check if right-clicked on an order book row
     if (e.target.closest('.order-table tr') && !e.target.closest('th')) {
         const row = e.target.closest('tr');
         if (row.dataset.side && row.dataset.symbol && row.dataset.price && row.dataset.qty) {
@@ -886,6 +1084,31 @@ document.addEventListener('contextmenu', (e) => {
             contextMenu.dataset.symbol = row.dataset.symbol;
             contextMenu.dataset.price = row.dataset.price;
             contextMenu.dataset.qty = row.dataset.qty;
+            
+            // Show trade against option
+            tradeAgainstOption.style.display = 'block';
+            // Hide close position option
+            closePositionOption.style.display = 'none';
+        }
+    }
+    
+    // Check if right-clicked on a position row
+    if (e.target.closest('#open-positions-table tr') && !e.target.closest('th')) {
+        const row = e.target.closest('tr');
+        if (row.dataset.symbol && row.dataset.quantity) {
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.style.top = `${e.pageY}px`;
+            
+            // Store the position details in the context menu for later use
+            contextMenu.dataset.symbol = row.dataset.symbol;
+            contextMenu.dataset.quantity = row.dataset.quantity;
+            contextMenu.dataset.positionType = row.dataset.positionType;
+            
+            // Hide trade against option
+            tradeAgainstOption.style.display = 'none';
+            // Show close position option
+            closePositionOption.style.display = 'block';
         }
     }
 });
@@ -908,6 +1131,45 @@ tradeAgainstOption.addEventListener('click', () => {
     // Hide context menu and show modal
     contextMenu.style.display = 'none';
     modal.style.display = 'block';
+});
+
+// Handle close position option
+closePositionOption.addEventListener('click', () => {
+    const symbol = contextMenu.dataset.symbol;
+    const quantity = contextMenu.dataset.quantity;
+    const positionType = contextMenu.dataset.positionType;
+    
+    // Set opposite side of the position
+    document.getElementById('side').value = positionType === 'Long' ? 'Sell' : 'Buy';
+    
+    // Set other fields
+    document.getElementById('symbol').value = symbol;
+    document.getElementById('quantity').value = quantity;
+    
+    // Get current market price for the symbol
+    fetch('/get_market_price', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ symbol: symbol })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.price) {
+            document.getElementById('price').value = data.price;
+        }
+        
+        // Hide context menu and show modal
+        contextMenu.style.display = 'none';
+        modal.style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Error getting market price:', error);
+        // Still show the modal even if we couldn't get the price
+        contextMenu.style.display = 'none';
+        modal.style.display = 'block';
+    });
 });
 
 // Modal Functionality
@@ -955,6 +1217,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listeners
     document.getElementById('update-trader-id').addEventListener('click', updateTraderId);
+    document.getElementById('reset-filter').addEventListener('click', function() {
+        document.getElementById('symbol-filter').value = '';
+        updateOrderBlotter();
+    });
+    
+    // Add event listener for symbol filter input
+    document.getElementById('symbol-filter').addEventListener('input', function() {
+        updateOrderBlotter();
+    });
     
     // Start polling for updates
     setInterval(updateOrderBlotter, 1000);
@@ -1028,6 +1299,9 @@ function updateOrderBlotter() {
             
             // Update previous states for next comparison
             previousOrderStates = currentOrderStates;
+            
+            // Also refresh open positions in the order entry tab
+            loadOrderEntryOpenPositions();
         })
         .catch(error => console.error('Error updating order blotter:', error));
 }
@@ -1280,57 +1554,641 @@ function displayChatMessage(message, isUser = false) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Random trade generator
+// Random trade generator functionality
 let randomTradeInterval = null;
 
-function startRandomTrades() {
-    if (randomTradeInterval) return;
-    
-    randomTradeInterval = setInterval(() => {
-        fetch('/generate_random_trade', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
+// Load random trade settings when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadRandomTradeSettings();
+});
+
+function loadRandomTradeSettings() {
+    fetch('/get_random_trade_settings')
         .then(response => response.json())
         .then(data => {
-            // Update the output box
-            const outputBox = document.getElementById('output-box');
-            outputBox.innerHTML += `<br>${data.output}`;
-            outputBox.scrollTop = outputBox.scrollHeight;
+            document.getElementById('random-trades-toggle').checked = data.enabled;
+            document.getElementById('interval-seconds').value = data.interval_seconds;
+            document.getElementById('orders-per-interval').value = data.orders_per_interval;
+            document.getElementById('max-orders-before-refresh').value = data.max_orders_before_refresh;
             
-            // Update the status display
-            document.getElementById('status-display').textContent = data.status;
-            
-            // Refresh the order book and recent trades
-            updateOrderBook();
-            updateRecentTrades();
+            // If enabled, start the interval
+            if (data.enabled) {
+                startRandomTradeGenerator(data.interval_seconds, data.orders_per_interval);
+            }
         })
-        .catch(error => {
-            console.error('Error generating random trade:', error);
-            document.getElementById('status-display').textContent = 'ERROR';
-        });
-    }, 15000); // 15 seconds
+        .catch(error => console.error('Error loading random trade settings:', error));
 }
 
-function stopRandomTrades() {
+function saveRandomTradeSettings() {
+    const settings = {
+        enabled: document.getElementById('random-trades-toggle').checked,
+        interval_seconds: parseInt(document.getElementById('interval-seconds').value),
+        orders_per_interval: parseInt(document.getElementById('orders-per-interval').value),
+        max_orders_before_refresh: parseInt(document.getElementById('max-orders-before-refresh').value)
+    };
+    
+    fetch('/update_random_trade_settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the interval if enabled
+        if (settings.enabled) {
+            startRandomTradeGenerator(settings.interval_seconds, settings.orders_per_interval);
+        } else {
+            stopRandomTradeGenerator();
+        }
+        
+        // Show success message
+        updateStatus('Random trade settings saved');
+    })
+    .catch(error => {
+        console.error('Error saving random trade settings:', error);
+        updateStatus('Error saving settings');
+    });
+}
+
+function startRandomTradeGenerator(intervalSeconds, ordersPerInterval) {
+    // Clear any existing interval
+    stopRandomTradeGenerator();
+    
+    // Start a new interval
+    randomTradeInterval = setInterval(() => {
+        // Generate the specified number of orders
+        for (let i = 0; i < ordersPerInterval; i++) {
+            generateRandomTrade();
+        }
+    }, intervalSeconds * 1000);
+    
+    updateStatus('Random trade generator started');
+}
+
+function stopRandomTradeGenerator() {
     if (randomTradeInterval) {
         clearInterval(randomTradeInterval);
         randomTradeInterval = null;
+        updateStatus('Random trade generator stopped');
     }
 }
 
-// Add event listener for the random trades toggle
-document.addEventListener('DOMContentLoaded', () => {
-    const randomTradesToggle = document.getElementById('random-trades-toggle');
-    if (randomTradesToggle) {
-        randomTradesToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                startRandomTrades();
-            } else {
-                stopRandomTrades();
+function generateRandomTrade() {
+    fetch('/generate_random_trade', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the output box
+        const outputBox = document.getElementById('output-box');
+        outputBox.innerHTML += '<br>' + data.output;
+        outputBox.scrollTop = outputBox.scrollHeight;
+        
+        // Update the status
+        updateStatus(data.status);
+        
+        // Update the order book and recent trades
+        updateOrderBook();
+        updateRecentTrades();
+    })
+    .catch(error => {
+        console.error('Error generating random trade:', error);
+        updateStatus('Error generating random trade');
+    });
+}
+
+// Add event listeners for the random trade controls
+document.getElementById('random-trades-toggle').addEventListener('change', function() {
+    // This will be handled when settings are saved
+});
+
+document.getElementById('save-random-trade-settings').addEventListener('click', saveRandomTradeSettings);
+
+// Market price functionality
+document.getElementById('get-market-price').addEventListener('click', async function() {
+    const symbolInput = document.getElementById('symbol');
+    const priceInput = document.getElementById('price');
+    const button = this;
+    
+    if (!symbolInput.value) {
+        alert('Please enter a symbol first');
+        return;
+    }
+    
+    // Disable button while fetching
+    button.disabled = true;
+    button.textContent = 'Loading...';
+    
+    try {
+        const response = await fetch('/get_market_price', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                symbol: symbolInput.value
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch market price');
+        }
+        
+        const data = await response.json();
+        if (data.price) {
+            priceInput.value = data.price;
+        } else {
+            alert('Unable to fetch market price for ' + symbolInput.value);
+        }
+    } catch (error) {
+        console.error('Error fetching market price:', error);
+        alert('Error fetching market price. Please try again.');
+    } finally {
+        // Re-enable button
+        button.disabled = false;
+        button.textContent = 'Get Market Price';
+    }
+});
+
+// Portfolio Functions
+function loadPortfolio() {
+    const traderId = document.getElementById('trader-id').value;
+    if (!traderId) {
+        updateStatus('Error: Trader ID is required');
+        return;
+    }
+    
+    updateStatus('Loading portfolio...');
+    
+    // First check if baripool is accessible
+    fetch('/test_baripool')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('baripool module not accessible');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'error') {
+                throw new Error(data.message);
+            }
+            console.log('baripool test successful:', data);
+            
+            // Now try to load the portfolio
+            return fetch(`/get_portfolio?trader_id=${traderId}`);
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            updatePortfolioUI(data);
+            updateStatus('Portfolio loaded successfully');
+        })
+        .catch(error => {
+            console.error('Error loading portfolio:', error);
+            updateStatus('Error loading portfolio: ' + error.message);
+            
+            // Display empty portfolio UI
+            updatePortfolioUI({
+                open_positions: [],
+                filled_trades: [],
+                total_realized_pnl: 0,
+                total_unrealized_pnl: 0,
+                total_pnl: 0
+            });
+        });
+}
+
+// Add the missing updateStatus function
+function updateStatus(message) {
+    const statusDisplay = document.getElementById('status-display');
+    if (statusDisplay) {
+        statusDisplay.textContent = message;
+    } else {
+        console.log('Status:', message);
+    }
+}
+
+function updatePortfolioUI(data) {
+    // Update summary values
+    document.getElementById('total-pnl').textContent = formatCurrency(data.total_pnl);
+    document.getElementById('realized-pnl').textContent = formatCurrency(data.total_realized_pnl);
+    document.getElementById('unrealized-pnl').textContent = formatCurrency(data.total_unrealized_pnl);
+    document.getElementById('open-positions-count').textContent = data.open_positions.length;
+    
+    // Update open positions table
+    const openPositionsBody = document.getElementById('open-positions-body');
+    openPositionsBody.innerHTML = '';
+    
+    if (data.open_positions.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="8" class="no-data-message">No open positions</td>';
+        openPositionsBody.appendChild(emptyRow);
+    } else {
+        data.open_positions.forEach(position => {
+            const row = document.createElement('tr');
+            
+            // Determine position type and styling
+            const positionType = position.quantity > 0 ? 'Long' : 'Short';
+            const positionClass = position.quantity > 0 ? 'position-long' : 'position-short';
+            
+            // Calculate market value
+            const marketValue = Math.abs(position.quantity) * position.current_price;
+            
+            // Calculate PnL percentage
+            const pnlPercentage = position.quantity > 0 
+                ? ((position.current_price - position.avg_price) / position.avg_price) * 100
+                : ((position.avg_price - position.current_price) / position.avg_price) * 100;
+            
+            // Determine PnL styling
+            const pnlClass = position.unrealized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            
+            // Add data attributes for context menu
+            row.dataset.symbol = position.symbol;
+            row.dataset.quantity = Math.abs(position.quantity);
+            row.dataset.positionType = positionType;
+            
+            row.innerHTML = `
+                <td>${position.symbol}</td>
+                <td class="${positionClass}">${positionType}</td>
+                <td>${Math.abs(position.quantity)}</td>
+                <td>${formatCurrency(position.avg_price)}</td>
+                <td>${formatCurrency(position.current_price)}</td>
+                <td>${formatCurrency(marketValue)}</td>
+                <td class="${pnlClass}">${formatCurrency(position.unrealized_pnl)}</td>
+                <td class="${pnlClass}">${formatNumber(pnlPercentage)}%</td>
+            `;
+            
+            // Add right-click event listener for context menu
+            row.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                
+                // Show context menu
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.top = `${e.pageY}px`;
+                
+                // Store position details in context menu for later use
+                contextMenu.dataset.symbol = position.symbol;
+                contextMenu.dataset.quantity = Math.abs(position.quantity);
+                contextMenu.dataset.positionType = positionType;
+                
+                // Show close position option and hide trade against option
+                document.getElementById('close-position').style.display = 'block';
+                document.getElementById('trade-against').style.display = 'none';
+            });
+            
+            openPositionsBody.appendChild(row);
+        });
+    }
+    
+    // Update filled trades table
+    const filledTradesBody = document.getElementById('filled-trades-body');
+    filledTradesBody.innerHTML = '';
+    
+    if (data.filled_trades.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="7" class="no-data-message">No filled trades</td>';
+        filledTradesBody.appendChild(emptyRow);
+    } else {
+        data.filled_trades.forEach(trade => {
+            const row = document.createElement('tr');
+            
+            // Determine side styling
+            const sideClass = trade.side === '1' ? 'position-long' : 'position-short';
+            const sideText = trade.side === '1' ? 'Buy' : 'Sell';
+            
+            row.innerHTML = `
+                <td>${trade.time}</td>
+                <td>${trade.order_id}</td>
+                <td>${trade.symbol}</td>
+                <td class="${sideClass}">${sideText}</td>
+                <td>${trade.quantity}</td>
+                <td>${formatCurrency(trade.price)}</td>
+                <td>${trade.status}</td>
+            `;
+            
+            filledTradesBody.appendChild(row);
+        });
+    }
+}
+
+function formatCurrency(value) {
+    return '$' + parseFloat(value).toFixed(2);
+}
+
+function formatNumber(value) {
+    return parseFloat(value).toFixed(2);
+}
+
+// Function to load open positions for the order entry tab
+function loadOrderEntryOpenPositions() {
+    const traderId = document.getElementById('trader-id').value;
+    if (!traderId) {
+        updateStatus('Error: Trader ID is required');
+        return;
+    }
+    
+    updateStatus('Loading open positions...');
+    
+    // First check if baripool is accessible
+    fetch('/test_baripool')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('baripool module not accessible');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'error') {
+                throw new Error(data.message);
+            }
+            
+            // Now try to load the portfolio
+            return fetch(`/get_portfolio?trader_id=${traderId}`);
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            updateOrderEntryOpenPositionsUI(data);
+            updateStatus('Open positions loaded successfully');
+        })
+        .catch(error => {
+            console.error('Error loading open positions:', error);
+            updateStatus('Error loading open positions: ' + error.message);
+            
+            // Display empty open positions UI
+            updateOrderEntryOpenPositionsUI({
+                open_positions: [],
+                total_unrealized_pnl: 0
+            });
+        });
+}
+
+// Function to update the open positions UI in the order entry tab
+function updateOrderEntryOpenPositionsUI(data) {
+    // Update open positions count
+    document.getElementById('open-positions-count').textContent = data.open_positions.length;
+    
+    // Update open positions table
+    const openPositionsBody = document.getElementById('order-entry-open-positions-body');
+    openPositionsBody.innerHTML = '';
+    
+    if (data.open_positions.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="8" class="no-data-message">No open positions</td>';
+        openPositionsBody.appendChild(emptyRow);
+    } else {
+        data.open_positions.forEach(position => {
+            const row = document.createElement('tr');
+            
+            // Determine position type and styling
+            const positionType = position.quantity > 0 ? 'Long' : 'Short';
+            const positionClass = position.quantity > 0 ? 'position-long' : 'position-short';
+            
+            // Calculate market value
+            const marketValue = Math.abs(position.quantity) * position.current_price;
+            
+            // Calculate PnL percentage
+            const pnlPercentage = position.quantity > 0 
+                ? ((position.current_price - position.avg_price) / position.avg_price) * 100
+                : ((position.avg_price - position.current_price) / position.avg_price) * 100;
+            
+            // Determine PnL styling
+            const pnlClass = position.unrealized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+            
+            // Add data attributes for context menu
+            row.dataset.symbol = position.symbol;
+            row.dataset.quantity = Math.abs(position.quantity);
+            row.dataset.positionType = positionType;
+            
+            row.innerHTML = `
+                <td>${position.symbol}</td>
+                <td class="${positionClass}">${positionType}</td>
+                <td>${Math.abs(position.quantity)}</td>
+                <td>${formatCurrency(position.avg_price)}</td>
+                <td>${formatCurrency(position.current_price)}</td>
+                <td>${formatCurrency(marketValue)}</td>
+                <td class="${pnlClass}">${formatCurrency(position.unrealized_pnl)}</td>
+                <td class="${pnlClass}">${formatNumber(pnlPercentage)}%</td>
+            `;
+            
+            // Add right-click event listener for context menu
+            row.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                
+                // Show context menu
+                const contextMenu = document.getElementById('context-menu');
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.top = `${e.pageY}px`;
+                
+                // Store position details in context menu for later use
+                contextMenu.dataset.symbol = position.symbol;
+                contextMenu.dataset.quantity = Math.abs(position.quantity);
+                contextMenu.dataset.positionType = positionType;
+                
+                // Show close position option and hide trade against option
+                document.getElementById('close-position').style.display = 'block';
+                document.getElementById('trade-against').style.display = 'none';
+            });
+            
+            openPositionsBody.appendChild(row);
+        });
+    }
+}
+
+// Add event listener for close position option in context menu
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing code ...
+    
+    // Add event listener for close position option
+    const closePositionOption = document.getElementById('close-position');
+    if (closePositionOption) {
+        closePositionOption.addEventListener('click', function() {
+            const contextMenu = document.getElementById('context-menu');
+            const symbol = contextMenu.dataset.symbol;
+            const quantity = contextMenu.dataset.quantity;
+            const positionType = contextMenu.dataset.positionType;
+            
+            // Hide context menu
+            contextMenu.style.display = 'none';
+            
+            // Open order entry modal
+            const modal = document.getElementById('order-entry-modal');
+            modal.style.display = 'block';
+            
+            // Set form values for closing position
+            document.getElementById('side').value = positionType === 'Long' ? 'Sell' : 'Buy';
+            document.getElementById('symbol').value = symbol;
+            document.getElementById('quantity').value = quantity;
+            
+            // Get current market price for the symbol
+            fetch('/get_market_price', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ symbol: symbol })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.price) {
+                    document.getElementById('price').value = data.price;
+                }
+            })
+            .catch(error => {
+                console.error('Error getting market price:', error);
+            });
+        });
+    }
+    
+    // Add event listener for cancel order option
+    const cancelOrderOption = document.getElementById('cancel-order');
+    if (cancelOrderOption) {
+        cancelOrderOption.addEventListener('click', function() {
+            const contextMenu = document.getElementById('context-menu');
+            const orderId = contextMenu.dataset.orderId;
+            const symbol = contextMenu.dataset.symbol;
+            
+            // Hide context menu
+            contextMenu.style.display = 'none';
+            
+            // Confirm cancellation
+            if (confirm(`Are you sure you want to cancel order ${orderId} for ${symbol}?`)) {
+                // Send cancel order request
+                fetch('/cancel_order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ order_id: orderId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update output box with cancellation message
+                    const outputBox = document.getElementById('output-box');
+                    outputBox.innerHTML += '\n' + data.output;
+                    // Auto-scroll to the bottom
+                    outputBox.scrollTop = outputBox.scrollHeight;
+                    
+                    // Update status and reset after delay
+                    document.getElementById('status-display').textContent = data.status;
+                    setTimeout(() => {
+                        document.getElementById('status-display').textContent = 'READY';
+                    }, 2000);
+                    
+                    // Refresh the order book to show the cancellation
+                    updateOrderBook();
+                })
+                .catch(error => {
+                    console.error('Error canceling order:', error);
+                    updateStatus('Error canceling order: ' + error.message);
+                });
             }
         });
     }
+    
+    // Hide context menu when clicking elsewhere
+    document.addEventListener('click', function() {
+        const contextMenu = document.getElementById('context-menu');
+        if (contextMenu) {
+            contextMenu.style.display = 'none';
+        }
+    });
 });
+
+// Function to handle volume bar animation and row removal
+function handleVolumeAnimation(changes) {
+    // Process each symbol
+    for (const symbol in changes.partialFills) {
+        const sides = ['buys', 'sells'];
+        
+        sides.forEach(side => {
+            changes.partialFills[symbol][side].forEach(orderId => {
+                // Find the row with this order ID
+                const rows = document.querySelectorAll(`.order-table tr[data-order-id="${orderId}"]`);
+                
+                rows.forEach(row => {
+                    // Find the size indicator
+                    const sizeIndicator = row.querySelector('.size-indicator');
+                    if (sizeIndicator) {
+                        // Get the current width
+                        const currentWidth = sizeIndicator.style.width;
+                        
+                        // Add the volume decreasing animation class
+                        sizeIndicator.classList.add('volume-decreasing');
+                        
+                        // Check if this is a fully filled order
+                        if (changes.fullFills[symbol] && 
+                            changes.fullFills[symbol][side] && 
+                            changes.fullFills[symbol][side].includes(orderId)) {
+                            
+                            // After the volume animation completes, add the row removal animation
+                            setTimeout(() => {
+                                row.classList.add('row-removing');
+                                
+                                // After the row removal animation completes, remove the row
+                                setTimeout(() => {
+                                    if (row.parentNode) {
+                                        row.parentNode.removeChild(row);
+                                    }
+                                }, 1000); // Match the duration of the rowRemove animation
+                            }, 4000); // Match the duration of the volumeDecrease animation
+                        }
+                    }
+                });
+            });
+        });
+    }
+    
+    // Also handle fully filled orders that weren't in the partial fills
+    for (const symbol in changes.fullFills) {
+        const sides = ['buys', 'sells'];
+        
+        sides.forEach(side => {
+            changes.fullFills[symbol][side].forEach(orderId => {
+                // Skip if this order was already handled in the partial fills section
+                if (changes.partialFills[symbol] && 
+                    changes.partialFills[symbol][side] && 
+                    changes.partialFills[symbol][side].includes(orderId)) {
+                    return;
+                }
+                
+                // Find the row with this order ID
+                const rows = document.querySelectorAll(`.order-table tr[data-order-id="${orderId}"]`);
+                
+                rows.forEach(row => {
+                    // Find the size indicator
+                    const sizeIndicator = row.querySelector('.size-indicator');
+                    if (sizeIndicator) {
+                        // Add the volume decreasing animation class
+                        sizeIndicator.classList.add('volume-decreasing');
+                        
+                        // After the volume animation completes, add the row removal animation
+                        setTimeout(() => {
+                            row.classList.add('row-removing');
+                            
+                            // After the row removal animation completes, remove the row
+                            setTimeout(() => {
+                                if (row.parentNode) {
+                                    row.parentNode.removeChild(row);
+                                }
+                            }, 1000); // Match the duration of the rowRemove animation
+                        }, 4000); // Match the duration of the volumeDecrease animation
+                    }
+                });
+            });
+        });
+    }
+}

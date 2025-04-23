@@ -14,7 +14,7 @@ sendercompids = list(devresources.clients.keys())
 def neworderid():
     return 'katana-' + str(uuid.uuid4())[0:8]
 
-symbols = ['AAPL', 'GOOG', 'AMZN', 'MSFT', 'TSLA', 'MS', 'BAC', 'ZVZZT', 'SPY', 'QQQ','IWM','META','GME','AMC','BB','NOK','V','EL','LULU']
+symbols = ['AAPL', 'SPY']
 
 #generate random price, use cents
 prices = [str(r.randint(1, 1000)) + '.' + str(r.randint(10, 99)) for _ in range(100)]
@@ -46,7 +46,7 @@ def send_r_orders(num_orders=10000, sleep_interval=.5):
         time.sleep(sleep_interval)
 
 #for bp_directentry population
-def bp_directentry_sim(num_orders=6, sleep_interval=0):
+def bp_directentry_sim(num_orders=2, sleep_interval=0):
     for _ in range(num_orders):
         r_order = generate_r_order()
         baripool.on_new_order(r_order)
