@@ -115,8 +115,8 @@ def generate_random_trade():
         # Increment the order count for this symbol
         finnhub_client.increment_order_count(symbol)
         
-        # Generate a random price within 3% of the current price
-        price_variation = random.uniform(-0.03, 0.03)
+        # Generate a random price within 1% of the current price
+        price_variation = random.uniform(-0.01, 0.01)
         price = round(current_price * (1 + price_variation), 2)
         
         # Generate a random quantity between 10 and 1000
