@@ -11,6 +11,7 @@ import maricon
 bookshelf = {}  # contains books of all symbols
 fillcontainer = {}  # contains all fills
 orderid_container = {} # contains orderids to prevent duplicate orderids
+nbbo = {}  # {symbol: {'bid': price, 'bid_qty': qty, 'ask': price, 'ask_qty': qty}}
 
 # Initialize the Finnhub client with a 15% price-away threshold
 finnhub_client = market_data.FinnhubClient(maricon.finnhub_key, price_away_threshold=0.15)
@@ -64,7 +65,48 @@ class BariOrder:
         self.lastpx = False
 
 
-def matcher(buyer, seller, potential_lastpx):
+def calculate_nbbo(symbol):
+    if symbol not in bookshelf or not bookshelf[symbol]:
+        nbbo[symbol] = {'bid': None, 'bid_qty': 0, 'ask': None, 'ask_qty': 0}
+        return nbbo[symbol]
+
+    book = bookshelf[symbol]
+    buys = [o for o in book if o.side == '1' and not o.is_canceled]
+    sells = [o for o in book if o.side == '2' and not o.is_canceled]
+
+    if buys:
+        best_bid = max(o.limitprice for o in buys)
+        bid_qty = sum(o.qty for o in buys if o.limitprice == best_bid)
+    else:
+        best_bid = None
+        bid_qty = 0
+
+    if sells:
+        best_ask = min(o.limitprice for o in sells)
+        ask_qty = sum(o.qty for o in sells if o.limitprice == best_ask)
+    else:
+        best_ask = None
+        ask_qty = 0
+
+    nbbo[symbol] = {'bid': best_bid, 'bid_qty': bid_qty, 'ask': best_ask, 'ask_qty': ask_qty}
+    return nbbo[symbol]
+
+
+def compute_nbbo_fill_price(symbol, buyer, seller, aggressive_side):
+    nbb = nbbo.get(symbol, {})
+    best_bid = nbb.get('bid')
+    best_ask = nbb.get('ask')
+
+    if best_bid is not None and best_ask is not None:
+        return round((best_bid + best_ask) / 2, 2)
+
+    if aggressive_side == '1':
+        return seller.limitprice
+    else:
+        return buyer.limitprice
+
+
+def matcher(buyer, seller, aggressive_side):
     # Prevent self-match
     if buyer.sendercompid == seller.sendercompid:
         print('Self-match prevented! - buyer:', buyer.sendercompid, 'seller:', seller.sendercompid, 'symbol:', buyer.symbol, 'qty:')
@@ -80,8 +122,7 @@ def matcher(buyer, seller, potential_lastpx):
         buyer_status = '2' if buyer.qty == 0 else '1'
         seller_status = '2' if seller.qty == 0 else '1'
 
-        # Calculate fill price based on passive (resting) order's limit price
-        fill_price = potential_lastpx
+        fill_price = compute_nbbo_fill_price(buyer.symbol, buyer, seller, aggressive_side)
 
         buyer_execution_report = dfix.execreport_gen.generate_execution_report(buyer, matched_qty, buyer_status, fill_price)
         seller_execution_report = dfix.execreport_gen.generate_execution_report(seller, matched_qty, seller_status, fill_price)
@@ -89,6 +130,7 @@ def matcher(buyer, seller, potential_lastpx):
         # Send execution reports to buyer and seller
         print("Buyer Execution Report:", buyer_execution_report)
         print("Seller Execution Report:", seller_execution_report)
+        print(f"NBBO Fill Price: {fill_price} | Best Bid: {nbbo.get(buyer.symbol, {}).get('bid')} | Best Ask: {nbbo.get(buyer.symbol, {}).get('ask')}")
         
         # Use a composite key that includes both order ID and a timestamp to ensure uniqueness
         timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
@@ -99,6 +141,7 @@ def matcher(buyer, seller, potential_lastpx):
 
 
 def evaluate_book(new_order, book):
+    symbol = new_order.symbol
     potential_matches = [
         order for order in book
         if order.side != new_order.side and not order.is_canceled
@@ -114,19 +157,26 @@ def evaluate_book(new_order, book):
         # For sell orders, match against buy orders with highest prices first
         potential_matches.sort(key=lambda order: order.limitprice, reverse=True)
 
+    # Compute NBBO before matching
+    calculate_nbbo(symbol)
+
     for potential_match in potential_matches:
-        # potential fill price is the passive (resting) order's limit price
-        potential_lastpx = potential_match.limitprice
-        fill_qty = matcher(new_order, potential_match, potential_lastpx) if new_order.side == '1' else matcher(potential_match, new_order, potential_lastpx)
+        if new_order.side == '1':
+            fill_qty = matcher(new_order, potential_match, aggressive_side='1')
+        else:
+            fill_qty = matcher(potential_match, new_order, aggressive_side='2')
 
         if fill_qty > 0:
-            new_order.lastpx = potential_lastpx
-            potential_match.lastpx = potential_lastpx
+            fill_price = compute_nbbo_fill_price(symbol, new_order, potential_match, new_order.side)
+            new_order.lastpx = fill_price
+            potential_match.lastpx = fill_price
             matched_qty += fill_qty
             if potential_match.qty == 0:
                 book.remove(potential_match)
             if new_order.qty == 0:
                 break
+        # Recompute NBBO after each match since the book changed
+        calculate_nbbo(symbol)
 
     if new_order.qty > 0:
         if new_order.timeinforce != '3':
@@ -135,7 +185,10 @@ def evaluate_book(new_order, book):
             print(f"Immediate or Cancel order {new_order.orderid} not fully executed. Remaining quantity: {new_order.qty}")
             unfilled_ioc_exec_report = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
             print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
-        bookshelf[new_order.symbol] = book
+        bookshelf[symbol] = book
+
+    # Final NBBO recalculation after all changes
+    calculate_nbbo(symbol)
 
 def side_to_str(side):
     return 'Buy' if side == '1' else 'Sell'
@@ -239,8 +292,10 @@ def on_new_order(new_order):
 
     if new_order.symbol not in bookshelf.keys():
         bookshelf[new_order.symbol] = [new_order]
+        calculate_nbbo(new_order.symbol)
         if new_order.timeinforce == '3':
             bookshelf[new_order.symbol] = []
+            calculate_nbbo(new_order.symbol)
             print(f"Immediate or Cancel order {new_order.orderid} not fully executed. Remaining quantity: {new_order.qty}")
             unfilled_ioc_exec_report = dfix.execreport_gen.generate_unfilled_ioc_execution_report(new_order)
             print("Unfilled IOC Execution Report:", unfilled_ioc_exec_report)
@@ -254,9 +309,15 @@ def on_new_order(new_order):
 
 def display_book(book):
     try:
-        print('Order Book: ', book[0].symbol, 'at', datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3])
+        symbol = book[0].symbol
+        print('Order Book: ', symbol, 'at', datetime.datetime.now().strftime('%Y%m%d-%H:%M:%S.%f')[:-3])
     except IndexError:
         print('Order Book is empty.')
+        return
+
+    nbb = nbbo.get(symbol, {})
+    if nbb.get('bid') is not None or nbb.get('ask') is not None:
+        print(f"NBBO: Bid {nbb.get('bid')} x {nbb.get('bid_qty')} | Ask {nbb.get('ask')} x {nbb.get('ask_qty')} | Spread: {round(nbb.get('ask', 0) - nbb.get('bid', 0), 2) if nbb.get('bid') and nbb.get('ask') else 'N/A'}")
 
     buys = [order for order in book if order.side == '1']
     sells = [order for order in book if order.side == '2']
@@ -300,7 +361,8 @@ def on_cancel_order(order_id):
                 # Add the cancellation to the fillcontainer with a composite key
                 timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
                 fillcontainer[f"{order_id}_{timestamp}_cancel"] = cancel_exec_report
-                
+
+                calculate_nbbo(symbol)
                 return
     print(f"Order {order_id} not found in the order book.")
 

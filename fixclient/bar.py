@@ -266,6 +266,10 @@ def get_time():
         'date': datetime.now().strftime("%d-%b-%Y")
     })
 
+@app.route('/get_nbbo')
+def get_nbbo():
+    return jsonify(baripool.nbbo)
+
 @app.route('/get_order_book')
 def get_order_book():
     books_data = {}
@@ -281,7 +285,17 @@ def get_order_book():
         buys.sort(key=lambda x: x.limitprice, reverse=True)
         sells.sort(key=lambda x: x.limitprice)
         
+        # Include NBBO data
+        nbbo_data = baripool.nbbo.get(symbol, {})
+        
         books_data[symbol] = {
+            'nbbo': {
+                'bid': nbbo_data.get('bid'),
+                'bid_qty': nbbo_data.get('bid_qty', 0),
+                'ask': nbbo_data.get('ask'),
+                'ask_qty': nbbo_data.get('ask_qty', 0),
+                'spread': round(nbbo_data.get('ask', 0) - nbbo_data.get('bid', 0), 2) if nbbo_data.get('bid') and nbbo_data.get('ask') else None
+            },
             'buys': [
                 {
                     'order_id': order.orderid,
