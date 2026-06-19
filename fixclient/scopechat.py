@@ -1,13 +1,17 @@
 import json
 import os
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from datetime import datetime
-import anthropic
 import maricon
 import tiktoken
 import uuid
 from flask import Blueprint, request, jsonify
 import baripool
 import baripool_action
+
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODEL = "deepseek/deepseek-v4-flash"
 
 # Default prompt template for trader simulation
 DEFAULT_PROMPT = """You are an experienced financial trader. You're conversing with another trader or market participant who may ask you questions about market conditions, trading strategies, or specific orders.
@@ -55,11 +59,13 @@ scope_chat_bp = Blueprint('scope_chat', __name__)
 class ScopeChat:
     def __init__(self):
         self.chat_history = {}  # Store chat history by scope_id
-        self.api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        self.client = anthropic.Anthropic(api_key=maricon.anthropic_key)
+        self.api_key = (
+            os.environ.get("OPENROUTER_API_KEY")
+            or getattr(maricon, "openrouter_key", "")
+        )
         self.order_handler = None  # Will be set by external code to handle order submission
         self.token_costs = {}  # Store token costs by scope_id
-        self.encoding = tiktoken.get_encoding("cl100k_base")  # Claude's tokenizer
+        self.encoding = tiktoken.get_encoding("cl100k_base")
     
     def set_order_handler(self, handler_function):
         """Set the function that will handle order submissions"""
@@ -71,8 +77,9 @@ class ScopeChat:
     
     def _calculate_cost(self, input_tokens, output_tokens):
         """Calculate cost in cents based on token counts"""
-        input_cost = (input_tokens / 1000000) * 300  # $3/MTOK = 300 cents/MTOK
-        output_cost = (output_tokens / 1000000) * 1500  # $15/MTOK = 1500 cents/MTOK
+        # DeepSeek V4 Flash: $0.09 input / $0.18 output per million tokens.
+        input_cost = (input_tokens / 1_000_000) * 9
+        output_cost = (output_tokens / 1_000_000) * 18
         return input_cost + output_cost
     
     def send_message(self, scope_id, message, custom_prompt=None):
@@ -94,10 +101,10 @@ class ScopeChat:
             "timestamp": timestamp
         })
         
-        # Prepare the prompt for Claude
+        # Prepare the system prompt
         prompt = custom_prompt if custom_prompt else DEFAULT_PROMPT
         
-        # Build conversation history for Claude
+        # Build OpenRouter-compatible conversation history
         messages = [{"role": "system", "content": prompt}]
         for chat in self.chat_history[scope_id]:
             messages.append({
@@ -109,13 +116,13 @@ class ScopeChat:
         input_tokens = sum(self._count_tokens(msg["content"]) for msg in messages)
         
         # If API key is not set, return a mock response
-        if not self.client:
+        if not self.api_key:
             response = f"[MOCK TRADER RESPONSE] This is a simulated response as no API key is set. Regarding: {message}"
             output_tokens = self._count_tokens(response)
         else:
-            # Make API request to Claude using the Anthropic client
+            # Make the request through OpenRouter.
             try:
-                response = self._call_claude_api(messages)
+                response = self._call_openrouter_api(messages)
                 output_tokens = self._count_tokens(response)
             except Exception as e:
                 response = f"Error: Could not get response from trader simulation. {str(e)}"
@@ -201,28 +208,44 @@ class ScopeChat:
         except Exception as e:
             return {"status": "ERROR", "message": f"Failed to process order: {str(e)}"}
     
-    def _call_claude_api(self, messages):
-        """Call the Claude API with the conversation history using the Anthropic client"""
+    def _call_openrouter_api(self, messages):
+        """Call DeepSeek V4 Flash through OpenRouter."""
+        payload = json.dumps({
+            "model": OPENROUTER_MODEL,
+            "messages": messages,
+            "max_tokens": 500,
+        }).encode("utf-8")
+
+        api_request = Request(
+            OPENROUTER_API_URL,
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:5017",
+                "X-OpenRouter-Title": "BAR Trading Terminal",
+            },
+            method="POST",
+        )
+
         try:
-            # Extract system message
-            system_message = None
-            conversation_messages = []
-            
-            for message in messages:
-                if message["role"] == "system":
-                    system_message = message["content"]
-                else:
-                    conversation_messages.append(message)
-            
-            response = self.client.messages.create(
-                model="claude-3-7-sonnet-latest",
-                system=system_message,
-                messages=conversation_messages,
-                max_tokens=500
-            )
-            return response.content[0].text
-        except Exception as e:
-            raise Exception(f"API Error: {str(e)}")
+            with urlopen(api_request, timeout=60) as response:
+                response_data = json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            error_body = exc.read().decode("utf-8", errors="replace")
+            try:
+                error_data = json.loads(error_body)
+                message = error_data.get("error", {}).get("message", error_body)
+            except json.JSONDecodeError:
+                message = error_body
+            raise RuntimeError(f"OpenRouter returned HTTP {exc.code}: {message}") from exc
+        except URLError as exc:
+            raise RuntimeError(f"Could not connect to OpenRouter: {exc.reason}") from exc
+
+        try:
+            return response_data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError("OpenRouter returned an unexpected response") from exc
     
     def get_chat_history(self, scope_id):
         """Get the chat history for a specific scope_id"""

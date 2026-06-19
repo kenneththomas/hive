@@ -21,6 +21,9 @@ from market_maker import MarketMaker
 
 app = Flask(__name__)
 
+TERMINAL_NAME = "BAR"
+TERMINAL_ENVIRONMENT = "SIM"
+
 # Register profile routes
 register_profile_routes(app)
 
@@ -186,7 +189,11 @@ def unique_id():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template(
+        'index.html',
+        terminal_name=TERMINAL_NAME,
+        terminal_environment=TERMINAL_ENVIRONMENT,
+    )
 
 @app.route('/submit_order', methods=['POST'])
 def submit_order():
@@ -217,8 +224,40 @@ def submit_order():
         price = request.form.get('price')
         sender = request.form.get('sender')
     
-    result = process_order(side_value, symbol, quantity, price, sender)
-    return jsonify(result)
+    symbol = (symbol or '').strip().upper()
+    sender = (sender or '').strip().upper()
+
+    if side_value not in {'1', '2'}:
+        return jsonify({'error': 'Side must be Buy or Sell', 'status': 'REJECTED'}), 400
+    if not symbol:
+        return jsonify({'error': 'Symbol is required', 'status': 'REJECTED'}), 400
+    if not sender:
+        return jsonify({'error': 'Sender is required', 'status': 'REJECTED'}), 400
+
+    try:
+        quantity = int(quantity)
+        price = float(price)
+    except (TypeError, ValueError):
+        return jsonify({
+            'error': 'Quantity and price must be numeric',
+            'status': 'REJECTED'
+        }), 400
+
+    if quantity <= 0 or price <= 0:
+        return jsonify({
+            'error': 'Quantity and price must be greater than zero',
+            'status': 'REJECTED'
+        }), 400
+
+    try:
+        result = process_order(side_value, symbol, quantity, price, sender)
+        return jsonify(result)
+    except Exception as exc:
+        logging.exception("Order submission failed")
+        return jsonify({
+            'error': f'Order could not be submitted: {exc}',
+            'status': 'REJECTED'
+        }), 500
 
 @app.route('/get_time')
 def get_time():

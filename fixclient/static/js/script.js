@@ -1,23 +1,51 @@
 // Submit form function
 function submitForm() {
-    const formData = new FormData(document.getElementById('order-form'));
+    const form = document.getElementById('order-form');
+    const modal = document.getElementById('order-entry-modal');
+
+    if (modal.style.display !== 'block') {
+        modal.style.display = 'block';
+        document.getElementById('symbol').focus();
+        return;
+    }
+
+    if (!form.reportValidity()) {
+        document.getElementById('status-display').textContent = 'CHECK ORDER FIELDS';
+        return;
+    }
+
+    const formData = new FormData(form);
+    document.getElementById('status-display').textContent = 'SENDING ORDER...';
     
     fetch('/submit_order', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || 'Order rejected');
+        }
+        return data;
+    })
     .then(data => {
         const outputBox = document.getElementById('output-box');
-        outputBox.innerHTML += '\n' + data.output;
+        outputBox.textContent += '\n' + data.output;
         // Auto-scroll to the bottom
         outputBox.scrollTop = outputBox.scrollHeight;
         
         // Update status and reset after delay
         document.getElementById('status-display').textContent = data.status;
+        closeOrderEntry();
         setTimeout(() => {
             document.getElementById('status-display').textContent = 'READY';
         }, 2000);
+    })
+    .catch(error => {
+        const outputBox = document.getElementById('output-box');
+        outputBox.textContent += `\n[REJECTED] ${error.message}`;
+        outputBox.scrollTop = outputBox.scrollHeight;
+        document.getElementById('status-display').textContent = 'ORDER REJECTED';
     });
 }
 

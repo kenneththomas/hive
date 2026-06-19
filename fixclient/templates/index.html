@@ -3,56 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAR</title>
+    <title>{{ terminal_name }} // Trading Terminal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container">
         <!-- Floating Order Entry Button -->
-        <button id="floating-order-entry" class="floating-order-entry-button">New Order</button>
+        <button id="floating-order-entry" class="floating-order-entry-button" type="button" aria-label="Open new order ticket">
+            <span class="key-hint">F2</span> New Order
+        </button>
         
         <!-- Context Menu -->
-        <div id="context-menu" class="context-menu">
+        <div id="context-menu" class="context-menu" role="menu" aria-hidden="true">
             <div class="context-menu-item" id="trade-against">Trade Against</div>
             <div class="context-menu-item" id="close-position">Close Position</div>
             <div class="context-menu-item" id="cancel-order">Cancel Order</div>
         </div>
         
         <!-- Header bar -->
-        <div class="header-bar">
-            <div class="header-title">BAR Trading Terminal</div>
-            <div class="header-date" id="date-display"></div>
-            <div class="header-time" id="time-display"></div>
-        </div>
+        <header class="header-bar">
+            <div class="brand-lockup">
+                <span class="brand-mark">{{ terminal_name }}</span>
+                <span class="header-title">Execution Workspace</span>
+                <span class="environment-badge">{{ terminal_environment }}</span>
+            </div>
+            <div class="market-session" aria-label="Terminal status">
+                <span class="session-dot"></span>
+                <span>CONNECTED</span>
+            </div>
+            <div class="header-clock">
+                <span class="header-date" id="date-display"></span>
+                <span class="header-time" id="time-display"></span>
+                <span class="timezone-label">LOCAL</span>
+            </div>
+        </header>
 
         <!-- Main content -->
         <div class="main-content">
-            <div class="tabs">
-                <button class="tab-button active" data-tab="order-entry">ORDER ENTRY</button>
-                <button class="tab-button" data-tab="recent-trades">RECENT TRADES</button>
-                <button class="tab-button" data-tab="portfolio">PORTFOLIO</button>
-                <button class="tab-button" data-tab="scopechat">SCOPECHAT</button>
-                <button class="tab-button" data-tab="management">MANAGEMENT</button>
-            </div>
+            <nav class="tabs" aria-label="Terminal workspaces">
+                <button class="tab-button active" data-tab="order-entry" type="button"><span>1</span> Orders</button>
+                <button class="tab-button" data-tab="recent-trades" type="button"><span>2</span> Trades</button>
+                <button class="tab-button" data-tab="portfolio" type="button"><span>3</span> Portfolio</button>
+                <button class="tab-button" data-tab="scopechat" type="button"><span>4</span> ScopeChat</button>
+                <button class="tab-button" data-tab="management" type="button"><span>5</span> Controls</button>
+            </nav>
 
             <div class="tab-content">
                 <!-- Order Entry Tab -->
-                <div class="trader-id-container">
-                    <label for="trader-id">Trader ID:</label>
-                    <input type="text" id="trader-id" value="TRADER1">
-                    <button id="update-trader-id">Update</button>
-                </div>
-                <div class="symbol-filter">
-                    <label for="symbol-filter">Filter by Symbol:</label>
-                    <input type="text" id="symbol-filter" placeholder="Enter symbol...">
-                    <button id="reset-filter" class="reset">Reset</button>
-                </div>
                 <div class="tab-pane active" id="order-entry-tab">
-                    <h1 class="title">ORDER ENTRY</h1>
-
-                    <!-- Order Entry Button -->
-                    <div class="order-entry-button-container">
-                        <button id="open-order-entry" class="order-entry-button">New Order</button>
+                    <div class="workspace-header">
+                        <div>
+                            <div class="eyebrow">Execution Management</div>
+                            <h1 class="title">Order Entry</h1>
+                        </div>
+                        <div class="workspace-actions">
+                            <div class="trader-id-container">
+                                <label for="trader-id">Trader</label>
+                                <input type="text" id="trader-id" value="TRADER1" autocomplete="off" spellcheck="false">
+                                <button id="update-trader-id" type="button">Apply</button>
+                            </div>
+                            <div class="symbol-filter">
+                                <label for="symbol-filter">Symbol</label>
+                                <input type="search" id="symbol-filter" placeholder="ALL" autocomplete="off" spellcheck="false">
+                                <button id="reset-filter" class="reset" type="button">Clear</button>
+                            </div>
+                            <button id="open-order-entry" class="order-entry-button" type="button">
+                                <span class="key-hint">F2</span> New Order
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Order Blotter -->
@@ -139,7 +157,9 @@
 
                 <!-- Recent Trades Tab -->
                 <div class="tab-pane" id="recent-trades-tab">
-                    <h1 class="title">RECENT TRADES</h1>
+                    <div class="workspace-header">
+                        <div><div class="eyebrow">Tape</div><h1 class="title">Recent Trades</h1></div>
+                    </div>
                     <div class="ticker-section">
                         <div class="ticker-container">
                             <div id="trade-ticker" class="trade-ticker">
@@ -151,7 +171,9 @@
 
                 <!-- Portfolio Tab -->
                 <div class="tab-pane" id="portfolio-tab">
-                    <h1 class="title">PORTFOLIO</h1>
+                    <div class="workspace-header">
+                        <div><div class="eyebrow">Risk &amp; Performance</div><h1 class="title">Portfolio</h1></div>
+                    </div>
                     
                     <!-- Portfolio Summary -->
                     <div class="portfolio-summary">
@@ -227,11 +249,14 @@
                 </div>
 
                 <!-- Order Entry Modal -->
-                <div id="order-entry-modal" class="modal">
+                <div id="order-entry-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="order-ticket-title">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h2>Order Entry</h2>
-                            <span class="close-modal">&times;</span>
+                            <div>
+                                <div class="eyebrow">FIX NewOrderSingle</div>
+                                <h2 id="order-ticket-title">Order Ticket</h2>
+                            </div>
+                            <button class="close-modal" type="button" aria-label="Close order ticket">&times;</button>
                         </div>
                         <div class="modal-body">
                             <form id="order-form">
@@ -245,39 +270,41 @@
 
                                 <div class="form-group">
                                     <label for="symbol">SYMBOL: (55)</label>
-                                    <input type="text" id="symbol" name="symbol" class="form-control">
+                                    <input type="text" id="symbol" name="symbol" class="form-control" autocomplete="off" spellcheck="false" required>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="quantity">QTY: (38)</label>
-                                    <input type="text" id="quantity" name="quantity" class="form-control">
+                                    <input type="number" id="quantity" name="quantity" class="form-control" min="1" step="1" inputmode="numeric" required>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="price">PRICE: (44)</label>
                                     <div class="price-input-group">
-                                        <input type="text" id="price" name="price" class="form-control">
+                                        <input type="number" id="price" name="price" class="form-control" min="0.01" step="0.01" inputmode="decimal" required>
                                         <button type="button" id="get-market-price" class="market-price-button">Get Market Price</button>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="sender">SENDER: (49)</label>
-                                    <input type="text" id="sender" name="sender" class="form-control">
+                                    <input type="text" id="sender" name="sender" class="form-control" autocomplete="off" spellcheck="false" required>
                                 </div>
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button class="modal-button" onclick="submitForm()">Submit</button>
-                            <button class="modal-button" onclick="clearForm()">Clear</button>
-                            <button class="modal-button" onclick="closeOrderEntry()">Cancel</button>
+                            <button class="modal-button primary" type="button" onclick="submitForm()">Submit Order</button>
+                            <button class="modal-button" type="button" onclick="clearForm()">Clear</button>
+                            <button class="modal-button" type="button" onclick="closeOrderEntry()">Cancel</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- ScopeChat Tab -->
                 <div class="tab-pane" id="scopechat-tab">
-                    <h1 class="title">SCOPE CHAT</h1>
+                    <div class="workspace-header">
+                        <div><div class="eyebrow">Desk Collaboration</div><h1 class="title">ScopeChat</h1></div>
+                    </div>
                     
                     <div class="scope-chat-container">
                         <div class="scope-chat-settings">
@@ -396,7 +423,9 @@
 
                 <!-- Management Tab -->
                 <div class="tab-pane" id="management-tab">
-                    <h1 class="title">MANAGEMENT CONTROLS</h1>
+                    <div class="workspace-header">
+                        <div><div class="eyebrow">System</div><h1 class="title">Management Controls</h1></div>
+                    </div>
                     
                     <div class="management-controls">
                         <div class="control-group">
@@ -437,7 +466,16 @@
 
         <!-- Status bar -->
         <div class="status-bar">
-            <div id="status-display">READY</div>
+            <div class="status-left">
+                <span class="status-indicator"></span>
+                <span id="status-display">READY</span>
+            </div>
+            <div class="status-right">
+                <span>F1 HELP</span>
+                <span>F2 ORDER</span>
+                <span>F3 CLEAR</span>
+                <span>F4 EXIT</span>
+            </div>
         </div>
     </div>
 
